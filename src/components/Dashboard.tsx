@@ -4,8 +4,8 @@ import { MealEntry, DailyStats, WeightEntry, NutrientInfo } from '../types';
 import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
 import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp } from 'lucide-react';
-import { suggestMeal } from '../services/openai';
+import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp, Lightbulb, X } from 'lucide-react';
+import { suggestMeal, suggestFoodForNutrient } from '../services/openai';
 
 interface MealTypeStats {
   mealType: string;
@@ -25,6 +25,8 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [mealSuggestion, setMealSuggestion] = useState<string>('');
   const [suggestingMeal, setSuggestingMeal] = useState(false);
+  const [nutrientSuggestion, setNutrientSuggestion] = useState<{nutrient: string, suggestion: string} | null>(null);
+  const [suggestingNutrient, setSuggestingNutrient] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -211,6 +213,26 @@ export const Dashboard = () => {
     }
   };
 
+  const handleNutrientSuggestion = async (nutrientName: string, currentAmount: number, targetAmount: number) => {
+    if (!user) return;
+
+    setSuggestingNutrient(true);
+    setNutrientSuggestion(null);
+
+    try {
+      const suggestion = await suggestFoodForNutrient(nutrientName, currentAmount, targetAmount);
+      setNutrientSuggestion({ nutrient: nutrientName, suggestion });
+    } catch (error) {
+      console.error('Error getting nutrient suggestion:', error);
+      setNutrientSuggestion({ 
+        nutrient: nutrientName, 
+        suggestion: 'Unable to get suggestion. Please try again.' 
+      });
+    } finally {
+      setSuggestingNutrient(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -295,6 +317,14 @@ export const Dashboard = () => {
               style={{ width: `${Math.min(proteinPercentage, 100)}%` }}
             ></div>
           </div>
+          <button
+            onClick={() => handleNutrientSuggestion('Protein', todayStats?.totalProtein || 0, goals?.targetProtein || 150)}
+            disabled={suggestingNutrient}
+            className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+          >
+            <Lightbulb className="w-3 h-3" />
+            Suggest Foods
+          </button>
         </div>
 
         <div className="stat-card">
@@ -314,6 +344,14 @@ export const Dashboard = () => {
               style={{ width: `${Math.min(carbsPercentage, 100)}%` }}
             ></div>
           </div>
+          <button
+            onClick={() => handleNutrientSuggestion('Carbs', todayStats?.totalCarbs || 0, goals?.targetCarbs || 250)}
+            disabled={suggestingNutrient}
+            className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+          >
+            <Lightbulb className="w-3 h-3" />
+            Suggest Foods
+          </button>
         </div>
 
         <div className="stat-card">
@@ -333,6 +371,14 @@ export const Dashboard = () => {
               style={{ width: `${Math.min(fatsPercentage, 100)}%` }}
             ></div>
           </div>
+          <button
+            onClick={() => handleNutrientSuggestion('Fats', todayStats?.totalFats || 0, goals?.targetFats || 65)}
+            disabled={suggestingNutrient}
+            className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+          >
+            <Lightbulb className="w-3 h-3" />
+            Suggest Foods
+          </button>
         </div>
       </div>
 
@@ -406,44 +452,129 @@ export const Dashboard = () => {
             <p className="text-sm text-gray-600">Fiber</p>
             <p className="text-xl font-bold text-purple-600">{Math.round(micronutrients.fiber || 0)}g</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetFiber || 30}g</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Fiber', micronutrients.fiber || 0, goals?.targetFiber || 30)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
           <div className="p-3 bg-orange-50 rounded-lg">
             <p className="text-sm text-gray-600">Vitamin A</p>
             <p className="text-xl font-bold text-orange-600">{Math.round(micronutrients.vitaminA || 0)}mcg</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetVitaminA || 900}mcg</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Vitamin A', micronutrients.vitaminA || 0, goals?.targetVitaminA || 900)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
           <div className="p-3 bg-green-50 rounded-lg">
             <p className="text-sm text-gray-600">Vitamin C</p>
             <p className="text-xl font-bold text-green-600">{Math.round(micronutrients.vitaminC || 0)}mg</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetVitaminC || 90}mg</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Vitamin C', micronutrients.vitaminC || 0, goals?.targetVitaminC || 90)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
           <div className="p-3 bg-yellow-50 rounded-lg">
             <p className="text-sm text-gray-600">Vitamin D</p>
             <p className="text-xl font-bold text-yellow-600">{Math.round(micronutrients.vitaminD || 0)}mcg</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetVitaminD || 15}mcg</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Vitamin D', micronutrients.vitaminD || 0, goals?.targetVitaminD || 15)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
           <div className="p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-gray-600">Calcium</p>
             <p className="text-xl font-bold text-blue-600">{Math.round(micronutrients.calcium || 0)}mg</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetCalcium || 1000}mg</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Calcium', micronutrients.calcium || 0, goals?.targetCalcium || 1000)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
           <div className="p-3 bg-red-50 rounded-lg">
             <p className="text-sm text-gray-600">Iron</p>
             <p className="text-xl font-bold text-red-600">{Math.round(micronutrients.iron || 0)}mg</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetIron || 18}mg</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Iron', micronutrients.iron || 0, goals?.targetIron || 18)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
           <div className="p-3 bg-indigo-50 rounded-lg">
             <p className="text-sm text-gray-600">Magnesium</p>
             <p className="text-xl font-bold text-indigo-600">{Math.round(micronutrients.magnesium || 0)}mg</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetMagnesium || 400}mg</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Magnesium', micronutrients.magnesium || 0, goals?.targetMagnesium || 400)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
           <div className="p-3 bg-pink-50 rounded-lg">
             <p className="text-sm text-gray-600">Potassium</p>
             <p className="text-xl font-bold text-pink-600">{Math.round(micronutrients.potassium || 0)}mg</p>
             <p className="text-xs text-gray-500">Target: {goals?.targetPotassium || 3500}mg</p>
+            <button
+              onClick={() => handleNutrientSuggestion('Potassium', micronutrients.potassium || 0, goals?.targetPotassium || 3500)}
+              disabled={suggestingNutrient}
+              className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3" />
+              Suggest
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Nutrient Suggestion Display */}
+      {nutrientSuggestion && (
+        <div className="card bg-gradient-to-br from-blue-50 to-indigo-100">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-6 h-6 text-blue-600" />
+              <h3 className="text-lg font-semibold">Food Suggestions for {nutrientSuggestion.nutrient}</h3>
+            </div>
+            <button
+              onClick={() => setNutrientSuggestion(null)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="bg-white p-4 rounded-lg">
+            <p className="text-gray-800 whitespace-pre-wrap">{nutrientSuggestion.suggestion}</p>
+          </div>
+        </div>
+      )}
 
       {/* Weight Progress */}
       {recentWeight && (

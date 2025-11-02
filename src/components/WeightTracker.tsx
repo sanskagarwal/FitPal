@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { WeightEntry, Streak } from '../types';
-import { saveWeight, getWeightsByUser, saveStreak, getStreak } from '../utils/db';
+import { saveWeight, getWeightsByUser, saveStreak, getStreak, updateWeight, deleteWeight } from '../utils/db';
 import { generateId, calculateBMI, calculateStreak } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingDown, Award, Calendar } from 'lucide-react';
+import { TrendingDown, Award, Calendar, Edit2, Trash2, Save, X } from 'lucide-react';
 
 export const WeightTracker = () => {
   const { user } = useAuth();
@@ -14,6 +14,10 @@ export const WeightTracker = () => {
   const [bodyFat, setBodyFat] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editWeight, setEditWeight] = useState('');
+  const [editBodyFat, setEditBodyFat] = useState('');
+  const [editNotes, setEditNotes] = useState('');
 
   useEffect(() => {
     loadWeightData();
@@ -85,6 +89,79 @@ export const WeightTracker = () => {
       await loadWeightData();
     } catch (error) {
       console.error('Error logging weight:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEdit = (entry: WeightEntry) => {
+    setEditingId(entry.id);
+    setEditWeight(entry.weight.toString());
+    setEditBodyFat(entry.bodyFat?.toString() || '');
+    setEditNotes(entry.notes || '');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditWeight('');
+    setEditBodyFat('');
+    setEditNotes('');
+  };
+
+  const saveEdit = async (id: string) => {
+    if (!user || !editWeight) return;
+
+    setLoading(true);
+    try {
+      const weightValue = parseFloat(editWeight);
+      const bodyFatValue = editBodyFat ? parseFloat(editBodyFat) : undefined;
+      const bmi = calculateBMI(weightValue, user.profile.height);
+
+      const originalEntry = weights.find(w => w.id === id);
+      if (!originalEntry) return;
+
+      const updatedEntry: WeightEntry = {
+        ...originalEntry,
+        weight: weightValue,
+        bodyFat: bodyFatValue,
+        bmi,
+        notes: editNotes || undefined,
+      };
+
+      await updateWeight(updatedEntry);
+      cancelEdit();
+      await loadWeightData();
+    } catch (error) {
+      console.error('Error updating weight:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!user || !confirm('Are you sure you want to delete this weight entry?')) return;
+
+    setLoading(true);
+    try {
+      await deleteWeight(id, user.id);
+      await loadWeightData();
+
+      // Update streak after deletion
+      const allWeights = await getWeightsByUser(user.id);
+      const dates = allWeights.map((w) => new Date(w.date));
+      const currentStreak = calculateStreak(dates);
+      
+      const updatedStreak: Streak = {
+        userId: user.id,
+        currentStreak,
+        longestStreak: streak?.longestStreak || 0,
+        lastLogDate: allWeights[0] ? new Date(allWeights[0].date) : new Date(),
+      };
+
+      await saveStreak(updatedStreak);
+      setStreakData(updatedStreak);
+    } catch (error) {
+      console.error('Error deleting weight:', error);
     } finally {
       setLoading(false);
     }
@@ -235,18 +312,96 @@ export const WeightTracker = () => {
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">BMI</th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Body Fat</th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Notes</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {weights.slice(0, 10).map((entry) => (
                   <tr key={entry.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm">
-                      {new Date(entry.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium">{entry.weight} kg</td>
-                    <td className="px-4 py-3 text-sm">{entry.bmi}</td>
-                    <td className="px-4 py-3 text-sm">{entry.bodyFat ? `${entry.bodyFat}%` : '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{entry.notes || '-'}</td>
+                    {editingId === entry.id ? (
+                      <>
+                        <td className="px-4 py-3 text-sm">
+                          {new Date(entry.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={editWeight}
+                            onChange={(e) => setEditWeight(e.target.value)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {calculateBMI(parseFloat(editWeight) || 0, user?.profile.height || 170)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={editBodyFat}
+                            onChange={(e) => setEditBodyFat(e.target.value)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded"
+                            placeholder="-"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <input
+                            type="text"
+                            value={editNotes}
+                            onChange={(e) => setEditNotes(e.target.value)}
+                            className="w-32 px-2 py-1 border border-gray-300 rounded"
+                            placeholder="Notes"
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveEdit(entry.id)}
+                              disabled={loading}
+                              className="text-green-600 hover:text-green-800 disabled:opacity-50"
+                            >
+                              <Save className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              disabled={loading}
+                              className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 text-sm">
+                          {new Date(entry.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium">{entry.weight} kg</td>
+                        <td className="px-4 py-3 text-sm">{entry.bmi}</td>
+                        <td className="px-4 py-3 text-sm">{entry.bodyFat ? `${entry.bodyFat}%` : '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{entry.notes || '-'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => startEdit(entry)}
+                              disabled={loading}
+                              className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(entry.id)}
+                              disabled={loading}
+                              className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

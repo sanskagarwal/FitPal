@@ -1,111 +1,74 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { User, MealEntry, WeightEntry, NotificationSettings, Streak } from '../types';
 
-interface FitPalDB extends DBSchema {
-  users: {
-    key: string;
-    value: User;
-  };
-  meals: {
-    key: string;
-    value: MealEntry;
-    indexes: { 'by-user': string; 'by-date': Date };
-  };
-  weights: {
-    key: string;
-    value: WeightEntry;
-    indexes: { 'by-user': string; 'by-date': Date };
-  };
-  notifications: {
-    key: string;
-    value: NotificationSettings;
-  };
-  streaks: {
-    key: string;
-    value: Streak;
-  };
-}
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-const DB_NAME = 'fitpal-db';
-const DB_VERSION = 1;
-
-let dbInstance: IDBPDatabase<FitPalDB> | null = null;
-
-export const initDB = async (): Promise<IDBPDatabase<FitPalDB>> => {
-  if (dbInstance) return dbInstance;
-
-  dbInstance = await openDB<FitPalDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      // Users store
-      if (!db.objectStoreNames.contains('users')) {
-        db.createObjectStore('users', { keyPath: 'id' });
-      }
-
-      // Meals store with indexes
-      if (!db.objectStoreNames.contains('meals')) {
-        const mealStore = db.createObjectStore('meals', { keyPath: 'id' });
-        mealStore.createIndex('by-user', 'userId');
-        mealStore.createIndex('by-date', 'date');
-      }
-
-      // Weights store with indexes
-      if (!db.objectStoreNames.contains('weights')) {
-        const weightStore = db.createObjectStore('weights', { keyPath: 'id' });
-        weightStore.createIndex('by-user', 'userId');
-        weightStore.createIndex('by-date', 'date');
-      }
-
-      // Notifications store
-      if (!db.objectStoreNames.contains('notifications')) {
-        db.createObjectStore('notifications', { keyPath: 'userId' });
-      }
-
-      // Streaks store
-      if (!db.objectStoreNames.contains('streaks')) {
-        db.createObjectStore('streaks', { keyPath: 'userId' });
-      }
+// Helper function for API calls
+async function apiCall(endpoint: string, method: string = 'GET', body?: any) {
+  const options: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
     },
-  });
+  };
 
-  return dbInstance;
-};
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+  
+  if (!response.ok) {
+    throw new Error(`API call failed: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
 
 // User operations
 export const saveUser = async (user: User): Promise<void> => {
-  const db = await initDB();
-  await db.put('users', user);
+  await apiCall(`/users`, 'POST', user);
 };
 
 export const getUser = async (id: string): Promise<User | undefined> => {
-  const db = await initDB();
-  return await db.get('users', id);
+  try {
+    return await apiCall(`/users/${id}`);
+  } catch (error) {
+    return undefined;
+  }
 };
 
 export const getUserByEmail = async (email: string): Promise<User | undefined> => {
-  const db = await initDB();
-  const users = await db.getAll('users');
-  return users.find(user => user.email === email);
+  try {
+    return await apiCall(`/users/email/${encodeURIComponent(email)}`);
+  } catch (error) {
+    return undefined;
+  }
 };
 
-export const getAllUsers = async (): Promise<User[]> => {
-  const db = await initDB();
-  return await db.getAll('users');
+export const updateUser = async (user: User): Promise<void> => {
+  await apiCall(`/users/${user.id}`, 'PUT', user);
 };
 
 // Meal operations
 export const saveMeal = async (meal: MealEntry): Promise<void> => {
-  const db = await initDB();
-  await db.put('meals', meal);
+  await apiCall(`/meals`, 'POST', meal);
 };
 
-export const getMeal = async (id: string): Promise<MealEntry | undefined> => {
-  const db = await initDB();
-  return await db.get('meals', id);
+export const getMeal = async (id: string, userId: string): Promise<MealEntry | undefined> => {
+  try {
+    const meals = await getMealsByUser(userId);
+    return meals.find(m => m.id === id);
+  } catch (error) {
+    return undefined;
+  }
 };
 
 export const getMealsByUser = async (userId: string): Promise<MealEntry[]> => {
-  const db = await initDB();
-  return await db.getAllFromIndex('meals', 'by-user', userId);
+  try {
+    return await apiCall(`/meals/${userId}`);
+  } catch (error) {
+    return [];
+  }
 };
 
 export const getMealsByDateRange = async (
@@ -113,64 +76,84 @@ export const getMealsByDateRange = async (
   startDate: Date,
   endDate: Date
 ): Promise<MealEntry[]> => {
-  const db = await initDB();
-  const meals = await db.getAllFromIndex('meals', 'by-user', userId);
+  const meals = await getMealsByUser(userId);
   return meals.filter(meal => {
     const mealDate = new Date(meal.date);
     return mealDate >= startDate && mealDate <= endDate;
   });
 };
 
-export const deleteMeal = async (id: string): Promise<void> => {
-  const db = await initDB();
-  await db.delete('meals', id);
+export const updateMeal = async (meal: MealEntry): Promise<void> => {
+  await apiCall(`/meals/${meal.id}`, 'PUT', meal);
+};
+
+export const deleteMeal = async (id: string, userId: string): Promise<void> => {
+  await apiCall(`/meals/${userId}/${id}`, 'DELETE');
 };
 
 // Weight operations
 export const saveWeight = async (weight: WeightEntry): Promise<void> => {
-  const db = await initDB();
-  await db.put('weights', weight);
+  await apiCall(`/weights`, 'POST', weight);
 };
 
 export const getWeightsByUser = async (userId: string): Promise<WeightEntry[]> => {
-  const db = await initDB();
-  const weights = await db.getAllFromIndex('weights', 'by-user', userId);
-  return weights.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  try {
+    const weights = await apiCall(`/weights/${userId}`);
+    return weights.sort((a: WeightEntry, b: WeightEntry) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  } catch (error) {
+    return [];
+  }
 };
 
-export const deleteWeight = async (id: string): Promise<void> => {
-  const db = await initDB();
-  await db.delete('weights', id);
+export const updateWeight = async (weight: WeightEntry): Promise<void> => {
+  await apiCall(`/weights/${weight.id}`, 'PUT', weight);
+};
+
+export const deleteWeight = async (id: string, userId: string): Promise<void> => {
+  await apiCall(`/weights/${userId}/${id}`, 'DELETE');
 };
 
 // Notification operations
 export const saveNotificationSettings = async (settings: NotificationSettings): Promise<void> => {
-  const db = await initDB();
-  await db.put('notifications', settings);
+  await apiCall(`/notifications`, 'POST', settings);
 };
 
 export const getNotificationSettings = async (userId: string): Promise<NotificationSettings | undefined> => {
-  const db = await initDB();
-  return await db.get('notifications', userId);
+  try {
+    return await apiCall(`/notifications/${userId}`);
+  } catch (error) {
+    return undefined;
+  }
 };
 
 // Streak operations
 export const saveStreak = async (streak: Streak): Promise<void> => {
-  const db = await initDB();
-  await db.put('streaks', streak);
+  await apiCall(`/streaks`, 'POST', streak);
 };
 
 export const getStreak = async (userId: string): Promise<Streak | undefined> => {
-  const db = await initDB();
-  return await db.get('streaks', userId);
+  try {
+    return await apiCall(`/streaks/${userId}`);
+  } catch (error) {
+    return undefined;
+  }
 };
 
-// Clear all data (for logout/reset)
+// Legacy compatibility - keep these functions but they now do nothing
+export const initDB = async (): Promise<any> => {
+  // No-op for server-based storage
+  return null;
+};
+
 export const clearAllData = async (): Promise<void> => {
-  const db = await initDB();
-  await db.clear('users');
-  await db.clear('meals');
-  await db.clear('weights');
-  await db.clear('notifications');
-  await db.clear('streaks');
+  // No-op - data is on server
+  console.warn('clearAllData is not supported with server-based storage');
+};
+
+export const getAllUsers = async (): Promise<User[]> => {
+  // Not exposed in server API for security
+  console.warn('getAllUsers is not supported with server-based storage');
+  return [];
 };

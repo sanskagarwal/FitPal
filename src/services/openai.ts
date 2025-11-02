@@ -213,6 +213,39 @@ Keep it practical and focused on common Indian foods.`
   }
 }
 
+export async function suggestFoodForNutrient(
+  nutrientName: string,
+  currentAmount: number,
+  targetAmount: number
+): Promise<string> {
+  const deficit = targetAmount - currentAmount;
+  const messages: OpenAIMessage[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: `Suggest Indian foods rich in ${nutrientName}.
+
+Current: ${Math.round(currentAmount)}
+Target: ${Math.round(targetAmount)}
+Need: ${Math.round(deficit)} more
+
+Provide:
+1. Top 3-5 Indian foods high in ${nutrientName}
+2. Specific portion sizes that would help meet the deficit
+3. Simple ways to incorporate these foods into meals
+
+Keep suggestions practical and focused on commonly available Indian ingredients.`
+    }
+  ];
+
+  try {
+    return await callAzureOpenAI(messages);
+  } catch (error) {
+    console.error('Error getting food suggestion:', error);
+    return `Include more ${nutrientName}-rich foods in your diet. Common sources include dairy, pulses, vegetables, and whole grains.`;
+  }
+}
+
 export async function suggestGoals(
   height: number,
   currentWeight: number,

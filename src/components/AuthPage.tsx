@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus } from 'lucide-react';
+import { saveWeight } from '../utils/db';
+import { generateId, calculateBMI } from '../utils/helpers';
+import { WeightEntry } from '../types';
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -11,7 +14,7 @@ export const AuthPage = () => {
     age: '',
     gender: 'male' as 'male' | 'female' | 'other',
     height: '',
-    targetWeight: '',
+    currentWeight: '',
     activityLevel: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active',
   });
   const [error, setError] = useState('');
@@ -31,11 +34,35 @@ export const AuthPage = () => {
           setError('Invalid email or password');
         }
       } else {
-        if (!formData.name || !formData.email || !formData.password || !formData.age || !formData.height || !formData.targetWeight) {
+        if (!formData.name || !formData.email || !formData.password || !formData.age || !formData.height || !formData.currentWeight) {
           setError('Please fill in all required fields');
           setLoading(false);
           return;
         }
+
+        // Calculate default maintenance calories based on BMR and activity level
+        const age = parseInt(formData.age);
+        const height = parseInt(formData.height);
+        const weight = parseInt(formData.currentWeight);
+        
+        // Mifflin-St Jeor Equation for BMR
+        const bmr = formData.gender === 'male' 
+          ? 10 * weight + 6.25 * height - 5 * age + 5
+          : 10 * weight + 6.25 * height - 5 * age - 161;
+        
+        // Activity multipliers
+        const activityMultipliers = {
+          'sedentary': 1.2,
+          'light': 1.375,
+          'moderate': 1.55,
+          'active': 1.725,
+          'very-active': 1.9
+        };
+        
+        const maintenanceCalories = Math.round(bmr * activityMultipliers[formData.activityLevel]);
+        const protein = Math.round(weight * 1.6); // 1.6g per kg for active individuals
+        const fats = Math.round((maintenanceCalories * 0.25) / 9); // 25% of calories from fats
+        const carbs = Math.round((maintenanceCalories - (protein * 4) - (fats * 9)) / 4);
 
         const success = await register(formData.name, formData.email, formData.password, {
           age: parseInt(formData.age),
@@ -43,14 +70,42 @@ export const AuthPage = () => {
           height: parseInt(formData.height),
           activityLevel: formData.activityLevel,
           goals: {
-            targetWeight: parseInt(formData.targetWeight),
-            targetCalories: 0, // Will be calculated
-            targetProtein: 0,
-            targetCarbs: 0,
-            targetFats: 0,
+            targetWeight: 0, // Empty - user will set this in Goals page
+            targetCalories: maintenanceCalories,
+            targetProtein: protein,
+            targetCarbs: carbs,
+            targetFats: fats,
             targetFiber: 30,
           },
         });
+
+        // If registration successful, log initial weight
+        if (success) {
+          try {
+            // Need to get the newly created user ID
+            const newUser = await new Promise<any>((resolve) => {
+              setTimeout(() => {
+                // This is a workaround - the user state should be available after successful registration
+                const storedUserId = localStorage.getItem('fitpal-user-id');
+                resolve({ id: storedUserId });
+              }, 100);
+            });
+
+            if (newUser?.id) {
+              const initialWeight: WeightEntry = {
+                id: generateId(),
+                userId: newUser.id,
+                date: new Date(),
+                weight: weight,
+                bmi: calculateBMI(weight, height),
+                notes: 'Initial weight at registration',
+              };
+              await saveWeight(initialWeight);
+            }
+          } catch (error) {
+            console.error('Error logging initial weight:', error);
+          }
+        }
 
         if (!success) {
           setError('Email already exists');
@@ -156,9 +211,9 @@ export const AuthPage = () => {
                 />
                 <input
                   type="number"
-                  placeholder="Target Weight (kg)"
-                  value={formData.targetWeight}
-                  onChange={(e) => setFormData({ ...formData, targetWeight: e.target.value })}
+                  placeholder="Current Weight (kg)"
+                  value={formData.currentWeight}
+                  onChange={(e) => setFormData({ ...formData, currentWeight: e.target.value })}
                   className="input-field"
                   required
                 />

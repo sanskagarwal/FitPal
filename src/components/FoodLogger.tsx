@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Food, MealEntry, FoodEntry, NutrientInfo } from '../types';
 import { analyzeFoodWithAI } from '../services/openai';
-import { saveMeal } from '../utils/db';
-import { generateId } from '../utils/helpers';
-import { Search, Plus, X } from 'lucide-react';
+import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
+import { generateId, getStartOfDay, getEndOfDay } from '../utils/helpers';
+import { Search, Plus, X, Edit2, Trash2 } from 'lucide-react';
 
 const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
 const QUANTITY_UNITS = ['serving', 'cup', 'tbsp', 'tsp', 'piece', 'gram', 'oz'] as const;
@@ -17,6 +17,27 @@ export const FoodLogger = () => {
   const [selectedFoods, setSelectedFoods] = useState<FoodEntry[]>([]);
   const [mealType, setMealType] = useState<typeof MEAL_TYPES[number]>('breakfast');
   const [notes, setNotes] = useState('');
+  const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
+  const [editingMealId, setEditingMealId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadTodayMeals();
+  }, [user]);
+
+  const loadTodayMeals = async () => {
+    if (!user) return;
+    const today = new Date();
+    const startOfToday = getStartOfDay(today);
+    const endOfToday = getEndOfDay(today);
+    
+    const meals = await getMealsByUser(user.id);
+    const todaysMeals = meals.filter(meal => {
+      const mealDate = new Date(meal.date);
+      return mealDate >= startOfToday && mealDate <= endOfToday;
+    });
+    setTodayMeals(todaysMeals);
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -117,10 +138,70 @@ export const FoodLogger = () => {
       // Reset form
       setSelectedFoods([]);
       setNotes('');
+      await loadTodayMeals();
       alert('Meal logged successfully!');
     } catch (error) {
       console.error('Error saving meal:', error);
       alert('Failed to log meal. Please try again.');
+    }
+  };
+
+  const startEditMeal = (meal: MealEntry) => {
+    setEditingMealId(meal.id);
+    setSelectedFoods(meal.foods);
+    setMealType(meal.mealType);
+    setNotes(meal.notes || '');
+  };
+
+  const cancelEditMeal = () => {
+    setEditingMealId(null);
+    setSelectedFoods([]);
+    setNotes('');
+  };
+
+  const saveEditedMeal = async () => {
+    if (!user || !editingMealId || selectedFoods.length === 0) return;
+
+    setLoading(true);
+    try {
+      const originalMeal = todayMeals.find(m => m.id === editingMealId);
+      if (!originalMeal) return;
+
+      const totalNutrients = calculateTotalNutrients();
+
+      const updatedMeal: MealEntry = {
+        ...originalMeal,
+        mealType,
+        foods: selectedFoods,
+        totalNutrients,
+        notes: notes || undefined,
+      };
+
+      await updateMeal(updatedMeal);
+      cancelEditMeal();
+      await loadTodayMeals();
+      alert('Meal updated successfully!');
+    } catch (error) {
+      console.error('Error updating meal:', error);
+      alert('Failed to update meal. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteMeal = async (mealId: string) => {
+    if (!user || !confirm('Are you sure you want to delete this meal?')) return;
+
+    setLoading(true);
+    try {
+      await deleteMeal(mealId, user.id);
+      await loadTodayMeals();
+      alert('Meal deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting meal:', error);
+      alert('Failed to delete meal. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -286,9 +367,84 @@ export const FoodLogger = () => {
           </div>
 
           {/* Save Button */}
-          <button onClick={saveMealEntry} className="btn-primary w-full mt-4">
-            Log Meal
+          <button onClick={editingMealId ? saveEditedMeal : saveMealEntry} className="btn-primary w-full mt-4">
+            {editingMealId ? 'Update Meal' : 'Log Meal'}
           </button>
+          {editingMealId && (
+            <button onClick={cancelEditMeal} className="btn-secondary w-full mt-2">
+              Cancel Edit
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Today's Meals History */}
+      {todayMeals.length > 0 && (
+        <div className="card">
+          <h3 className="text-xl font-semibold mb-4">Today's Meals</h3>
+          <div className="space-y-3">
+            {todayMeals.map((meal) => (
+              <div key={meal.id} className="p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h4 className="font-medium text-gray-900 capitalize">
+                      {meal.mealType.replace('-', ' ')}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {new Date(meal.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => startEditMeal(meal)}
+                      disabled={loading || editingMealId !== null}
+                      className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMeal(meal.id)}
+                      disabled={loading}
+                      className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-1 mb-3">
+                  {meal.foods.map((foodEntry, idx) => (
+                    <p key={idx} className="text-sm text-gray-700">
+                      • {foodEntry.food.name} - {foodEntry.unitQuantity} {foodEntry.unit}
+                    </p>
+                  ))}
+                </div>
+                
+                <div className="grid grid-cols-4 gap-2 text-sm border-t pt-2">
+                  <div>
+                    <span className="text-gray-600">Calories:</span>
+                    <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.calories)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Protein:</span>
+                    <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.protein)}g</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Carbs:</span>
+                    <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.carbs)}g</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Fats:</span>
+                    <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.fats)}g</span>
+                  </div>
+                </div>
+                
+                {meal.notes && (
+                  <p className="text-sm text-gray-600 mt-2 italic">Note: {meal.notes}</p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
