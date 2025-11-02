@@ -6,6 +6,7 @@ import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutri
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp, Lightbulb, X } from 'lucide-react';
 import { suggestMeal, suggestFoodForNutrient } from '../services/openai';
+import ReactMarkdown from 'react-markdown';
 
 interface MealTypeStats {
   mealType: string;
@@ -204,13 +205,55 @@ export const Dashboard = () => {
         remainingFiber,
         mealType
       );
-      setMealSuggestion(suggestion);
+      
+      // Try to parse if it's JSON and format it nicely
+      try {
+        const parsed = JSON.parse(suggestion);
+        const formatted = formatMealSuggestionFromJSON(parsed);
+        setMealSuggestion(formatted);
+      } catch {
+        // Not JSON, use as is
+        setMealSuggestion(suggestion);
+      }
     } catch (error) {
       console.error('Error getting meal suggestion:', error);
       setMealSuggestion('Unable to get meal suggestion. Please try again.');
     } finally {
       setSuggestingMeal(false);
     }
+  };
+
+  const formatMealSuggestionFromJSON = (data: any): string => {
+    let formatted = '';
+    
+    if (data.meal_suggestion) {
+      formatted += `## ${data.meal_suggestion.name}\n\n`;
+      
+      if (data.meal_suggestion.ingredients) {
+        formatted += '**Ingredients:**\n\n';
+        data.meal_suggestion.ingredients.forEach((ing: any) => {
+          formatted += `- **${ing.item}**: ${ing.portion}\n`;
+        });
+        formatted += '\n';
+      }
+    }
+    
+    if (data.nutritional_breakdown) {
+      formatted += '**Nutritional Breakdown:**\n\n';
+      const nutrients = data.nutritional_breakdown;
+      formatted += `- **Calories**: ${nutrients.calories}\n`;
+      formatted += `- **Protein**: ${nutrients.protein}\n`;
+      formatted += `- **Carbs**: ${nutrients.carbohydrates}\n`;
+      formatted += `- **Fats**: ${nutrients.fats}\n`;
+      formatted += `- **Fiber**: ${nutrients.fiber}\n\n`;
+    }
+    
+    if (data.meal_fit_justification) {
+      formatted += '**Why This Meal?**\n\n';
+      formatted += data.meal_fit_justification;
+    }
+    
+    return formatted;
   };
 
   const handleNutrientSuggestion = async (nutrientName: string, currentAmount: number, targetAmount: number) => {
@@ -221,7 +264,16 @@ export const Dashboard = () => {
 
     try {
       const suggestion = await suggestFoodForNutrient(nutrientName, currentAmount, targetAmount);
-      setNutrientSuggestion({ nutrient: nutrientName, suggestion });
+      
+      // Try to parse if it's JSON and format it nicely
+      try {
+        const parsed = JSON.parse(suggestion);
+        const formatted = formatNutrientSuggestionFromJSON(parsed, nutrientName);
+        setNutrientSuggestion({ nutrient: nutrientName, suggestion: formatted });
+      } catch {
+        // Not JSON, use as is
+        setNutrientSuggestion({ nutrient: nutrientName, suggestion });
+      }
     } catch (error) {
       console.error('Error getting nutrient suggestion:', error);
       setNutrientSuggestion({ 
@@ -231,6 +283,54 @@ export const Dashboard = () => {
     } finally {
       setSuggestingNutrient(false);
     }
+  };
+
+  const formatNutrientSuggestionFromJSON = (data: any, nutrientName: string): string => {
+    let formatted = '';
+    
+    if (data.top_foods || data.foods) {
+      const foods = data.top_foods || data.foods;
+      formatted += `**Top ${nutrientName}-Rich Indian Foods:**\n\n`;
+      
+      if (Array.isArray(foods)) {
+        foods.forEach((food: any) => {
+          if (typeof food === 'string') {
+            formatted += `- ${food}\n`;
+          } else if (food.name && food.content) {
+            formatted += `- **${food.name}**: ${food.content}\n`;
+          } else if (food.item && food.portion) {
+            formatted += `- **${food.item}** (${food.portion})\n`;
+          }
+        });
+      }
+      formatted += '\n';
+    }
+    
+    if (data.portion_sizes) {
+      formatted += '**Recommended Portions:**\n\n';
+      if (Array.isArray(data.portion_sizes)) {
+        data.portion_sizes.forEach((portion: any) => {
+          formatted += `- ${portion}\n`;
+        });
+      } else if (typeof data.portion_sizes === 'string') {
+        formatted += data.portion_sizes + '\n';
+      }
+      formatted += '\n';
+    }
+    
+    if (data.meal_ideas || data.incorporation_tips) {
+      formatted += '**How to Add to Your Meals:**\n\n';
+      const tips = data.meal_ideas || data.incorporation_tips;
+      if (Array.isArray(tips)) {
+        tips.forEach((tip: any) => {
+          formatted += `- ${tip}\n`;
+        });
+      } else if (typeof tips === 'string') {
+        formatted += tips;
+      }
+    }
+    
+    return formatted;
   };
 
   if (loading) {
@@ -399,7 +499,24 @@ export const Dashboard = () => {
         </div>
         {mealSuggestion ? (
           <div className="bg-white p-4 rounded-lg">
-            <p className="text-gray-800 whitespace-pre-wrap">{mealSuggestion}</p>
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown
+                components={{
+                  h1: ({node, ...props}) => <h1 className="text-xl font-bold text-gray-900 mb-3" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-4" {...props} />,
+                  h3: ({node, ...props}) => <h3 className="text-base font-semibold text-gray-800 mb-2 mt-3" {...props} />,
+                  p: ({node, ...props}) => <p className="text-gray-700 mb-2" {...props} />,
+                  ul: ({node, ...props}) => <ul className="list-disc list-inside ml-2 mb-3 space-y-1" {...props} />,
+                  ol: ({node, ...props}) => <ol className="list-decimal list-inside ml-2 mb-3 space-y-1" {...props} />,
+                  li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
+                  strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                  em: ({node, ...props}) => <em className="italic text-gray-700" {...props} />,
+                  code: ({node, ...props}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props} />,
+                }}
+              >
+                {mealSuggestion}
+              </ReactMarkdown>
+            </div>
           </div>
         ) : (
           <p className="text-gray-600">
@@ -571,7 +688,24 @@ export const Dashboard = () => {
             </button>
           </div>
           <div className="bg-white p-4 rounded-lg">
-            <p className="text-gray-800 whitespace-pre-wrap">{nutrientSuggestion.suggestion}</p>
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown
+                components={{
+                  h1: ({node, ...props}) => <h1 className="text-xl font-bold text-gray-900 mb-3" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-4" {...props} />,
+                  h3: ({node, ...props}) => <h3 className="text-base font-semibold text-gray-800 mb-2 mt-3" {...props} />,
+                  p: ({node, ...props}) => <p className="text-gray-700 mb-2" {...props} />,
+                  ul: ({node, ...props}) => <ul className="list-disc list-inside ml-2 mb-3 space-y-1" {...props} />,
+                  ol: ({node, ...props}) => <ol className="list-decimal list-inside ml-2 mb-3 space-y-1" {...props} />,
+                  li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
+                  strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                  em: ({node, ...props}) => <em className="italic text-gray-700" {...props} />,
+                  code: ({node, ...props}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props} />,
+                }}
+              >
+                {nutrientSuggestion.suggestion}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       )}

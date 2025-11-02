@@ -5,6 +5,7 @@ import { analyzeFoodWithAI } from '../services/openai';
 import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
 import { generateId, getStartOfDay, getEndOfDay } from '../utils/helpers';
 import { Search, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { Toast, ToastType } from './Toast';
 
 const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
 const QUANTITY_UNITS = ['serving', 'cup', 'tbsp', 'tsp', 'piece', 'gram', 'oz'] as const;
@@ -20,6 +21,8 @@ export const FoodLogger = () => {
   const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
     loadTodayMeals();
@@ -43,11 +46,13 @@ export const FoodLogger = () => {
     if (!searchQuery.trim()) return;
 
     setSearching(true);
+    setError(null);
     try {
       const results = await analyzeFoodWithAI(searchQuery);
       setSearchResults(results);
     } catch (error) {
       console.error('Search error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to search for food. Please try again.');
     } finally {
       setSearching(false);
     }
@@ -139,10 +144,10 @@ export const FoodLogger = () => {
       setSelectedFoods([]);
       setNotes('');
       await loadTodayMeals();
-      alert('Meal logged successfully!');
+      setToast({ message: 'Meal logged successfully!', type: 'success' });
     } catch (error) {
       console.error('Error saving meal:', error);
-      alert('Failed to log meal. Please try again.');
+      setToast({ message: 'Failed to log meal. Please try again.', type: 'error' });
     }
   };
 
@@ -180,10 +185,10 @@ export const FoodLogger = () => {
       await updateMeal(updatedMeal);
       cancelEditMeal();
       await loadTodayMeals();
-      alert('Meal updated successfully!');
+      setToast({ message: 'Meal updated successfully!', type: 'success' });
     } catch (error) {
       console.error('Error updating meal:', error);
-      alert('Failed to update meal. Please try again.');
+      setToast({ message: 'Failed to update meal. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -196,10 +201,10 @@ export const FoodLogger = () => {
     try {
       await deleteMeal(mealId, user.id);
       await loadTodayMeals();
-      alert('Meal deleted successfully!');
+      setToast({ message: 'Meal deleted successfully!', type: 'success' });
     } catch (error) {
       console.error('Error deleting meal:', error);
-      alert('Failed to delete meal. Please try again.');
+      setToast({ message: 'Failed to delete meal. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -207,6 +212,14 @@ export const FoodLogger = () => {
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <h1 className="text-3xl font-bold text-gray-900">Log Your Meal</h1>
 
       {/* Meal Type Selection */}
@@ -258,6 +271,14 @@ export const FoodLogger = () => {
             )}
           </button>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800 font-medium">Error:</p>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        )}
 
         {/* Search Results */}
         {searchResults.length > 0 && (

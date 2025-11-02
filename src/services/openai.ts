@@ -22,6 +22,31 @@ Key responsibilities:
 
 Always respond in JSON format when analyzing foods. Be culturally accurate and focus on Indian meals, ingredients, and cooking methods.`;
 
+// Helper function to parse JSON that might be wrapped in markdown code blocks
+function parseJSONResponse(response: string): any {
+  // Remove markdown code blocks if present
+  let cleanedResponse = response.trim();
+  
+  // Remove ```json and ``` markers
+  if (cleanedResponse.startsWith('```json')) {
+    cleanedResponse = cleanedResponse.slice(7);
+  } else if (cleanedResponse.startsWith('```')) {
+    cleanedResponse = cleanedResponse.slice(3);
+  }
+  
+  if (cleanedResponse.endsWith('```')) {
+    cleanedResponse = cleanedResponse.slice(0, -3);
+  }
+  
+  cleanedResponse = cleanedResponse.trim();
+  
+  try {
+    return JSON.parse(cleanedResponse);
+  } catch (error) {
+    throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : 'Unknown error'}. Response was: ${cleanedResponse.substring(0, 200)}...`);
+  }
+}
+
 async function callAzureOpenAI(messages: OpenAIMessage[]): Promise<string> {
   if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_KEY) {
     throw new Error('Azure OpenAI credentials not configured. Please set VITE_AZURE_OPENAI_ENDPOINT and VITE_AZURE_OPENAI_KEY in your .env file.');
@@ -42,10 +67,15 @@ async function callAzureOpenAI(messages: OpenAIMessage[]): Promise<string> {
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Azure OpenAI API error: ${error}`);
+    throw new Error(`Azure OpenAI API error: ${response.status} - ${error}`);
   }
 
   const data = await response.json();
+  
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('Invalid response from Azure OpenAI API');
+  }
+  
   return data.choices[0].message.content;
 }
 
@@ -86,7 +116,11 @@ If the food is misspelled or incomplete, suggest the most likely Indian foods. R
 
   try {
     const response = await callAzureOpenAI(messages);
-    const foods = JSON.parse(response);
+    const foods = parseJSONResponse(response);
+    
+    if (!Array.isArray(foods)) {
+      throw new Error('Expected an array of foods from AI response');
+    }
     
     return foods.map((food: any) => ({
       id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -98,8 +132,8 @@ If the food is misspelled or incomplete, suggest the most likely Indian foods. R
     }));
   } catch (error) {
     console.error('Error analyzing food:', error);
-    // Return mock data if API fails
-    return getMockFoodData(foodQuery);
+    // Throw the error to show it to the user
+    throw error;
   }
 }
 
@@ -137,7 +171,11 @@ Return JSON array:
 
   try {
     const response = await callAzureOpenAI(messages);
-    const recipes = JSON.parse(response);
+    const recipes = parseJSONResponse(response);
+    
+    if (!Array.isArray(recipes)) {
+      throw new Error('Expected an array of recipes from AI response');
+    }
     
     return recipes.map((recipe: any) => ({
       id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -145,7 +183,8 @@ Return JSON array:
     }));
   } catch (error) {
     console.error('Error getting recipes:', error);
-    return getMockRecipes();
+    // Throw the error to show it to the user
+    throw error;
   }
 }
 
@@ -196,12 +235,18 @@ Carbs: ${remainingCarbs}g
 Fats: ${remainingFats}g
 Fiber: ${remainingFiber}g
 
+IMPORTANT: Respond in **MARKDOWN format** with clear structure.
+
 Provide:
-1. A specific meal suggestion with portion sizes
-2. Approximate nutritional breakdown
+1. A specific meal suggestion with ingredients and portion sizes
+2. Approximate nutritional breakdown (calories, protein, carbs, fats, fiber)
 3. Why this meal fits the remaining goals
 
-Keep it practical and focused on common Indian foods.`
+Use markdown formatting:
+- Use **bold** for headings and important terms
+- Use bullet points (-) for lists
+- Use proper line breaks for readability
+- Keep it practical and focused on common Indian foods`
     }
   ];
 
@@ -229,12 +274,18 @@ Current: ${Math.round(currentAmount)}
 Target: ${Math.round(targetAmount)}
 Need: ${Math.round(deficit)} more
 
+IMPORTANT: Respond in **MARKDOWN format** with clear structure.
+
 Provide:
-1. Top 3-5 Indian foods high in ${nutrientName}
+1. Top 3-5 Indian foods high in ${nutrientName} with their ${nutrientName} content
 2. Specific portion sizes that would help meet the deficit
 3. Simple ways to incorporate these foods into meals
 
-Keep suggestions practical and focused on commonly available Indian ingredients.`
+Use markdown formatting:
+- Use **bold** for headings and important terms
+- Use bullet points (-) for lists
+- Use proper line breaks for readability
+- Keep suggestions practical and focused on commonly available Indian ingredients`
     }
   ];
 
@@ -320,103 +371,4 @@ Use standard nutritional formulas (Harris-Benedict for BMR, appropriate macronut
       explanation: 'These goals are calculated based on your BMR and activity level.'
     };
   }
-}
-
-// Mock data for development/fallback
-function getMockFoodData(query: string): Food[] {
-  const mockFoods: { [key: string]: Food } = {
-    'dosa': {
-      id: 'food-dosa',
-      name: 'Plain Dosa',
-      servingSize: '1 medium (about 60g)',
-      isIndian: true,
-      category: 'breakfast',
-      nutrients: {
-        calories: 168,
-        protein: 4.2,
-        carbs: 29.5,
-        fats: 3.7,
-        fiber: 1.2,
-        iron: 1.8,
-        calcium: 20
-      }
-    },
-    'idli': {
-      id: 'food-idli',
-      name: 'Idli',
-      servingSize: '2 pieces (about 80g)',
-      isIndian: true,
-      category: 'breakfast',
-      nutrients: {
-        calories: 156,
-        protein: 5.1,
-        carbs: 30.2,
-        fats: 1.2,
-        fiber: 1.5,
-        iron: 1.5,
-        calcium: 25
-      }
-    },
-    'roti': {
-      id: 'food-roti',
-      name: 'Roti (Chapati)',
-      servingSize: '1 medium (about 40g)',
-      isIndian: true,
-      category: 'lunch',
-      nutrients: {
-        calories: 104,
-        protein: 3.5,
-        carbs: 20.8,
-        fats: 1.2,
-        fiber: 2.8,
-        iron: 1.2,
-        calcium: 15
-      }
-    },
-    'dal': {
-      id: 'food-dal',
-      name: 'Dal (Lentils)',
-      servingSize: '1 cup (about 200g)',
-      isIndian: true,
-      category: 'lunch',
-      nutrients: {
-        calories: 230,
-        protein: 17.9,
-        carbs: 39.8,
-        fats: 0.8,
-        fiber: 15.6,
-        iron: 6.6,
-        potassium: 731
-      }
-    }
-  };
-
-  const lowerQuery = query.toLowerCase();
-  for (const key in mockFoods) {
-    if (lowerQuery.includes(key)) {
-      return [mockFoods[key]];
-    }
-  }
-
-  return [mockFoods['roti']];
-}
-
-function getMockRecipes(): Recipe[] {
-  return [
-    {
-      id: 'recipe-1',
-      name: 'Moong Dal Khichdi',
-      description: 'A healthy, protein-rich one-pot meal',
-      ingredients: ['1 cup rice', '1/2 cup moong dal', 'vegetables', 'spices'],
-      instructions: ['Wash rice and dal', 'Pressure cook with vegetables', 'Season with ghee and spices'],
-      prepTime: '30 minutes',
-      servings: 2,
-      nutrients: {
-        calories: 320,
-        protein: 12,
-        carbs: 58,
-        fats: 4
-      }
-    }
-  ];
 }

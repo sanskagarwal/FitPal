@@ -9,17 +9,20 @@ export const Recipes = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(false);
   const [preferences, setPreferences] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const loadRecipes = async () => {
     if (!user) return;
 
     setLoading(true);
+    setError(null);
     try {
       const goals = `Target: ${user.profile.goals.targetWeight}kg, ${user.profile.goals.targetCalories} cal/day`;
       const results = await getRecipeSuggestions(preferences || 'vegetarian', goals, []);
       setRecipes(results);
     } catch (error) {
       console.error('Error loading recipes:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load recipes. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -53,6 +56,14 @@ export const Recipes = () => {
         <p className="text-sm text-gray-600 mt-2">
           Get personalized healthy Indian recipes based on your preferences and goals
         </p>
+        
+        {/* Error Display */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800 font-medium">Error:</p>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+        )}
       </div>
 
       {recipes.length > 0 && (
