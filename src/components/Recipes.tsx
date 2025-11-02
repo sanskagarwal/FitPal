@@ -1,0 +1,128 @@
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Recipe } from '../types';
+import { getRecipeSuggestions } from '../services/openai';
+import { ChefHat, Clock, Users } from 'lucide-react';
+
+export const Recipes = () => {
+  const { user } = useAuth();
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [preferences, setPreferences] = useState('');
+
+  const loadRecipes = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const goals = `Target: ${user.profile.goals.targetWeight}kg, ${user.profile.goals.targetCalories} cal/day`;
+      const results = await getRecipeSuggestions(preferences || 'vegetarian', goals, []);
+      setRecipes(results);
+    } catch (error) {
+      console.error('Error loading recipes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-gray-900">Recipe Suggestions</h1>
+
+      <div className="card">
+        <div className="flex items-center gap-3 mb-4">
+          <ChefHat className="w-6 h-6 text-primary-600" />
+          <h2 className="text-xl font-semibold">Get AI-Powered Recipe Ideas</h2>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={preferences}
+            onChange={(e) => setPreferences(e.target.value)}
+            placeholder="e.g., vegetarian, high protein, low carb..."
+            className="input-field flex-1"
+          />
+          <button
+            onClick={loadRecipes}
+            disabled={loading}
+            className="btn-primary"
+          >
+            {loading ? 'Loading...' : 'Get Recipes'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mt-2">
+          Get personalized healthy Indian recipes based on your preferences and goals
+        </p>
+      </div>
+
+      {recipes.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recipes.map((recipe) => (
+            <div key={recipe.id} className="card hover:shadow-lg transition-shadow">
+              <div className="flex items-start gap-3 mb-4">
+                <ChefHat className="w-8 h-8 text-primary-600 flex-shrink-0" />
+                <div>
+                  <h3 className="font-bold text-lg">{recipe.name}</h3>
+                  <p className="text-sm text-gray-600">{recipe.description}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {recipe.prepTime}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {recipe.servings} servings
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Ingredients:</h4>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    {recipe.ingredients.map((ingredient, idx) => (
+                      <li key={idx}>• {ingredient}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Instructions:</h4>
+                  <ol className="text-sm text-gray-700 space-y-1">
+                    {recipe.instructions.map((instruction, idx) => (
+                      <li key={idx}>{idx + 1}. {instruction}</li>
+                    ))}
+                  </ol>
+                </div>
+
+                <div className="pt-3 border-t border-gray-200">
+                  <h4 className="font-semibold text-sm mb-2">Nutrition (per serving):</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-gray-600">Calories:</span>
+                      <span className="font-medium ml-2">{recipe.nutrients.calories}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Protein:</span>
+                      <span className="font-medium ml-2">{recipe.nutrients.protein}g</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Carbs:</span>
+                      <span className="font-medium ml-2">{recipe.nutrients.carbs}g</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Fats:</span>
+                      <span className="font-medium ml-2">{recipe.nutrients.fats}g</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
