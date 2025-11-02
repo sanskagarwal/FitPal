@@ -69,7 +69,7 @@ FitPal is a modern Progressive Web App (PWA) focused on nutrition, weight manage
 npm install
 ```
 
-3. **Configure Azure OpenAI:**
+3. **Configure Azure OpenAI** (Optional - app works with mock data without it):
    
    Create a `.env` file in the root directory:
 ```env
@@ -78,7 +78,13 @@ VITE_AZURE_OPENAI_KEY=your_api_key_here
 VITE_AZURE_OPENAI_DEPLOYMENT=gpt-4o
 ```
 
-   Get these values from your Azure OpenAI resource in the Azure Portal.
+   **To get these credentials:**
+   - Go to [Azure Portal](https://portal.azure.com)
+   - Create an Azure OpenAI resource (you may need to [request access](https://aka.ms/oai/access))
+   - Deploy a GPT-4o model
+   - Copy the endpoint URL and API key from "Keys and Endpoint" section
+   
+   **Don't have Azure OpenAI?** The app works with mock data for development.
 
 4. **Start the development server:**
 ```bash
@@ -200,18 +206,22 @@ The app is modular and easy to extend:
 3. **New database operations** - Extend `src/utils/db.ts`
 4. **New AI features** - Extend `src/services/openai.ts`
 
-## 🔐 Azure OpenAI Setup
+## 🔐 Azure OpenAI Setup (Optional)
+
+The app works with mock data for development, but for full AI features:
 
 1. Go to [Azure Portal](https://portal.azure.com)
-2. Create an **Azure OpenAI** resource
-3. Deploy a **GPT-4o** model
-4. Copy the endpoint URL and API key
-5. Add them to your `.env` file
+2. Create an **Azure OpenAI** resource (may need to [request access](https://aka.ms/oai/access))
+3. In Azure OpenAI Studio, create a deployment with **GPT-4o** model
+4. Copy the endpoint URL and API key from "Keys and Endpoint"
+5. Add them to your `.env` file (see Installation step 3)
 
-The app uses GPT-4o for:
+The AI is used for:
 - Food identification and nutritional analysis
 - Recipe suggestions
 - Dietary insights and recommendations
+- Meal suggestions based on remaining daily goals
+- Personalized goal recommendations
 
 ## 📱 Installing as PWA
 
