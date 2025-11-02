@@ -1,316 +1,238 @@
-# FitPal Feature Showcase 🌟
+# FitPal Features 🌟
 
-## Overview
-FitPal is your complete Indian nutrition tracking companion. Here's everything you can do with it!
+A comprehensive list of all features available in FitPal, your AI-powered Indian nutrition tracker.
 
-## ✨ Complete Feature List
+## 🔐 User Management
 
-### 🔐 User Management
-- ✅ **Local Account Creation** - No email verification needed
-- ✅ **Secure Login** - Passwords hashed with SHA-256
-- ✅ **Profile Management** - Edit your info anytime
-- ✅ **No Cloud** - All data stays on your device
-- ✅ **Privacy First** - Zero tracking or analytics
+- **Local Authentication** - Create account with email and password (no email verification needed)
+- **Secure Storage** - Passwords hashed with SHA-256
+- **Profile Management** - Edit personal information anytime
+- **Smart Registration** - Auto-calculates maintenance calories using Mifflin-St Jeor BMR formula
+- **Activity Levels** - Choose from sedentary to very active (affects calorie calculation)
+- **Initial Weight Entry** - Automatically logs your starting weight during registration
+- **No Cloud Dependency** - All data stored locally on your server
 
-### 🍛 Food Logging
-- ✅ **AI-Powered Search** - Find any Indian food
-- ✅ **Smart Recognition** - Works with misspellings
-- ✅ **Detailed Nutrition** - Macros and micronutrients
-- ✅ **Portion Control** - Adjust serving sizes (0.5, 1, 1.5, etc.)
-- ✅ **Meal Types** - Breakfast, lunch, dinner, snacks
-- ✅ **Multiple Foods** - Add several items to one meal
-- ✅ **Running Totals** - See nutrition as you build your meal
-- ✅ **Meal Notes** - Add context to your logs
+## 🍛 Food Logging
 
-**Supported Foods**:
-- Traditional dishes (dosa, idli, roti, dal, etc.)
-- North Indian cuisine (paneer tikka, butter chicken, etc.)
-- South Indian meals (sambar, rasam, etc.)
-- Street food (pani puri, vada pav, etc.)
-- Sweets and desserts (gulab jamun, jalebi, etc.)
-- Regional specialties
+- **AI-Powered Search** - Find any Indian food using Azure OpenAI GPT-4o
+- **Smart Recognition** - Handles misspellings, regional names, and incomplete entries
+- **Comprehensive Nutrition** - Get detailed macros and micronutrients for each food
+- **Flexible Portions** - Adjust serving sizes (0.5x, 1x, 1.5x, 2x, custom)
+- **Meal Types** - Categorize as breakfast, lunch, dinner, or snack
+- **Multi-Food Meals** - Add multiple items to a single meal
+- **Running Totals** - See cumulative nutrition as you build meals
+- **Meal Notes** - Add context or comments to your food logs
+- **Edit Entries** - Modify logged meals anytime
+- **Delete Entries** - Remove meals with confirmation
 
-### 📊 Nutrition Dashboard
-- ✅ **Daily Overview** - Today's calories and macros
-- ✅ **Progress Bars** - Visual goal tracking
-- ✅ **Macro Distribution** - Pie chart of protein/carbs/fats
-- ✅ **Weekly Trends** - Line chart showing 7-day nutrition
-- ✅ **Meal Count** - Number of meals logged today
-- ✅ **Goal Comparison** - See how close you are to targets
-- ✅ **Color-Coded Stats** - Easy to understand at a glance
-- ✅ **Real-Time Updates** - Refreshes as you log
+**Supported Indian Foods:**
+- Traditional dishes (dosa, idli, roti, dal, sambar)
+- North Indian (paneer tikka, butter chicken, chole bhature)
+- South Indian (rasam, pongal, uttapam)
+- Street food (pani puri, vada pav, bhel puri)
+- Sweets (gulab jamun, jalebi, rasgulla)
+- Regional specialties from across India
 
-**Tracked Nutrients**:
-- Calories
-- Protein (g)
-- Carbohydrates (g)
-- Fats (g)
-- Fiber (g)
-- Sugar (g)
-- Sodium (mg)
-- Vitamins (A, C, D, E, B12)
-- Minerals (Calcium, Iron, Magnesium, Potassium, Zinc)
+## 📊 Nutrition Dashboard
 
-### ⚖️ Weight Tracking
-- ✅ **Weight Logging** - Record in kg
-- ✅ **BMI Calculation** - Automatic based on height
-- ✅ **Body Fat %** - Optional tracking
-- ✅ **Progress Charts** - Visual weight timeline
-- ✅ **Streak System** - Gamified consistency
-  - Current streak counter
-  - Longest streak badge
-  - Daily logging motivation
-- ✅ **Weight History** - Table of all entries
-- ✅ **Target Tracking** - Progress to goal weight
-- ✅ **Weight Notes** - Journal your feelings
+- **Daily Overview** - At-a-glance view of today's nutrition
+- **Progress Indicators** - Visual progress bars for each nutrient
+- **Macro Distribution** - Pie chart showing protein/carbs/fats breakdown
+- **Weekly Trends** - Line chart displaying 7-day nutrition patterns
+- **Calorie Tracking** - Monitor daily calorie intake vs target
+- **Macro Tracking** - Track protein, carbohydrates, and fats
+- **Micronutrient Tracking** - Monitor fiber and 8 vitamins/minerals
+- **Color-Coded Stats** - Green (on track), yellow (close), red (over/under)
+- **Meal Count** - Number of meals logged today
+- **Real-Time Updates** - Dashboard refreshes as you log
+- **Smart Suggestions** - AI-powered food recommendations to meet nutrient targets
 
-**Streak Features**:
-- 🔥 Build streaks by logging daily
-- 🏆 Track your longest streak
-- 📅 Never miss a day reminder
-- 💪 Stay motivated with visual progress
+**Tracked Nutrients:**
+- **Macronutrients:** Calories, Protein, Carbohydrates, Fats
+- **Micronutrients:** Fiber, Vitamin A, Vitamin C, Vitamin D, Calcium, Iron, Magnesium, Potassium
 
-### 🎯 Goal Setting
-- ✅ **Custom Targets** - Set your own goals
-- ✅ **Weight Goals** - Target weight in kg
-- ✅ **Calorie Goals** - Daily calorie target
-- ✅ **Macro Goals** - Protein, carbs, fats
-- ✅ **Smart Recommendations** - Based on your profile
-- ✅ **Flexible Adjustment** - Change anytime
-- ✅ **Helpful Tips** - Guidance for realistic goals
+## ⚖️ Weight Tracking
 
-**Preset Activity Levels**:
-- Sedentary (little/no exercise)
-- Light (1-3 days/week)
-- Moderate (3-5 days/week)
-- Active (6-7 days/week)
-- Very Active (twice per day)
+- **Weight Logging** - Record weight in kilograms
+- **BMI Calculation** - Automatic calculation based on height
+- **Body Fat Tracking** - Optional body fat percentage tracking
+- **Progress Charts** - Visual timeline of weight changes
+- **Weight History Table** - Complete log of all weight entries
+- **Target Progress** - See progress toward goal weight
+- **Streak System** - Gamified consistency tracking
+  - Current streak counter (consecutive days logged)
+  - Longest streak badge (personal best)
+  - Visual streak indicators
+- **Weight Notes** - Journal your thoughts with each entry
+- **Edit Entries** - Modify past weight logs
+- **Delete Entries** - Remove weight records with confirmation
 
-### 👨‍🍳 Recipe Suggestions
-- ✅ **AI-Generated Recipes** - Powered by GPT-4o
-- ✅ **Indian Cuisine Focus** - Authentic recipes
-- ✅ **Preference-Based** - Vegetarian, high protein, etc.
-- ✅ **Goal-Aligned** - Matches your objectives
-- ✅ **Detailed Instructions** - Step-by-step cooking
-- ✅ **Ingredient Lists** - Everything you need
-- ✅ **Nutrition Info** - Per serving breakdown
-- ✅ **Prep Time** - Plan your cooking
-- ✅ **Serving Sizes** - Scale recipes
+## 🎯 Goal Setting
 
-**Recipe Categories**:
+- **Auto-Calculated Targets** - Initial goals based on your profile
+- **Customizable Goals** - Adjust any target to fit your needs
+- **Weight Goals** - Set target weight in kilograms
+- **Calorie Goals** - Daily calorie target
+- **Macro Goals** - Individual targets for protein, carbs, and fats
+- **Fiber Goals** - Daily fiber target
+- **Flexible Updates** - Change goals anytime
+- **Smart Recommendations** - Suggestions based on age, gender, activity level
+- **Goal Progress** - Dashboard shows how close you are to each goal
+
+**Activity Level Options:**
+- Sedentary - Little to no exercise
+- Light - Exercise 1-3 days/week
+- Moderate - Exercise 3-5 days/week
+- Active - Exercise 6-7 days/week  
+- Very Active - Exercise twice per day
+
+## 👨‍🍳 Recipe Suggestions
+
+- **AI-Generated Recipes** - Powered by Azure OpenAI GPT-4o
+- **Indian Cuisine Focus** - Authentic Indian recipes
+- **Preference-Based** - Filter by dietary preferences
+- **Goal-Aligned** - Recipes match your fitness objectives
+- **Detailed Instructions** - Step-by-step cooking guidance
+- **Ingredient Lists** - Complete list of required ingredients
+- **Nutrition Information** - Per-serving nutritional breakdown
+- **Prep & Cook Time** - Plan your meal preparation
+- **Serving Sizes** - Recipes scaled appropriately
+
+**Recipe Categories:**
 - Weight loss meals
-- Muscle building foods
-- Quick & easy
-- High protein
-- Low carb
+- High protein dishes
+- Low carb options
 - Vegetarian/vegan
-- Heart-healthy
+- Quick & easy recipes
+- Traditional healthy foods
 
-### 💾 Data Management
-- ✅ **Export as JSON** - Complete backup
-- ✅ **Export as CSV** - For spreadsheets
-- ✅ **Import from JSON** - Restore from backup
-- ✅ **Separate Exports** - Meals and weights individually
-- ✅ **Date-Stamped Files** - Organized backups
-- ✅ **Easy Transfer** - Move between devices
-- ✅ **Data Privacy** - You control your data
+## 💡 Smart Suggestions
 
-### 📱 Progressive Web App
-- ✅ **Installable** - Add to home screen
-- ✅ **Offline Mode** - Works without internet
-- ✅ **Fast Loading** - Cached for speed
-- ✅ **Auto-Updates** - New features automatically
-- ✅ **Native Feel** - Runs like an app
-- ✅ **Cross-Platform** - Works on all devices
+- **Nutrient-Specific Recommendations** - Get food suggestions for specific nutrients
+- **Macro Suggestions** - AI recommends foods for protein, carbs, or fats
+- **Micro Suggestions** - Get suggestions for vitamins and minerals
+- **Deficit Calculation** - System calculates how much more you need
+- **Indian Food Focus** - All suggestions are Indian cuisine
+- **Portion Guidance** - Specific serving sizes recommended
+- **One-Click Access** - Suggest button on each nutrient card
+- **Dismissible Cards** - Close suggestions when done
 
-**Platforms**:
-- 📱 iOS (Safari)
-- 🤖 Android (Chrome)
-- 💻 Desktop (Chrome, Edge, Safari)
-- 🌐 Any modern browser
+**Available for:**
+- All macronutrients (Protein, Carbohydrates, Fats)
+- All tracked micronutrients (Fiber, Vitamins A/C/D, Calcium, Iron, Magnesium, Potassium)
 
-### 🎨 User Interface
-- ✅ **Clean Design** - Minimalist and modern
-- ✅ **Responsive** - Perfect on any screen
-- ✅ **Intuitive Navigation** - Easy to use
-- ✅ **Color-Coded Stats** - Visual feedback
-- ✅ **Touch-Friendly** - Mobile optimized
-- ✅ **Fast Interactions** - No lag
-- ✅ **Dark Mode Ready** - Follows system preference
-- ✅ **Accessible** - Keyboard navigation, screen readers
+## 💾 Data Management
 
-**Design Highlights**:
-- Green theme (health & wellness)
-- Card-based layout
-- Smooth animations
-- Clear typography
-- Consistent spacing
+- **JSON Export** - Complete backup of all your data
+- **CSV Export** - Export for use in spreadsheets
+- **Import Support** - Restore data from JSON backup
+- **Separate Exports** - Export meals and weights individually
+- **Date-Stamped Files** - Organized backup file names
+- **Easy Transfer** - Move data between devices
+- **Data Ownership** - You control your data completely
+- **No Vendor Lock-in** - Standard file formats
+
+## 📱 Progressive Web App (PWA)
+
+- **Installable** - Add to home screen on any device
+- **Offline Support** - Works without internet connection
+- **Fast Loading** - Cached resources for speed
+- **Auto-Updates** - Get new features automatically
+- **Native Feel** - Runs like a native app
+- **Responsive Design** - Perfect on mobile, tablet, desktop
+- **Cross-Platform** - Works on iOS, Android, Windows, macOS, Linux
+
+## 🎨 User Interface
+
+- **Clean Design** - Modern, minimalist interface
+- **Intuitive Navigation** - Easy-to-use sidebar menu
+- **Touch-Friendly** - Optimized for mobile interaction
+- **Visual Feedback** - Success/error messages for all actions
+- **Loading States** - Clear indicators during processing
+- **Color-Coded Stats** - Quick visual understanding
+- **Consistent Layout** - Predictable UI patterns
+- **Accessible** - Keyboard navigation support
+
+**Design Highlights:**
+- Green theme representing health and wellness
+- Card-based layout for organized content
+- Smooth transitions and animations
+- Clear typography with good contrast
+- Proper spacing and visual hierarchy
 - Professional appearance
 
-### 🔒 Privacy & Security
-- ✅ **Local Storage Only** - No servers
-- ✅ **No Account Required** - Beyond local login
-- ✅ **No Tracking** - Zero analytics
-- ✅ **Encrypted Passwords** - SHA-256 hashing
-- ✅ **Data Ownership** - You control everything
-- ✅ **No Third Parties** - Just you and the app
-- ✅ **GDPR Compliant** - Privacy by design
+## 🔒 Privacy & Security
 
-## 🎮 User Experience Features
+- **Local Storage** - Data stored on your server, not in the cloud
+- **File-Based** - Simple JSON files you can access directly
+- **Password Security** - SHA-256 hashing for credentials
+- **No Tracking** - Zero analytics or user tracking
+- **No Third Parties** - Only Azure OpenAI for AI features
+- **Data Ownership** - Complete control over your data
+- **Easy Backup** - Direct access to data files
+- **GDPR Compliant** - Privacy by design
 
-### Smart Defaults
-- Automatic calorie calculation
-- Pre-filled macro ratios
-- Common serving sizes
-- Meal type suggestions
+## 🚀 Performance
 
-### Quick Actions
-- Search foods with Enter key
-- One-click meal logging
-- Quick date navigation
-- Fast goal updates
-
-### Visual Feedback
-- Success messages
-- Error alerts
-- Loading indicators
-- Progress animations
-
-### Helpful Hints
-- Tooltips on forms
-- Example inputs
-- Goal setting tips
-- Nutrition guidance
-
-## 🌐 Internationalization Ready
-
-While currently in English, the architecture supports:
-- Multi-language support
-- Regional food databases
-- Local date/time formats
-- Cultural customization
+- **Fast Search** - AI responses in ~2 seconds
+- **Instant Updates** - Real-time dashboard refresh
+- **Optimized Rendering** - Smooth React performance
+- **Smart Caching** - Offline support with service workers
+- **Small Bundle** - Quick initial load
+- **Lazy Loading** - Components load on demand
+- **Efficient Storage** - Minimal server space required
 
 ## 📈 Analytics & Insights
 
-**What You Can Track**:
-- Daily calorie intake
+**Track Your Progress:**
+- Daily calorie and nutrient intake
 - Weekly nutrition trends
-- Weight loss progress
+- Weight loss/gain over time
 - Streak consistency
-- Goal achievement
+- Goal achievement rates
 - Macro balance
 - Micronutrient coverage
 
-**Visualizations**:
-- Line charts (weekly trends)
-- Pie charts (macro distribution)
-- Progress bars (goal tracking)
-- Data tables (history)
+**Visualizations:**
+- Line charts for weekly trends
+- Pie charts for macro distribution
+- Progress bars for goal tracking
+- Weight timeline graphs
+- Data tables for detailed history
 
-## 🚀 Performance Features
+## 🎯 Use Cases
 
-- ⚡ **Instant Search** - AI-powered results
-- 💨 **Fast Rendering** - Optimized React
-- 🔄 **Smart Caching** - Offline support
-- 📦 **Small Bundle** - Quick downloads
-- 🎯 **Lazy Loading** - Components on demand
+**Perfect For:**
+- 🎯 Weight loss tracking
+- 💪 Muscle building and protein monitoring
+- 🏃 Athletic training nutrition
+- 🩺 Health condition management
+- 📚 Learning about Indian food nutrition
+- 👨‍👩‍👧‍👦 Family health tracking
+- 🧘 Mindful eating habits
+- 📊 Data-driven fitness goals
 
-## 🎁 Bonus Features
+## � Why FitPal?
 
-- ✨ **No Ads** - Clean experience
-- 🆓 **Free Forever** - No subscriptions
-- 🔓 **Open Architecture** - Extend it yourself
-- 📚 **Well Documented** - Easy to understand
-- 🛠️ **Customizable** - Modify to your needs
-
-## 🔮 Planned Features
-
-Features that could be added:
-- 📸 Photo-based food logging
-- 🔔 Custom meal reminders
-- 💧 Water intake tracking
-- 🏃 Exercise logging
-- 📅 Meal planning
-- 🧑‍🤝‍🧑 Multi-user support
-- 📊 Advanced analytics
-- 🏪 Food database expansion
-
-## 💡 Use Cases
-
-**FitPal is Perfect For**:
-- 🎯 **Weight Loss** - Track calories and macros
-- 💪 **Muscle Building** - Monitor protein intake
-- 🏃 **Athletic Training** - Optimize nutrition
-- 🩺 **Health Management** - Control diet for conditions
-- 📚 **Nutrition Learning** - Understand Indian food nutrition
-- 👨‍👩‍👧‍👦 **Family Health** - Track household nutrition
-- 🧘 **Wellness Journey** - Mindful eating habits
-
-## 🏆 Why FitPal Stands Out
-
-1. **Indian Food Focus** - Not just generic nutrition
-2. **AI-Powered** - Smart food recognition
-3. **Privacy First** - Your data stays yours
-4. **No Internet Required** - Works offline
-5. **Free & Open** - No hidden costs
-6. **Modern Tech** - Built with latest tools
-7. **Active Development** - Regular updates
-8. **Community Driven** - Open to contributions
+1. **Indian Food Expertise** - Built specifically for Indian cuisine
+2. **AI-Powered Intelligence** - Smart food recognition and suggestions
+3. **Privacy First** - Your data never leaves your control
+4. **Offline Capable** - Works without internet
+5. **Free & Open Source** - No subscriptions or hidden costs
+6. **Modern Technology** - Built with latest web standards
+7. **Full Control** - Edit and delete any data
+8. **Comprehensive Tracking** - Macros and micros in one place
 
 ## 📊 Technical Capabilities
 
-- Supports 1000s of food items
-- Processes AI queries in ~2 seconds
+- Supports unlimited food items via AI
+- Processes queries in under 2 seconds
 - Handles years of historical data
 - Charts update in milliseconds
-- Works on 2G networks
-- Runs on low-end devices
-- Accessible to screen readers
-
-## 🎉 Getting Started Benefits
-
-**Within 5 Minutes You Can**:
-- Create your account
-- Set your goals
-- Log your first meal
-- See your nutrition breakdown
-- Track your weight
-- Get recipe suggestions
-- Export your data
-
-**Within a Week You Can**:
-- Build your streak
-- See weekly trends
-- Adjust your goals
-- Try new recipes
-- Understand your eating patterns
-- Make informed food choices
-
-**Within a Month You Can**:
-- Track significant progress
-- Develop healthy habits
-- Achieve initial goals
-- Discover new Indian foods
-- Master the interface
-- Share with friends
-
-## 🌟 User Testimonials (Example)
-
-> "Finally, a nutrition tracker that understands Indian food!" - Potential User
-
-> "The AI suggestions are spot-on for Indian cuisine" - Potential User
-
-> "Love that my data stays private on my device" - Potential User
-
-## 📞 Support & Resources
-
-- 📖 **Full Documentation** - README.md
-- 🎓 **Code Explanations** - CODE_EXPLANATION.md
-- 🚀 **Quick Start** - QUICKSTART.md
-- ☁️ **Azure Setup** - AZURE_SETUP.md
-- 💻 **GitHub Issues** - For bug reports
-- 📧 **Community** - For discussions
+- Fully functional offline after initial load
+- Runs efficiently on low-end devices
+- Mobile-first responsive design
 
 ---
 
-**FitPal** - Your complete Indian nutrition tracking solution! 🥗💪🇮🇳
+**FitPal** - Complete nutrition tracking for Indian cuisine 🥗💪
