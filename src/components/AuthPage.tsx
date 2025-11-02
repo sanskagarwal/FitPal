@@ -48,6 +48,7 @@ export const AuthPage = () => {
             targetProtein: 0,
             targetCarbs: 0,
             targetFats: 0,
+            targetFiber: 30,
           },
         });
 

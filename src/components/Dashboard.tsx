@@ -1,17 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { MealEntry, DailyStats, WeightEntry } from '../types';
+import { MealEntry, DailyStats, WeightEntry, NutrientInfo } from '../types';
 import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
 import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingDown, Target, Award, Calendar } from 'lucide-react';
+import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp } from 'lucide-react';
+import { suggestMeal } from '../services/openai';
+
+interface MealTypeStats {
+  mealType: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+}
 
 export const Dashboard = () => {
   const { user } = useAuth();
   const [todayStats, setTodayStats] = useState<DailyStats | null>(null);
+  const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
   const [weeklyData, setWeeklyData] = useState<DailyStats[]>([]);
   const [recentWeight, setRecentWeight] = useState<WeightEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mealSuggestion, setMealSuggestion] = useState<string>('');
+  const [suggestingMeal, setSuggestingMeal] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -28,12 +41,13 @@ export const Dashboard = () => {
       const startOfWeek = getStartOfWeek(today);
 
       // Load today's meals
-      const todayMeals = await getMealsByDateRange(user.id, startOfToday, endOfToday);
-      const todayTotals = calculateTotals(todayMeals);
+      const meals = await getMealsByDateRange(user.id, startOfToday, endOfToday);
+      setTodayMeals(meals);
+      const todayTotals = calculateTotals(meals);
       setTodayStats({
         date: today,
         ...todayTotals,
-        mealsLogged: todayMeals.length,
+        mealsLogged: meals.length,
       });
 
       // Load weekly data
@@ -77,6 +91,126 @@ export const Dashboard = () => {
     );
   };
 
+  const getMealTypeStats = (): MealTypeStats[] => {
+    const mealTypes = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'];
+    return mealTypes.map(mealType => {
+      const mealsOfType = todayMeals.filter(m => m.mealType === mealType);
+      const totals = mealsOfType.reduce((acc, meal) => ({
+        calories: acc.calories + meal.totalNutrients.calories,
+        protein: acc.protein + meal.totalNutrients.protein,
+        carbs: acc.carbs + meal.totalNutrients.carbs,
+        fats: acc.fats + meal.totalNutrients.fats,
+        fiber: acc.fiber + (meal.totalNutrients.fiber || 0),
+      }), { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
+      
+      return {
+        mealType: mealType.replace('-', ' '),
+        ...totals
+      };
+    }).filter(stat => stat.calories > 0);
+  };
+
+  const getTotalMicronutrients = (): Partial<NutrientInfo> => {
+    return todayMeals.reduce<Partial<NutrientInfo>>((acc, meal) => ({
+      fiber: (acc.fiber || 0) + (meal.totalNutrients.fiber || 0),
+      vitaminA: (acc.vitaminA || 0) + (meal.totalNutrients.vitaminA || 0),
+      vitaminC: (acc.vitaminC || 0) + (meal.totalNutrients.vitaminC || 0),
+      vitaminD: (acc.vitaminD || 0) + (meal.totalNutrients.vitaminD || 0),
+      calcium: (acc.calcium || 0) + (meal.totalNutrients.calcium || 0),
+      iron: (acc.iron || 0) + (meal.totalNutrients.iron || 0),
+      magnesium: (acc.magnesium || 0) + (meal.totalNutrients.magnesium || 0),
+      potassium: (acc.potassium || 0) + (meal.totalNutrients.potassium || 0),
+    }), {});
+  };
+
+  const getMotivationalMessage = () => {
+    if (!todayStats || !user) return null;
+    
+    const goals = user.profile.goals;
+    const caloriePercent = (todayStats.totalCalories / goals.targetCalories) * 100;
+    
+    if (caloriePercent > 120) {
+      return {
+        type: 'warning',
+        icon: AlertCircle,
+        message: `You're ${Math.round(caloriePercent - 100)}% over your calorie goal. Consider lighter meals for the rest of the day! 💪`,
+        bgColor: 'bg-red-50',
+        borderColor: 'border-red-200',
+        textColor: 'text-red-800',
+        iconColor: 'text-red-600'
+      };
+    } else if (caloriePercent > 100) {
+      return {
+        type: 'caution',
+        icon: AlertCircle,
+        message: `You've reached your calorie goal! Great job tracking. Keep it balanced! 🎯`,
+        bgColor: 'bg-amber-50',
+        borderColor: 'border-amber-200',
+        textColor: 'text-amber-800',
+        iconColor: 'text-amber-600'
+      };
+    } else if (caloriePercent >= 80) {
+      return {
+        type: 'success',
+        icon: TrendingUp,
+        message: `You're on track! ${Math.round(100 - caloriePercent)}% of calories remaining. Keep going! 🌟`,
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
+        textColor: 'text-green-800',
+        iconColor: 'text-green-600'
+      };
+    } else {
+      return {
+        type: 'info',
+        icon: Sparkles,
+        message: `Great start! You have plenty of room for nutritious meals today. Stay consistent! ✨`,
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200',
+        textColor: 'text-blue-800',
+        iconColor: 'text-blue-600'
+      };
+    }
+  };
+
+  const handleMealSuggestion = async () => {
+    if (!user || !todayStats) return;
+
+    setSuggestingMeal(true);
+    setMealSuggestion('');
+
+    const goals = user.profile.goals;
+    const remainingCalories = goals.targetCalories - todayStats.totalCalories;
+    const remainingProtein = goals.targetProtein - todayStats.totalProtein;
+    const remainingCarbs = goals.targetCarbs - todayStats.totalCarbs;
+    const remainingFats = goals.targetFats - todayStats.totalFats;
+    const remainingFiber = (goals.targetFiber || 30) - (getTotalMicronutrients().fiber || 0);
+
+    // Determine which meal type to suggest
+    const currentHour = new Date().getHours();
+    let mealType = 'dinner';
+    if (currentHour < 10) mealType = 'breakfast';
+    else if (currentHour < 12) mealType = 'morning snack';
+    else if (currentHour < 15) mealType = 'lunch';
+    else if (currentHour < 18) mealType = 'evening snack';
+
+    try {
+      const suggestion = await suggestMeal(
+        remainingCalories,
+        remainingProtein,
+        remainingCarbs,
+        remainingFats,
+        remainingFiber,
+        mealType
+      );
+      setMealSuggestion(suggestion);
+    } catch (error) {
+      console.error('Error getting meal suggestion:', error);
+      setMealSuggestion('Unable to get meal suggestion. Please try again.');
+    } finally {
+      setSuggestingMeal(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -105,9 +239,23 @@ export const Dashboard = () => {
     fats: day.totalFats,
   }));
 
+  const motivationalMsg = getMotivationalMessage();
+  const mealTypeStats = getMealTypeStats();
+  const micronutrients = getTotalMicronutrients();
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+
+      {/* Motivational Message */}
+      {motivationalMsg && (
+        <div className={`card ${motivationalMsg.bgColor} ${motivationalMsg.borderColor} border`}>
+          <div className="flex items-center gap-3">
+            <motivationalMsg.icon className={`w-6 h-6 ${motivationalMsg.iconColor}`} />
+            <p className={`${motivationalMsg.textColor} font-medium`}>{motivationalMsg.message}</p>
+          </div>
+        </div>
+      )}
 
       {/* Today's Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -184,6 +332,115 @@ export const Dashboard = () => {
               className="bg-amber-500 h-2 rounded-full transition-all"
               style={{ width: `${Math.min(fatsPercentage, 100)}%` }}
             ></div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Meal Suggestion */}
+      <div className="card bg-gradient-to-br from-primary-50 to-primary-100">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-primary-600" />
+            <h2 className="text-xl font-semibold">AI Meal Suggestion</h2>
+          </div>
+          <button
+            onClick={handleMealSuggestion}
+            disabled={suggestingMeal}
+            className="btn-primary"
+          >
+            {suggestingMeal ? 'Generating...' : 'Get Suggestion'}
+          </button>
+        </div>
+        {mealSuggestion ? (
+          <div className="bg-white p-4 rounded-lg">
+            <p className="text-gray-800 whitespace-pre-wrap">{mealSuggestion}</p>
+          </div>
+        ) : (
+          <p className="text-gray-600">
+            Click the button to get an AI-powered meal suggestion based on your remaining daily goals!
+          </p>
+        )}
+      </div>
+
+      {/* Meal Breakdown */}
+      {mealTypeStats.length > 0 && (
+        <div className="card">
+          <h2 className="text-xl font-semibold mb-4">Today's Meal Breakdown</h2>
+          <div className="space-y-3">
+            {mealTypeStats.map((stat) => (
+              <div key={stat.mealType} className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium text-gray-900 capitalize mb-2">{stat.mealType}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-600">Calories:</span>
+                    <span className="ml-1 font-semibold">{Math.round(stat.calories)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Protein:</span>
+                    <span className="ml-1 font-semibold">{Math.round(stat.protein)}g</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Carbs:</span>
+                    <span className="ml-1 font-semibold">{Math.round(stat.carbs)}g</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Fats:</span>
+                    <span className="ml-1 font-semibold">{Math.round(stat.fats)}g</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Fiber:</span>
+                    <span className="ml-1 font-semibold">{Math.round(stat.fiber)}g</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Micronutrients */}
+      <div className="card">
+        <h2 className="text-xl font-semibold mb-4">Today's Micronutrients</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-3 bg-purple-50 rounded-lg">
+            <p className="text-sm text-gray-600">Fiber</p>
+            <p className="text-xl font-bold text-purple-600">{Math.round(micronutrients.fiber || 0)}g</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetFiber || 30}g</p>
+          </div>
+          <div className="p-3 bg-orange-50 rounded-lg">
+            <p className="text-sm text-gray-600">Vitamin A</p>
+            <p className="text-xl font-bold text-orange-600">{Math.round(micronutrients.vitaminA || 0)}mcg</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetVitaminA || 900}mcg</p>
+          </div>
+          <div className="p-3 bg-green-50 rounded-lg">
+            <p className="text-sm text-gray-600">Vitamin C</p>
+            <p className="text-xl font-bold text-green-600">{Math.round(micronutrients.vitaminC || 0)}mg</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetVitaminC || 90}mg</p>
+          </div>
+          <div className="p-3 bg-yellow-50 rounded-lg">
+            <p className="text-sm text-gray-600">Vitamin D</p>
+            <p className="text-xl font-bold text-yellow-600">{Math.round(micronutrients.vitaminD || 0)}mcg</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetVitaminD || 15}mcg</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-gray-600">Calcium</p>
+            <p className="text-xl font-bold text-blue-600">{Math.round(micronutrients.calcium || 0)}mg</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetCalcium || 1000}mg</p>
+          </div>
+          <div className="p-3 bg-red-50 rounded-lg">
+            <p className="text-sm text-gray-600">Iron</p>
+            <p className="text-xl font-bold text-red-600">{Math.round(micronutrients.iron || 0)}mg</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetIron || 18}mg</p>
+          </div>
+          <div className="p-3 bg-indigo-50 rounded-lg">
+            <p className="text-sm text-gray-600">Magnesium</p>
+            <p className="text-xl font-bold text-indigo-600">{Math.round(micronutrients.magnesium || 0)}mg</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetMagnesium || 400}mg</p>
+          </div>
+          <div className="p-3 bg-pink-50 rounded-lg">
+            <p className="text-sm text-gray-600">Potassium</p>
+            <p className="text-xl font-bold text-pink-600">{Math.round(micronutrients.potassium || 0)}mg</p>
+            <p className="text-xs text-gray-500">Target: {goals?.targetPotassium || 3500}mg</p>
           </div>
         </div>
       </div>

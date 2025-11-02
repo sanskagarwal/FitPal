@@ -101,7 +101,6 @@ export const WeightTracker = () => {
 
   const latestWeight = weights[0];
   const targetWeight = user?.profile.goals.targetWeight || 0;
-  const progress = latestWeight ? ((latestWeight.weight - targetWeight) / latestWeight.weight) * 100 : 0;
 
   return (
     <div className="space-y-6">

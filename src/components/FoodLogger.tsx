@@ -6,13 +6,16 @@ import { saveMeal } from '../utils/db';
 import { generateId } from '../utils/helpers';
 import { Search, Plus, X } from 'lucide-react';
 
+const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
+const QUANTITY_UNITS = ['serving', 'cup', 'tbsp', 'tsp', 'piece', 'gram', 'oz'] as const;
+
 export const FoodLogger = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Food[]>([]);
   const [selectedFoods, setSelectedFoods] = useState<FoodEntry[]>([]);
-  const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
+  const [mealType, setMealType] = useState<typeof MEAL_TYPES[number]>('breakfast');
   const [notes, setNotes] = useState('');
 
   const handleSearch = async () => {
@@ -30,7 +33,12 @@ export const FoodLogger = () => {
   };
 
   const addFood = (food: Food) => {
-    setSelectedFoods([...selectedFoods, { food, quantity: 1 }]);
+    setSelectedFoods([...selectedFoods, { 
+      food, 
+      quantity: 1,
+      unit: 'serving',
+      unitQuantity: 1
+    }]);
     setSearchResults([]);
     setSearchQuery('');
   };
@@ -39,9 +47,13 @@ export const FoodLogger = () => {
     setSelectedFoods(selectedFoods.filter((_, i) => i !== index));
   };
 
-  const updateQuantity = (index: number, quantity: number) => {
+  const updateQuantity = (index: number, unitQuantity: number, unit: typeof QUANTITY_UNITS[number]) => {
     const updated = [...selectedFoods];
-    updated[index].quantity = quantity;
+    updated[index].unitQuantity = unitQuantity;
+    updated[index].unit = unit;
+    // Calculate multiplier based on unit (for now, use unitQuantity as multiplier)
+    // In a real app, you'd convert units to servings properly
+    updated[index].quantity = unitQuantity;
     setSelectedFoods(updated);
   };
 
@@ -119,8 +131,8 @@ export const FoodLogger = () => {
       {/* Meal Type Selection */}
       <div className="card">
         <label className="block text-sm font-medium text-gray-700 mb-2">Meal Type</label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {MEAL_TYPES.map((type) => (
             <button
               key={type}
               onClick={() => setMealType(type)}
@@ -130,7 +142,7 @@ export const FoodLogger = () => {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {type}
+              {type.replace('-', ' ')}
             </button>
           ))}
         </div>
@@ -208,15 +220,23 @@ export const FoodLogger = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-600">Qty:</label>
                   <input
                     type="number"
-                    min="0.5"
-                    step="0.5"
-                    value={entry.quantity}
-                    onChange={(e) => updateQuantity(index, parseFloat(e.target.value))}
+                    min="0.25"
+                    step="0.25"
+                    value={entry.unitQuantity}
+                    onChange={(e) => updateQuantity(index, parseFloat(e.target.value) || 1, entry.unit)}
                     className="w-20 px-2 py-1 border border-gray-300 rounded"
                   />
+                  <select
+                    value={entry.unit}
+                    onChange={(e) => updateQuantity(index, entry.unitQuantity, e.target.value as typeof QUANTITY_UNITS[number])}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    {QUANTITY_UNITS.map((unit) => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
                 </div>
                 <button
                   onClick={() => removeFood(index)}

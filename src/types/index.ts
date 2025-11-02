@@ -18,10 +18,23 @@ export interface UserProfile {
 
 export interface UserGoals {
   targetWeight: number; // in kg
+  weightLossRate?: number; // kg per week (0.25, 0.5, 1)
   targetCalories: number;
   targetProtein: number; // in grams
   targetCarbs: number; // in grams
   targetFats: number; // in grams
+  targetFiber: number; // in grams
+  // Micronutrient targets
+  targetVitaminA?: number; // mcg
+  targetVitaminC?: number; // mg
+  targetVitaminD?: number; // mcg
+  targetVitaminE?: number; // mg
+  targetVitaminB12?: number; // mcg
+  targetCalcium?: number; // mg
+  targetIron?: number; // mg
+  targetMagnesium?: number; // mg
+  targetPotassium?: number; // mg
+  targetZinc?: number; // mg
   customNutrients?: {
     [key: string]: number; // e.g., 'fiber': 30, 'iron': 18
   };
@@ -63,7 +76,7 @@ export interface MealEntry {
   id: string;
   userId: string;
   date: Date;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: 'breakfast' | 'morning-snack' | 'lunch' | 'evening-snack' | 'dinner';
   foods: FoodEntry[];
   totalNutrients: NutrientInfo;
   notes?: string;
@@ -72,6 +85,8 @@ export interface MealEntry {
 export interface FoodEntry {
   food: Food;
   quantity: number; // multiplier of serving size
+  unit: 'serving' | 'cup' | 'tbsp' | 'tsp' | 'piece' | 'gram' | 'oz';
+  unitQuantity: number; // e.g., 1.5 cups
 }
 
 // Weight Tracking Types

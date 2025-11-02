@@ -7,6 +7,7 @@ import { FoodLogger } from './components/FoodLogger';
 import { WeightTracker } from './components/WeightTracker';
 import { Goals } from './components/Goals';
 import { Recipes } from './components/Recipes';
+import { Profile } from './components/Profile';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
@@ -36,6 +37,8 @@ function AppContent() {
         return <Goals />;
       case 'recipes':
         return <Recipes />;
+      case 'profile':
+        return <Profile />;
       default:
         return <Dashboard />;
     }

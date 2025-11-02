@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, Menu, X } from 'lucide-react';
+import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, Menu, X, UserCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface LayoutProps {
@@ -19,6 +19,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
     { id: 'weight', label: 'Weight', icon: Scale },
     { id: 'goals', label: 'Goals', icon: Target },
     { id: 'recipes', label: 'Recipes', icon: BookOpen },
+    { id: 'profile', label: 'Profile', icon: UserCircle },
   ];
 
   return (

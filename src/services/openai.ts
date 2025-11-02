@@ -177,6 +177,118 @@ Give 3-5 specific, actionable recommendations for achieving their goals through 
   }
 }
 
+export async function suggestMeal(
+  remainingCalories: number,
+  remainingProtein: number,
+  remainingCarbs: number,
+  remainingFats: number,
+  remainingFiber: number,
+  mealType: string
+): Promise<string> {
+  const messages: OpenAIMessage[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: `Suggest an Indian ${mealType} meal to help meet these remaining daily targets:
+Calories: ${remainingCalories} kcal
+Protein: ${remainingProtein}g
+Carbs: ${remainingCarbs}g
+Fats: ${remainingFats}g
+Fiber: ${remainingFiber}g
+
+Provide:
+1. A specific meal suggestion with portion sizes
+2. Approximate nutritional breakdown
+3. Why this meal fits the remaining goals
+
+Keep it practical and focused on common Indian foods.`
+    }
+  ];
+
+  try {
+    return await callAzureOpenAI(messages);
+  } catch (error) {
+    console.error('Error getting meal suggestion:', error);
+    return 'Try a balanced meal with dal (protein), roti or rice (carbs), vegetables (fiber and micronutrients), and a small amount of healthy fats like ghee or nuts.';
+  }
+}
+
+export async function suggestGoals(
+  height: number,
+  currentWeight: number,
+  age: number,
+  gender: string,
+  activityLevel: string,
+  targetWeight: number
+): Promise<{
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+  explanation: string;
+}> {
+  const messages: OpenAIMessage[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: `Calculate recommended daily nutrition goals for:
+Height: ${height}cm
+Current Weight: ${currentWeight}kg
+Age: ${age}
+Gender: ${gender}
+Activity Level: ${activityLevel}
+Target Weight: ${targetWeight}kg
+
+Provide goals in JSON format:
+{
+  "calories": number,
+  "protein": number,
+  "carbs": number,
+  "fats": number,
+  "fiber": number,
+  "explanation": "brief explanation of why these goals are appropriate"
+}
+
+Use standard nutritional formulas (Harris-Benedict for BMR, appropriate macronutrient ratios for Indian diet).`
+    }
+  ];
+
+  try {
+    const response = await callAzureOpenAI(messages);
+    return JSON.parse(response);
+  } catch (error) {
+    console.error('Error getting goal suggestions:', error);
+    // Return basic calculations as fallback
+    const bmr = gender === 'male' 
+      ? 10 * currentWeight + 6.25 * height - 5 * age + 5
+      : 10 * currentWeight + 6.25 * height - 5 * age - 161;
+    
+    const activityMultiplier = {
+      'sedentary': 1.2,
+      'light': 1.375,
+      'moderate': 1.55,
+      'active': 1.725,
+      'very-active': 1.9
+    }[activityLevel] || 1.5;
+
+    const calories = Math.round(bmr * activityMultiplier);
+    const protein = Math.round(currentWeight * 1.6);
+    const fats = Math.round((calories * 0.25) / 9);
+    const carbs = Math.round((calories - (protein * 4) - (fats * 9)) / 4);
+    const fiber = 30;
+
+    return {
+      calories,
+      protein,
+      carbs,
+      fats,
+      fiber,
+      explanation: 'These goals are calculated based on your BMR and activity level.'
+    };
+  }
+}
+
 // Mock data for development/fallback
 function getMockFoodData(query: string): Food[] {
   const mockFoods: { [key: string]: Food } = {
