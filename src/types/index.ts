@@ -85,7 +85,7 @@ export interface MealEntry {
 export interface FoodEntry {
   food: Food;
   quantity: number; // multiplier of serving size
-  unit: 'serving' | 'cup' | 'tbsp' | 'tsp' | 'piece' | 'gram' | 'oz';
+  unit: 'serving' | 'katori' | 'bowl' | 'plate' | 'cup' | 'glass' | 'tbsp' | 'tsp' | 'piece' | 'slice' | 'gram' | 'ml' | 'oz';
   unitQuantity: number; // e.g., 1.5 cups
 }
 

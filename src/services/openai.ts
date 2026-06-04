@@ -89,7 +89,7 @@ export async function analyzeFoodWithAI(foodQuery: string): Promise<Food[]> {
 Return a JSON array of matching foods with this structure:
 [{
   "name": "Food name",
-  "servingSize": "100g or 1 cup, etc.",
+  "servingSize": "1 standard serving described in the most natural unit for this food",
   "isIndian": true,
   "category": "breakfast/lunch/dinner/snack",
   "nutrients": {
@@ -109,6 +109,13 @@ Return a JSON array of matching foods with this structure:
     "potassium": number
   }
 }]
+
+For servingSize, use the unit Indians naturally use for that food and include an approximate gram/ml weight in parentheses:
+- Use "katori" for dal, sabzi, curry, rice, kheer (e.g., "1 katori (~150g)")
+- Use "piece" for roti, chapati, idli, samosa, paratha, dosa (e.g., "1 piece (~40g)")
+- Use "glass" for milk, lassi, juice (e.g., "1 glass (~250ml)")
+- Use "bowl" or "plate" for larger portions, "tbsp"/"tsp" for ghee, chutney, pickle
+The nutrients you return MUST correspond to exactly ONE of that serving unit.
 
 If the food is misspelled or incomplete, suggest the most likely Indian foods. Return up to 3 matching options.`
     }
@@ -394,4 +401,109 @@ First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-
       explanation: `Maintenance is about ${maintenanceCalories} kcal/day (BMR × activity). Applied ${adjustmentNote} to move toward your target weight of ${targetWeight}kg.`
     };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Agentic, conversational meal logging
+// ---------------------------------------------------------------------------
+
+export interface ParsedMealFood {
+  name: string;
+  servingSize: string; // describes ONE unit, e.g. "1 katori (~150g)"
+  unit:
+    | 'serving'
+    | 'katori'
+    | 'bowl'
+    | 'plate'
+    | 'cup'
+    | 'glass'
+    | 'tbsp'
+    | 'tsp'
+    | 'piece'
+    | 'slice'
+    | 'gram'
+    | 'ml'
+    | 'oz';
+  unitQuantity: number; // how many of `unit` the user had
+  isIndian: boolean;
+  category?: string;
+  nutrients: NutrientInfo; // per ONE unit
+}
+
+export interface MealChatResult {
+  status: 'need_info' | 'ready';
+  message: string; // assistant's reply: a clarifying question or a confirmation summary
+  mealType?: 'breakfast' | 'morning-snack' | 'lunch' | 'evening-snack' | 'dinner';
+  time?: string | null; // HH:mm if known
+  foods: ParsedMealFood[];
+}
+
+const MEAL_CHAT_SYSTEM_PROMPT = `You are FitPal's agentic meal-logging assistant, an expert nutritionist specializing in Indian cuisine.
+
+The user describes, in natural language, what they ate and (optionally) when. Your job is to turn that into a precise, logged meal.
+
+Behaviour:
+1. Extract every food, its quantity, and the unit. Pick the unit Indians naturally use for each food:
+   - "katori" for dal, sabzi, curry, rice, kheer, raita
+   - "piece" for roti, chapati, idli, samosa, paratha, dosa, vada
+   - "glass" for milk, lassi, juice, buttermilk
+   - "bowl"/"plate" for larger portions; "tbsp"/"tsp" for ghee, chutney, pickle, sugar
+   - "slice" for bread/cake; otherwise "gram"/"ml"/"serving"/"cup"/"oz"
+2. Ask SHORT clarifying questions ONLY when something important is genuinely ambiguous (unclear quantity, unknown food, or you cannot reasonably infer the meal type). Do not over-ask — make sensible assumptions for obvious cases and state them.
+3. Infer mealType from the food or the stated time when possible (e.g. dosa in the morning -> breakfast).
+4. Provide nutrients for exactly ONE unit of each food (not the total).
+
+ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
+{
+  "status": "need_info" | "ready",
+  "message": "If need_info: a short, friendly clarifying question. If ready: a one-line confirmation summary of what will be logged.",
+  "mealType": "breakfast" | "morning-snack" | "lunch" | "evening-snack" | "dinner" | null,
+  "time": "HH:mm" or null,
+  "foods": [
+    {
+      "name": "Food name",
+      "servingSize": "1 katori (~150g)",
+      "unit": "katori",
+      "unitQuantity": 2,
+      "isIndian": true,
+      "category": "lunch",
+      "nutrients": {
+        "calories": number, "protein": number, "carbs": number, "fats": number,
+        "fiber": number, "sugar": number, "sodium": number,
+        "vitaminA": number, "vitaminC": number, "vitaminD": number,
+        "calcium": number, "iron": number, "magnesium": number, "potassium": number
+      }
+    }
+  ]
+}
+
+When status is "need_info", you may still include any foods you have already understood (with your best-guess quantities) so the user sees progress, but set status to "need_info" until the open question is resolved. When everything needed is known, set status to "ready" and include the full list of foods.`;
+
+export async function chatLogMeal(
+  history: { role: 'user' | 'assistant'; content: string }[]
+): Promise<MealChatResult> {
+  const now = new Date();
+  const messages: OpenAIMessage[] = [
+    { role: 'system', content: MEAL_CHAT_SYSTEM_PROMPT },
+    {
+      role: 'system',
+      content: `Current local time is ${now.toLocaleString()}. Use this to infer meal type/time when the user does not specify it.`,
+    },
+    ...history,
+  ];
+
+  const response = await callAzureOpenAI(messages);
+  const parsed = parseJSONResponse(response) as MealChatResult;
+
+  if (!parsed || (parsed.status !== 'need_info' && parsed.status !== 'ready')) {
+    throw new Error('Unexpected response from meal assistant.');
+  }
+
+  return {
+    status: parsed.status,
+    message: parsed.message || '',
+    mealType: parsed.mealType ?? undefined,
+    time: parsed.time ?? null,
+    foods: Array.isArray(parsed.foods) ? parsed.foods : [],
+  };
 }

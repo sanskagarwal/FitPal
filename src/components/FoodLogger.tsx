@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Food, MealEntry, FoodEntry, NutrientInfo } from '../types';
-import { analyzeFoodWithAI } from '../services/openai';
+import { analyzeFoodWithAI, chatLogMeal, ParsedMealFood, MealChatResult } from '../services/openai';
 import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
 import { generateId, getStartOfDay, getEndOfDay } from '../utils/helpers';
-import { Search, Plus, X, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check } from 'lucide-react';
 import { Toast, ToastType } from './Toast';
 
 const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
-const QUANTITY_UNITS = ['serving', 'cup', 'tbsp', 'tsp', 'piece', 'gram', 'oz'] as const;
+const QUANTITY_UNITS = ['serving', 'katori', 'bowl', 'plate', 'cup', 'glass', 'tbsp', 'tsp', 'piece', 'slice', 'gram', 'ml', 'oz'] as const;
+
+type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
+// Pluralize a serving unit for display (e.g. 2 "katoris", 3 "pieces").
+const formatUnit = (unit: string, quantity: number): string => {
+  if (quantity === 1) return unit;
+  const noPlural = ['serving', 'oz', 'gram', 'ml', 'tbsp', 'tsp'];
+  if (noPlural.includes(unit)) return unit;
+  return `${unit}s`;
+};
 
 export const FoodLogger = () => {
   const { user } = useAuth();
@@ -23,6 +33,12 @@ export const FoodLogger = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  // Agentic AI meal logging
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(null);
 
   useEffect(() => {
     loadTodayMeals();
@@ -40,6 +56,121 @@ export const FoodLogger = () => {
       return mealDate >= startOfToday && mealDate <= endOfToday;
     });
     setTodayMeals(todaysMeals);
+  };
+
+  // ---- Agentic AI meal logging --------------------------------------------
+
+  const buildMealFromParsed = (result: MealChatResult): MealEntry | null => {
+    if (!user || result.foods.length === 0) return null;
+
+    const foods: FoodEntry[] = result.foods.map((f: ParsedMealFood) => ({
+      food: {
+        id: generateId(),
+        name: f.name,
+        servingSize: f.servingSize,
+        nutrients: f.nutrients,
+        isIndian: f.isIndian ?? true,
+        category: f.category,
+      },
+      // nutrients are per single unit, so the multiplier is the unit count
+      quantity: f.unitQuantity,
+      unit: f.unit,
+      unitQuantity: f.unitQuantity,
+    }));
+
+    const totalNutrients = foods.reduce<NutrientInfo>(
+      (acc, entry) => {
+        const n = entry.food.nutrients;
+        const q = entry.quantity;
+        return {
+          calories: acc.calories + n.calories * q,
+          protein: acc.protein + n.protein * q,
+          carbs: acc.carbs + n.carbs * q,
+          fats: acc.fats + n.fats * q,
+          fiber: (acc.fiber || 0) + (n.fiber || 0) * q,
+          sugar: (acc.sugar || 0) + (n.sugar || 0) * q,
+          sodium: (acc.sodium || 0) + (n.sodium || 0) * q,
+          vitaminA: (acc.vitaminA || 0) + (n.vitaminA || 0) * q,
+          vitaminC: (acc.vitaminC || 0) + (n.vitaminC || 0) * q,
+          vitaminD: (acc.vitaminD || 0) + (n.vitaminD || 0) * q,
+          calcium: (acc.calcium || 0) + (n.calcium || 0) * q,
+          iron: (acc.iron || 0) + (n.iron || 0) * q,
+          magnesium: (acc.magnesium || 0) + (n.magnesium || 0) * q,
+          potassium: (acc.potassium || 0) + (n.potassium || 0) * q,
+        };
+      },
+      { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0, sugar: 0, sodium: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, calcium: 0, iron: 0, magnesium: 0, potassium: 0 }
+    );
+
+    // Resolve the meal date/time
+    let date = new Date();
+    if (result.time && /^\d{1,2}:\d{2}$/.test(result.time)) {
+      const [h, m] = result.time.split(':').map(Number);
+      date = new Date();
+      date.setHours(h, m, 0, 0);
+    }
+
+    return {
+      id: generateId(),
+      userId: user.id,
+      date,
+      mealType: result.mealType || 'breakfast',
+      foods,
+      totalNutrients,
+      notes: undefined,
+    };
+  };
+
+  const sendChat = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+
+    const userMessage: ChatMessage = { role: 'user', content: chatInput.trim() };
+    const newHistory = [...chatMessages, userMessage];
+    setChatMessages(newHistory);
+    setChatInput('');
+    setChatLoading(true);
+    setProposedMeal(null);
+
+    try {
+      const result = await chatLogMeal(newHistory);
+      setChatMessages([...newHistory, { role: 'assistant', content: result.message }]);
+      if (result.status === 'ready' && result.foods.length > 0) {
+        setProposedMeal(result);
+      }
+    } catch (err) {
+      console.error('Meal chat error:', err);
+      setChatMessages([
+        ...newHistory,
+        { role: 'assistant', content: 'Sorry, I had trouble understanding that. Could you rephrase what you ate?' },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const confirmChatMeal = async () => {
+    if (!proposedMeal) return;
+    const meal = buildMealFromParsed(proposedMeal);
+    if (!meal) return;
+
+    setChatLoading(true);
+    try {
+      await saveMeal(meal);
+      await loadTodayMeals();
+      setToast({ message: 'Meal logged successfully!', type: 'success' });
+      resetChat();
+    } catch (err) {
+      console.error('Error saving meal:', err);
+      setToast({ message: 'Failed to log meal. Please try again.', type: 'error' });
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const resetChat = () => {
+    setChatMessages([]);
+    setChatInput('');
+    setProposedMeal(null);
   };
 
   const handleSearch = async () => {
@@ -221,6 +352,112 @@ export const FoodLogger = () => {
       )}
       
       <h1 className="text-3xl font-bold text-gray-900">Log Your Meal</h1>
+
+      {/* Agentic AI Meal Logging */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="w-5 h-5 text-primary-600" />
+          <h2 className="text-lg font-semibold">Quick Log with AI</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Just describe your meal in plain language — e.g.{' '}
+          <span className="italic">"2 rotis and a katori of dal for lunch at 1pm"</span>. The
+          assistant will ask if it needs more detail, then log it for you.
+        </p>
+
+        {chatMessages.length > 0 && (
+          <div className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
+            {chatMessages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
+                    msg.role === 'user'
+                      ? 'bg-primary-600 text-white rounded-br-sm'
+                      : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm">
+                  Thinking…
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Proposed meal preview */}
+        {proposedMeal && proposedMeal.foods.length > 0 && (
+          <div className="mb-4 p-4 border border-primary-200 bg-primary-50 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-gray-800">
+                Ready to log
+                {proposedMeal.mealType && (
+                  <span className="ml-2 text-sm font-normal text-gray-600 capitalize">
+                    ({proposedMeal.mealType.replace('-', ' ')}
+                    {proposedMeal.time ? ` • ${proposedMeal.time}` : ''})
+                  </span>
+                )}
+              </h3>
+            </div>
+            <ul className="space-y-1 mb-3">
+              {proposedMeal.foods.map((f, i) => (
+                <li key={i} className="text-sm text-gray-700 flex justify-between">
+                  <span>
+                    • {f.unitQuantity} {f.unit} {f.name}
+                  </span>
+                  <span className="text-gray-500">
+                    {Math.round(f.nutrients.calories * f.unitQuantity)} cal
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2">
+              <button onClick={confirmChatMeal} disabled={chatLoading} className="btn-primary text-sm flex items-center gap-1">
+                <Check className="w-4 h-4" /> Confirm &amp; Log
+              </button>
+              <button onClick={resetChat} disabled={chatLoading} className="btn-secondary text-sm">
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendChat()}
+            placeholder="What did you eat?"
+            className="input-field flex-1"
+            disabled={chatLoading}
+          />
+          <button onClick={sendChat} disabled={chatLoading || !chatInput.trim()} className="btn-primary flex items-center gap-1">
+            <Send className="w-4 h-4" />
+            Send
+          </button>
+          {chatMessages.length > 0 && (
+            <button onClick={resetChat} disabled={chatLoading} className="btn-secondary" title="Start over">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Meal Type Selection */}
+      <div className="flex items-center gap-3 pt-2">
+        <div className="h-px bg-gray-200 flex-1" />
+        <span className="text-xs font-medium uppercase tracking-wide text-gray-400">Or add manually</span>
+        <div className="h-px bg-gray-200 flex-1" />
+      </div>
 
       {/* Meal Type Selection */}
       <div className="card">
@@ -433,14 +670,38 @@ export const FoodLogger = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-1 mb-3">
-                  {meal.foods.map((foodEntry, idx) => (
-                    <p key={idx} className="text-sm text-gray-700">
-                      • {foodEntry.food.name} - {foodEntry.unitQuantity} {foodEntry.unit}
-                    </p>
-                  ))}
+                <div className="divide-y divide-gray-200 mb-3">
+                  {meal.foods.map((foodEntry, idx) => {
+                    const q = foodEntry.quantity || foodEntry.unitQuantity || 1;
+                    const n = foodEntry.food.nutrients;
+                    const unitLabel = formatUnit(foodEntry.unit, foodEntry.unitQuantity);
+                    return (
+                      <div key={idx} className="py-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 capitalize truncate">
+                              {foodEntry.food.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {foodEntry.unitQuantity} {unitLabel}
+                              {foodEntry.food.servingSize ? ` • ${foodEntry.food.servingSize}` : ''}
+                            </p>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                            {Math.round(n.calories * q)} cal
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-gray-500">
+                          <span>P {Math.round(n.protein * q)}g</span>
+                          <span>C {Math.round(n.carbs * q)}g</span>
+                          <span>F {Math.round(n.fats * q)}g</span>
+                          {n.fiber ? <span>Fiber {Math.round(n.fiber * q)}g</span> : null}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                
+
                 <div className="grid grid-cols-4 gap-2 text-sm border-t pt-2">
                   <div>
                     <span className="text-gray-600">Calories:</span>
