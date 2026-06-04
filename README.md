@@ -26,6 +26,12 @@ See **[FEATURES.md](FEATURES.md)** for the full feature breakdown.
 
 ---
 
+## 🚧 In Progress
+
+Some features are actively being worked on — see **[TODO.md](TODO.md)** for details.
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
