@@ -47,6 +47,7 @@ export const FoodLogger = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Food[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [selectedFoods, setSelectedFoods] = useState<FoodEntry[]>([]);
   const [mealType, setMealType] = useState<typeof MEAL_TYPES[number]>('breakfast');
   const [notes, setNotes] = useState('');
@@ -238,6 +239,7 @@ export const FoodLogger = () => {
     try {
       const results = await analyzeFoodWithAI(searchQuery);
       setSearchResults(results);
+      setHasSearched(true);
     } catch (error) {
       console.error('Search error:', error);
       setError(error instanceof Error ? error.message : 'Failed to search for food. Please try again.');
@@ -255,6 +257,7 @@ export const FoodLogger = () => {
     }]);
     setSearchResults([]);
     setSearchQuery('');
+    setHasSearched(false);
   };
 
   const removeFood = (index: number) => {
@@ -610,6 +613,7 @@ export const FoodLogger = () => {
             placeholder="What did you eat?"
             className="input-field flex-1"
             disabled={chatLoading}
+            autoFocus
           />
           <button onClick={sendChat} disabled={chatLoading || !chatInput.trim()} className="btn-primary flex items-center gap-1">
             <Send className="w-4 h-4" />
@@ -663,6 +667,7 @@ export const FoodLogger = () => {
             onKeyDown={(e) => e.key === 'Enter' && !searching && handleSearch()}
             placeholder="e.g., dosa, dal, roti, paneer tikka..."
             className="input-field flex-1"
+            aria-label="Search Indian foods"
           />
           <button
             onClick={handleSearch}
@@ -709,8 +714,7 @@ export const FoodLogger = () => {
         {/* Search Results */}
         {searchResults.length > 0 && (
           <div className="mt-4 space-y-2">
-            <h3 className="font-medium text-gray-700">Search Results:</h3>
-            {searchResults.map((food) => (
+            <h3 className="font-medium text-gray-700">Search Results:</h3>            {searchResults.map((food) => (
               <div
                 key={food.id}
                 className="flex items-center justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -727,12 +731,21 @@ export const FoodLogger = () => {
                 <button
                   onClick={() => addFood(food)}
                   className="btn-primary text-sm shrink-0"
+                  aria-label={`Add ${food.name}`}
                 >
                   <Plus className="inline w-4 h-4" />
                   Add
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Empty state when a search returned no matches */}
+        {!searching && hasSearched && searchResults.length === 0 && (
+          <div className="mt-4 text-center py-8 text-gray-500">
+            <Search className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <p className="text-sm">No foods found. Try a different name or describe the dish.</p>
           </div>
         )}
       </div>
@@ -765,6 +778,7 @@ export const FoodLogger = () => {
                           onChange={(e) => updateFoodCalories(index, parseFloat(e.target.value) || 0)}
                           className="w-16 px-1.5 py-0.5 border border-gray-300 rounded text-sm"
                           title="Calories per unit — edit if the estimate looks off"
+                          aria-label={`Calories per unit for ${entry.food.name}`}
                         />
                         <span>cal each</span>
                       </>
@@ -780,12 +794,14 @@ export const FoodLogger = () => {
                     onChange={(e) => updateQuantity(index, parseFloat(e.target.value) || 1, entry.unit)}
                     className="w-20 px-2 py-2 border border-gray-300 rounded"
                     disabled={reestimatingIndex === index}
+                    aria-label={`Quantity of ${entry.food.name}`}
                   />
                   <select
                     value={entry.unit}
                     onChange={(e) => changeFoodUnit(index, e.target.value as typeof QUANTITY_UNITS[number])}
                     className="flex-1 sm:flex-none px-2 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
                     disabled={reestimatingIndex === index}
+                    aria-label={`Unit for ${entry.food.name}`}
                   >
                     {QUANTITY_UNITS.map((unit) => (
                       <option key={unit} value={unit}>{unit}</option>
@@ -882,6 +898,7 @@ export const FoodLogger = () => {
                       onClick={() => startEditMeal(meal)}
                       disabled={loading || editingMealId !== null}
                       className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                      aria-label={`Edit ${meal.mealType.replace('-', ' ')}`}
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
@@ -889,6 +906,7 @@ export const FoodLogger = () => {
                       onClick={() => handleDeleteMeal(meal.id)}
                       disabled={loading}
                       className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                      aria-label={`Delete ${meal.mealType.replace('-', ' ')}`}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

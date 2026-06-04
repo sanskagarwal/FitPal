@@ -9,6 +9,7 @@ export const Recipes = () => {
   const { user } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [preferences, setPreferences] = useState('');
   const [dietPreference, setDietPreference] = useState<'vegetarian' | 'eggetarian' | 'non-vegetarian'>(
     user?.profile.dietPreference || 'vegetarian'
@@ -24,6 +25,7 @@ export const Recipes = () => {
       const goals = `Target: ${user.profile.goals.targetWeight}kg, ${user.profile.goals.targetCalories} cal/day`;
       const results = await getRecipeSuggestions(preferences, goals, [], dietPreference);
       setRecipes(results);
+      setHasSearched(true);
     } catch (error) {
       console.error('Error loading recipes:', error);
       setError(error instanceof Error ? error.message : 'Failed to load recipes. Please try again.');
@@ -59,6 +61,8 @@ export const Recipes = () => {
             onKeyDown={(e) => e.key === 'Enter' && !loading && loadRecipes()}
             placeholder="e.g., high protein, low carb, quick to make..."
             className="input-field flex-1"
+            aria-label="Recipe preferences"
+            autoFocus
           />
           <button
             onClick={loadRecipes}
@@ -173,6 +177,14 @@ export const Recipes = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && hasSearched && recipes.length === 0 && (
+        <div className="card text-center py-12">
+          <ChefHat className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <h2 className="text-lg font-semibold text-gray-700">No recipes found</h2>
+          <p className="text-sm text-gray-500">Try different preferences or a broader description.</p>
         </div>
       )}
     </div>

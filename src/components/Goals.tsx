@@ -161,6 +161,8 @@ export const Goals = () => {
               <input
                 type="number"
                 step="0.1"
+                min="20"
+                max="500"
                 value={formData.targetWeight}
                 onChange={(e) => setFormData({ ...formData, targetWeight: parseFloat(e.target.value) })}
                 className="input-field"
@@ -177,6 +179,7 @@ export const Goals = () => {
                 value={formData.weightLossRate}
                 onChange={(e) => setFormData({ ...formData, weightLossRate: parseFloat(e.target.value) })}
                 className="input-field"
+                aria-label="Weight loss rate per week"
               >
                 <option value="0.25">0.25 kg/week (Slow & Steady)</option>
                 <option value="0.5">0.5 kg/week (Moderate)</option>
@@ -232,6 +235,8 @@ export const Goals = () => {
             </label>
             <input
               type="number"
+              min="800"
+              max="6000"
               value={formData.targetCalories}
               onChange={(e) => setFormData({ ...formData, targetCalories: parseInt(e.target.value) })}
               className="input-field"
@@ -248,6 +253,8 @@ export const Goals = () => {
               </label>
               <input
                 type="number"
+                min="0"
+                max="500"
                 value={formData.targetProtein}
                 onChange={(e) => setFormData({ ...formData, targetProtein: parseInt(e.target.value) })}
                 className="input-field"
@@ -262,6 +269,8 @@ export const Goals = () => {
               </label>
               <input
                 type="number"
+                min="0"
+                max="1000"
                 value={formData.targetCarbs}
                 onChange={(e) => setFormData({ ...formData, targetCarbs: parseInt(e.target.value) })}
                 className="input-field"
@@ -276,6 +285,8 @@ export const Goals = () => {
               </label>
               <input
                 type="number"
+                min="0"
+                max="500"
                 value={formData.targetFats}
                 onChange={(e) => setFormData({ ...formData, targetFats: parseInt(e.target.value) })}
                 className="input-field"
@@ -293,6 +304,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Fiber (g)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetFiber}
                   onChange={(e) => setFormData({ ...formData, targetFiber: parseInt(e.target.value) })}
                   className="input-field text-sm"
@@ -302,6 +314,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Vitamin A (mcg)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetVitaminA}
                   onChange={(e) => setFormData({ ...formData, targetVitaminA: parseInt(e.target.value) })}
                   className="input-field text-sm"
@@ -311,6 +324,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Vitamin C (mg)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetVitaminC}
                   onChange={(e) => setFormData({ ...formData, targetVitaminC: parseInt(e.target.value) })}
                   className="input-field text-sm"
@@ -320,6 +334,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Vitamin D (mcg)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetVitaminD}
                   onChange={(e) => setFormData({ ...formData, targetVitaminD: parseInt(e.target.value) })}
                   className="input-field text-sm"
@@ -329,6 +344,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Calcium (mg)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetCalcium}
                   onChange={(e) => setFormData({ ...formData, targetCalcium: parseInt(e.target.value) })}
                   className="input-field text-sm"
@@ -338,6 +354,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Iron (mg)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetIron}
                   onChange={(e) => setFormData({ ...formData, targetIron: parseInt(e.target.value) })}
                   className="input-field text-sm"
@@ -347,6 +364,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Magnesium (mg)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetMagnesium}
                   onChange={(e) => setFormData({ ...formData, targetMagnesium: parseInt(e.target.value) })}
                   className="input-field text-sm"
@@ -356,6 +374,7 @@ export const Goals = () => {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Potassium (mg)</label>
                 <input
                   type="number"
+                  min="0"
                   value={formData.targetPotassium}
                   onChange={(e) => setFormData({ ...formData, targetPotassium: parseInt(e.target.value) })}
                   className="input-field text-sm"

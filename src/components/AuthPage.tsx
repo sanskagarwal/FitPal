@@ -198,6 +198,7 @@ export const AuthPage = () => {
                     value={formData.gender}
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
                     className="input-field"
+                    aria-label="Gender"
                     required
                   >
                     <option value="male">Male</option>
@@ -210,6 +211,9 @@ export const AuthPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="number"
+                  min="100"
+                  max="250"
+                  step="1"
                   placeholder="Height (cm)"
                   value={formData.height}
                   onChange={(e) => setFormData({ ...formData, height: e.target.value })}
@@ -218,6 +222,9 @@ export const AuthPage = () => {
                 />
                 <input
                   type="number"
+                  min="20"
+                  max="500"
+                  step="0.1"
                   placeholder="Current Weight (kg)"
                   value={formData.currentWeight}
                   onChange={(e) => setFormData({ ...formData, currentWeight: e.target.value })}
@@ -230,6 +237,7 @@ export const AuthPage = () => {
                 value={formData.activityLevel}
                 onChange={(e) => setFormData({ ...formData, activityLevel: e.target.value as any })}
                 className="input-field"
+                aria-label="Activity level"
                 required
               >
                 <option value="sedentary">Sedentary (little/no exercise)</option>

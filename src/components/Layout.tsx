@@ -20,7 +20,6 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
     { id: 'weight', label: 'Weight', icon: Scale },
     { id: 'goals', label: 'Goals', icon: Target },
     { id: 'recipes', label: 'Recipes', icon: BookOpen },
-    { id: 'profile', label: 'Profile', icon: UserCircle },
   ];
 
   return (
@@ -54,11 +53,19 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
             })}
           </nav>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
-            </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onNavigate('profile')}
+              className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
+                currentPage === 'profile'
+                  ? 'bg-primary-100 text-primary-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              title="View profile"
+            >
+              <UserCircle className="w-5 h-5" />
+              <span className="text-sm font-medium">{user?.name}</span>
+            </button>
             <button
               onClick={logout}
               className="hidden md:flex items-center gap-2 text-gray-600 hover:text-red-600"
@@ -88,10 +95,6 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
             className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
           >
             <nav className="p-4 space-y-2">
-              <div className="px-4 pb-2 mb-1 border-b border-gray-100">
-                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
-              </div>
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -112,6 +115,20 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                   </button>
                 );
               })}
+              <button
+                onClick={() => {
+                  onNavigate('profile');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
+                  currentPage === 'profile'
+                    ? 'bg-primary-100 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <UserCircle className="w-4 h-4" />
+                {user?.name || 'Profile'}
+              </button>
               <button
                 onClick={logout}
                 className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg"

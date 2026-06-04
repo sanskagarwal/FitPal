@@ -117,6 +117,7 @@ export const Profile = () => {
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' | 'other' })}
                 className="input-field"
+                aria-label="Gender"
                 required
               >
                 <option value="male">Male</option>
@@ -138,6 +139,7 @@ export const Profile = () => {
                 required
                 min="100"
                 max="250"
+                step="1"
               />
             </div>
           </div>
@@ -152,6 +154,7 @@ export const Profile = () => {
               value={formData.activityLevel}
               onChange={(e) => setFormData({ ...formData, activityLevel: e.target.value as any })}
               className="input-field"
+              aria-label="Activity level"
               required
             >
               <option value="sedentary">Sedentary (Little or no exercise)</option>
@@ -175,6 +178,7 @@ export const Profile = () => {
               value={formData.dietPreference}
               onChange={(e) => setFormData({ ...formData, dietPreference: e.target.value as any })}
               className="input-field"
+              aria-label="Dietary preference"
               required
             >
               <option value="vegetarian">Vegetarian (no meat, fish, or eggs)</option>
