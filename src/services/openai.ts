@@ -323,6 +323,13 @@ Age: ${age}
 Gender: ${gender}
 Activity Level: ${activityLevel}
 Target Weight: ${targetWeight}kg
+Goal direction: ${
+        targetWeight < currentWeight
+          ? 'weight loss (apply a moderate calorie deficit)'
+          : targetWeight > currentWeight
+          ? 'weight gain (apply a moderate calorie surplus)'
+          : 'weight maintenance (no deficit or surplus)'
+      }
 
 Provide goals in JSON format:
 {
@@ -334,7 +341,7 @@ Provide goals in JSON format:
   "explanation": "brief explanation of why these goals are appropriate"
 }
 
-Use standard nutritional formulas (Harris-Benedict for BMR, appropriate macronutrient ratios for Indian diet).`
+First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-St Jeor or Harris-Benedict) times an activity factor. Then adjust the calorie target toward the target weight: apply a safe deficit of about 300-500 kcal/day for weight loss, or a surplus of about 250-500 kcal/day for weight gain, and no adjustment for maintenance. Never recommend fewer than 1200 kcal/day for women or 1500 kcal/day for men. Keep protein high enough to preserve muscle during a deficit, and use macronutrient ratios appropriate for an Indian diet. In the explanation, state the maintenance calories, the deficit/surplus applied, and why.`
     }
   ];
 
@@ -356,7 +363,23 @@ Use standard nutritional formulas (Harris-Benedict for BMR, appropriate macronut
       'very-active': 1.9
     }[activityLevel] || 1.5;
 
-    const calories = Math.round(bmr * activityMultiplier);
+    const maintenanceCalories = Math.round(bmr * activityMultiplier);
+
+    // Adjust toward target weight with a safe deficit/surplus.
+    let calories = maintenanceCalories;
+    let adjustmentNote = 'no adjustment (maintenance)';
+    if (targetWeight < currentWeight) {
+      calories = maintenanceCalories - 500; // ~0.5 kg/week loss
+      adjustmentNote = 'a 500 kcal/day deficit for weight loss';
+    } else if (targetWeight > currentWeight) {
+      calories = maintenanceCalories + 300; // lean gain
+      adjustmentNote = 'a 300 kcal/day surplus for weight gain';
+    }
+
+    // Enforce a safe minimum floor.
+    const minCalories = gender === 'male' ? 1500 : 1200;
+    calories = Math.max(minCalories, calories);
+
     const protein = Math.round(currentWeight * 1.6);
     const fats = Math.round((calories * 0.25) / 9);
     const carbs = Math.round((calories - (protein * 4) - (fats * 9)) / 4);
@@ -368,7 +391,7 @@ Use standard nutritional formulas (Harris-Benedict for BMR, appropriate macronut
       carbs,
       fats,
       fiber,
-      explanation: 'These goals are calculated based on your BMR and activity level.'
+      explanation: `Maintenance is about ${maintenanceCalories} kcal/day (BMR × activity). Applied ${adjustmentNote} to move toward your target weight of ${targetWeight}kg.`
     };
   }
 }

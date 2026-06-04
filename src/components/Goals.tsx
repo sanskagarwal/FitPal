@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Target, TrendingUp, Sparkles } from 'lucide-react';
 import { suggestGoals } from '../services/openai';
 import { calculateAge } from '../utils/helpers';
+import { getWeightsByUser } from '../utils/db';
 
 export const Goals = () => {
   const { user, updateGoals } = useAuth();
@@ -26,9 +27,24 @@ export const Goals = () => {
   const [gettingSuggestion, setGettingSuggestion] = useState(false);
   const [message, setMessage] = useState('');
   const [aiExplanation, setAiExplanation] = useState('');
+  const [currentWeight, setCurrentWeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getWeightsByUser(user.id).then((weights) => {
+      if (weights.length > 0) {
+        setCurrentWeight(weights[0].weight);
+      }
+    });
+  }, [user]);
 
   const handleGetAISuggestions = async () => {
     if (!user) return;
+
+    if (currentWeight === null) {
+      setMessage('Please log your current weight in the Weight Tracker first.');
+      return;
+    }
 
     setGettingSuggestion(true);
     setMessage('');
@@ -37,7 +53,7 @@ export const Goals = () => {
     try {
       const suggestions = await suggestGoals(
         user.profile.height,
-        user.profile.goals.targetWeight,
+        currentWeight,
         calculateAge(user.profile.dateOfBirth),
         user.profile.gender,
         user.profile.activityLevel,
@@ -65,13 +81,19 @@ export const Goals = () => {
   const calculateCaloriesFromWeightLoss = () => {
     if (!user) return;
 
+    if (currentWeight === null) {
+      setMessage('Please log your current weight in the Weight Tracker first.');
+      return;
+    }
+
     const weeklyDeficit = formData.weightLossRate * 7700;
     const dailyDeficit = weeklyDeficit / 7;
 
     const profile = user.profile;
+    const age = calculateAge(profile.dateOfBirth);
     const bmr = profile.gender === 'male'
-      ? 10 * formData.targetWeight + 6.25 * profile.height - 5 * profile.age + 5
-      : 10 * formData.targetWeight + 6.25 * profile.height - 5 * profile.age - 161;
+      ? 10 * currentWeight + 6.25 * profile.height - 5 * age + 5
+      : 10 * currentWeight + 6.25 * profile.height - 5 * age - 161;
 
     const activityMultiplier = {
       'sedentary': 1.2,
@@ -84,7 +106,7 @@ export const Goals = () => {
     const maintenanceCalories = bmr * activityMultiplier;
     const targetCalories = Math.round(maintenanceCalories - dailyDeficit);
 
-    const protein = Math.round(formData.targetWeight * 1.8);
+    const protein = Math.round(currentWeight * 1.8);
     const fats = Math.round((targetCalories * 0.25) / 9);
     const carbs = Math.round((targetCalories - (protein * 4) - (fats * 9)) / 4);
 
