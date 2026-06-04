@@ -6,6 +6,7 @@ import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
 import { generateId, getStartOfDay, getEndOfDay } from '../utils/helpers';
 import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check } from 'lucide-react';
 import { Toast, ToastType } from './Toast';
+import { Spinner } from './Spinner';
 
 const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
 const QUANTITY_UNITS = ['serving', 'katori', 'bowl', 'plate', 'cup', 'glass', 'tbsp', 'tsp', 'piece', 'slice', 'gram', 'ml', 'oz'] as const;
@@ -385,7 +386,8 @@ export const FoodLogger = () => {
             ))}
             {chatLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm">
+                <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
+                  <Spinner className="w-4 h-4" />
                   Thinking…
                 </div>
               </div>
@@ -499,7 +501,10 @@ export const FoodLogger = () => {
             className="btn-primary"
           >
             {searching ? (
-              'Searching...'
+              <span className="flex items-center gap-2">
+                <Spinner className="w-4 h-4" />
+                Searching...
+              </span>
             ) : (
               <>
                 <Search className="inline w-4 h-4 mr-2" />
@@ -508,6 +513,21 @@ export const FoodLogger = () => {
             )}
           </button>
         </div>
+
+        {/* Loading skeleton */}
+        {searching && (
+          <div className="mt-4 space-y-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg animate-pulse">
+                <div className="space-y-2 flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-1/4" />
+                </div>
+                <div className="h-8 w-16 bg-gray-200 rounded" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (

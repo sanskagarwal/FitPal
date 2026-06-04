@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Ruler, Calendar, Activity, Users } from 'lucide-react';
+import { User, Mail, Ruler, Calendar, Activity, Users, Salad } from 'lucide-react';
 import { calculateAge } from '../utils/helpers';
 
 export const Profile = () => {
@@ -12,6 +12,7 @@ export const Profile = () => {
     gender: user?.profile.gender || 'male',
     height: user?.profile.height || 0,
     activityLevel: user?.profile.activityLevel || 'moderate',
+    dietPreference: user?.profile.dietPreference || 'vegetarian',
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -27,6 +28,7 @@ export const Profile = () => {
         gender: formData.gender as 'male' | 'female' | 'other',
         height: formData.height,
         activityLevel: formData.activityLevel as any,
+        dietPreference: formData.dietPreference as 'vegetarian' | 'eggetarian' | 'non-vegetarian',
         goals: user!.profile.goals // Keep existing goals
       });
       setMessage('Profile updated successfully!');
@@ -160,6 +162,27 @@ export const Profile = () => {
             </select>
             <p className="text-xs text-gray-600 mt-1">
               This affects your daily calorie calculations
+            </p>
+          </div>
+
+          {/* Diet Preference */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Salad className="w-4 h-4" />
+              Dietary Preference
+            </label>
+            <select
+              value={formData.dietPreference}
+              onChange={(e) => setFormData({ ...formData, dietPreference: e.target.value as any })}
+              className="input-field"
+              required
+            >
+              <option value="vegetarian">Vegetarian (no meat, fish, or eggs)</option>
+              <option value="eggetarian">Eggetarian (vegetarian + eggs)</option>
+              <option value="non-vegetarian">Non-vegetarian (meat, fish, eggs)</option>
+            </select>
+            <p className="text-xs text-gray-600 mt-1">
+              Used for AI meal and recipe suggestions
             </p>
           </div>
 

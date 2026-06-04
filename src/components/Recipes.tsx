@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Recipe } from '../types';
 import { getRecipeSuggestions } from '../services/openai';
 import { ChefHat, Clock, Users } from 'lucide-react';
+import { Spinner } from './Spinner';
 
 export const Recipes = () => {
   const { user } = useAuth();
@@ -48,8 +49,9 @@ export const Recipes = () => {
           <button
             onClick={loadRecipes}
             disabled={loading}
-            className="btn-primary"
+            className="btn-primary flex items-center gap-2"
           >
+            {loading && <Spinner className="w-4 h-4" />}
             {loading ? 'Loading...' : 'Get Recipes'}
           </button>
         </div>
@@ -65,6 +67,31 @@ export const Recipes = () => {
           </div>
         )}
       </div>
+
+      {loading && recipes.length === 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="card animate-pulse">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded bg-gray-200 flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  <div className="h-3 bg-gray-200 rounded w-full" />
+                </div>
+              </div>
+              <div className="flex gap-4 mb-4">
+                <div className="h-3 bg-gray-200 rounded w-20" />
+                <div className="h-3 bg-gray-200 rounded w-24" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-full" />
+                <div className="h-3 bg-gray-200 rounded w-5/6" />
+                <div className="h-3 bg-gray-200 rounded w-4/6" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {recipes.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

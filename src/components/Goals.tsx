@@ -4,6 +4,7 @@ import { Target, TrendingUp, Sparkles } from 'lucide-react';
 import { suggestGoals } from '../services/openai';
 import { calculateAge } from '../utils/helpers';
 import { getWeightsByUser } from '../utils/db';
+import { Spinner, LoadingBlock } from './Spinner';
 
 export const Goals = () => {
   const { user, updateGoals } = useAuth();
@@ -203,17 +204,21 @@ export const Goals = () => {
                 type="button"
                 onClick={handleGetAISuggestions}
                 disabled={gettingSuggestion}
-                className="btn-primary bg-purple-600 hover:bg-purple-700"
+                className="btn-primary bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
               >
+                {gettingSuggestion && <Spinner className="w-4 h-4" />}
                 {gettingSuggestion ? 'Getting Suggestions...' : 'Get AI Suggestions'}
               </button>
             </div>
-            {aiExplanation && (
+            {gettingSuggestion ? (
+              <div className="bg-white p-3 rounded">
+                <LoadingBlock label="Crunching your profile and target to recommend goals…" />
+              </div>
+            ) : aiExplanation ? (
               <div className="bg-white p-3 rounded text-sm text-gray-700">
                 {aiExplanation}
               </div>
-            )}
-            {!aiExplanation && (
+            ) : (
               <p className="text-sm text-purple-700">
                 Get personalized nutrition goals based on your profile using AI
               </p>

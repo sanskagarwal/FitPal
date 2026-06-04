@@ -13,6 +13,7 @@ export interface UserProfile {
   gender: 'male' | 'female' | 'other';
   height: number; // in cm
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
+  dietPreference?: 'vegetarian' | 'eggetarian' | 'non-vegetarian';
   goals: UserGoals;
 }
 

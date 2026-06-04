@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp, Lightbulb, X } from 'lucide-react';
 import { suggestMeal, suggestFoodForNutrient } from '../services/openai';
 import ReactMarkdown from 'react-markdown';
+import { Spinner, LoadingBlock } from './Spinner';
 
 interface MealTypeStats {
   mealType: string;
@@ -492,12 +493,17 @@ export const Dashboard = () => {
           <button
             onClick={handleMealSuggestion}
             disabled={suggestingMeal}
-            className="btn-primary"
+            className="btn-primary flex items-center gap-2"
           >
+            {suggestingMeal && <Spinner className="w-4 h-4" />}
             {suggestingMeal ? 'Generating...' : 'Get Suggestion'}
           </button>
         </div>
-        {mealSuggestion ? (
+        {suggestingMeal ? (
+          <div className="bg-white p-4 rounded-lg">
+            <LoadingBlock label="Building a meal around your remaining goals…" />
+          </div>
+        ) : mealSuggestion ? (
           <div className="bg-white p-4 rounded-lg">
             <div className="prose prose-sm max-w-none">
               <ReactMarkdown
@@ -673,6 +679,18 @@ export const Dashboard = () => {
       </div>
 
       {/* Nutrient Suggestion Display */}
+      {suggestingNutrient && !nutrientSuggestion && (
+        <div className="card bg-gradient-to-br from-blue-50 to-indigo-100">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb className="w-6 h-6 text-blue-600" />
+            <h3 className="text-lg font-semibold">Finding food suggestions…</h3>
+          </div>
+          <div className="bg-white p-4 rounded-lg">
+            <LoadingBlock label="Looking up Indian foods rich in this nutrient…" />
+          </div>
+        </div>
+      )}
+
       {nutrientSuggestion && (
         <div className="card bg-gradient-to-br from-blue-50 to-indigo-100">
           <div className="flex items-center justify-between mb-3">

@@ -147,8 +147,18 @@ If the food is misspelled or incomplete, suggest the most likely Indian foods. R
 export async function getRecipeSuggestions(
   preferences: string,
   goals: string,
-  recentFoods: string[]
+  recentFoods: string[],
+  dietPreference?: string
 ): Promise<Recipe[]> {
+  const dietLine = dietPreference
+    ? `\nDietary type: ${dietPreference}. ${
+        dietPreference === 'vegetarian'
+          ? 'Only suggest pure vegetarian recipes (no meat, fish, or eggs).'
+          : dietPreference === 'eggetarian'
+          ? 'Vegetarian recipes plus eggs are allowed, but no meat or fish.'
+          : 'Non-vegetarian recipes are allowed (meat, fish, eggs).'
+      }`
+    : '';
   const messages: OpenAIMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
@@ -156,7 +166,7 @@ export async function getRecipeSuggestions(
       content: `Suggest 3 healthy Indian recipes based on:
 Preferences: ${preferences}
 Goals: ${goals}
-Recent foods: ${recentFoods.join(', ')}
+Recent foods: ${recentFoods.join(', ')}${dietLine}
 
 Return JSON array:
 [{
@@ -229,8 +239,18 @@ export async function suggestMeal(
   remainingCarbs: number,
   remainingFats: number,
   remainingFiber: number,
-  mealType: string
+  mealType: string,
+  dietPreference?: string
 ): Promise<string> {
+  const dietLine = dietPreference
+    ? `\nDietary type: ${dietPreference}. ${
+        dietPreference === 'vegetarian'
+          ? 'Only suggest pure vegetarian foods (no meat, fish, or eggs).'
+          : dietPreference === 'eggetarian'
+          ? 'Vegetarian foods plus eggs are allowed, but no meat or fish.'
+          : 'Non-vegetarian foods are allowed (meat, fish, eggs).'
+      }`
+    : '';
   const messages: OpenAIMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
@@ -240,7 +260,7 @@ Calories: ${remainingCalories} kcal
 Protein: ${remainingProtein}g
 Carbs: ${remainingCarbs}g
 Fats: ${remainingFats}g
-Fiber: ${remainingFiber}g
+Fiber: ${remainingFiber}g${dietLine}
 
 IMPORTANT: Respond in **MARKDOWN format** with clear structure.
 
