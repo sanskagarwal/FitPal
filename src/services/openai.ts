@@ -47,7 +47,7 @@ function parseJSONResponse(response: string): any {
   }
 }
 
-async function callAzureOpenAI(messages: OpenAIMessage[]): Promise<string> {
+async function callAzureOpenAI(messages: OpenAIMessage[], temperature = 0.7): Promise<string> {
   if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_KEY) {
     throw new Error('Azure OpenAI credentials not configured. Please set VITE_AZURE_OPENAI_ENDPOINT and VITE_AZURE_OPENAI_KEY in your .env file.');
   }
@@ -60,7 +60,7 @@ async function callAzureOpenAI(messages: OpenAIMessage[]): Promise<string> {
     },
     body: JSON.stringify({
       messages,
-      temperature: 0.7,
+      temperature,
       max_tokens: 2000,
     }),
   });
@@ -122,7 +122,7 @@ If the food is misspelled or incomplete, suggest the most likely Indian foods. R
   ];
 
   try {
-    const response = await callAzureOpenAI(messages);
+    const response = await callAzureOpenAI(messages, 0.2);
     const foods = parseJSONResponse(response);
     
     if (!Array.isArray(foods)) {
@@ -552,7 +552,8 @@ Behaviour:
    - "slice" for bread/cake; otherwise "gram"/"ml"/"serving"/"cup"/"oz"
 2. Ask SHORT clarifying questions ONLY when something important is genuinely ambiguous (unclear quantity, unknown food, or you cannot reasonably infer the meal type). Do not over-ask — make sensible assumptions for obvious cases and state them.
 3. Infer mealType from the food or the stated time when possible (e.g. dosa in the morning -> breakfast).
-4. Provide nutrients for exactly ONE unit of each food (not the total).
+4. CRITICAL — the "nutrients" object MUST be for exactly ONE single unit of the food, NEVER for the total amount the user ate. The app multiplies these per-unit values by "unitQuantity" itself, so if you pre-multiply you will DOUBLE-COUNT. Set unitQuantity to how many units the user had, and keep nutrients for just one unit.
+5. Keep every nutrient realistic for a typical Indian home portion of ONE unit. Base estimates on the food's actual ingredients and standard portion weight, and stay within plausible ranges for that dish. Do not overstate calories, protein, carbs, fats or any micronutrient — when unsure, prefer a sensible mid-range value over an extreme one.
 
 ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
 {
@@ -593,7 +594,7 @@ export async function chatLogMeal(
     ...history,
   ];
 
-  const response = await callAzureOpenAI(messages);
+  const response = await callAzureOpenAI(messages, 0.2);
   const parsed = parseJSONResponse(response) as MealChatResult;
 
   if (!parsed || (parsed.status !== 'need_info' && parsed.status !== 'ready')) {
