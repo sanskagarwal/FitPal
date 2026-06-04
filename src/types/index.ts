@@ -49,6 +49,7 @@ export interface Food {
   nutrients: NutrientInfo;
   isIndian: boolean;
   category?: string; // e.g., 'breakfast', 'snacks', 'dinner'
+  confidence?: 'high' | 'medium' | 'low'; // AI's confidence in the nutrition values
 }
 
 export interface NutrientInfo {

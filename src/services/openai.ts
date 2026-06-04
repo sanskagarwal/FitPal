@@ -102,6 +102,7 @@ const FoodAnalysisSchema = z.object({
       servingSize: z.string(),
       isIndian: z.boolean(),
       category: z.string(),
+      confidence: z.enum(['high', 'medium', 'low']),
       nutrients: NutrientsSchema,
     })
   ),
@@ -120,7 +121,7 @@ For each food, set "servingSize" using the unit Indians naturally use, including
 - "glass" for milk, lassi, juice (e.g., "1 glass (~250ml)")
 - "bowl"/"plate" for larger portions, "tbsp"/"tsp" for ghee, chutney, pickle
 
-"category" should be one of breakfast/lunch/dinner/snack. The "nutrients" MUST correspond to exactly ONE of that serving unit. If the query is misspelled or incomplete, suggest the most likely Indian foods.`,
+"category" should be one of breakfast/lunch/dinner/snack. The "nutrients" MUST correspond to exactly ONE of that serving unit. Set "confidence" to how sure you are about the nutrition values: "high" for well-known dishes with reliable, standard nutrition; "medium" when you can reasonably estimate; "low" when the food is unusual, ambiguous, or you are largely guessing. If the query is misspelled or incomplete, suggest the most likely Indian foods.`,
     },
   ];
 
@@ -132,6 +133,7 @@ For each food, set "servingSize" using the unit Indians naturally use, including
       servingSize: food.servingSize,
       isIndian: food.isIndian ?? true,
       category: food.category,
+      confidence: food.confidence,
       nutrients: food.nutrients as NutrientInfo,
     }));
   } catch (error) {
@@ -139,6 +141,36 @@ For each food, set "servingSize" using the unit Indians naturally use, including
     // Throw the error to show it to the user
     throw error;
   }
+}
+
+// Re-estimate per-unit nutrition for a known food when the user changes its unit
+// (e.g. "bowl" -> "gram" -> "piece"). Returns nutrients for exactly ONE of the new unit.
+const ReestimateSchema = z.object({
+  servingSize: z.string(),
+  confidence: z.enum(['high', 'medium', 'low']),
+  nutrients: NutrientsSchema,
+});
+
+export async function reestimateNutrientsForUnit(
+  foodName: string,
+  unit: string
+): Promise<{ servingSize: string; confidence: 'high' | 'medium' | 'low'; nutrients: NutrientInfo }> {
+  const messages: OpenAIMessage[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: `For the Indian food "${foodName}", estimate the nutrition for exactly ONE "${unit}" of it.
+
+"servingSize" must describe one ${unit} with an approximate gram/ml weight in parentheses (e.g. "1 ${unit} (~150g)"). The "nutrients" MUST correspond to exactly ONE ${unit}, not any other portion. Set "confidence" to "high" for well-known dishes with reliable nutrition, "medium" when you can reasonably estimate, or "low" when you are largely guessing.`,
+    },
+  ];
+
+  const result = await completeStructured(messages, ReestimateSchema, 'reestimate_unit', 0.2);
+  return {
+    servingSize: result.servingSize,
+    confidence: result.confidence,
+    nutrients: result.nutrients as NutrientInfo,
+  };
 }
 
 const RecipesSchema = z.object({
@@ -510,20 +542,41 @@ export interface ParsedMealFood {
   unitQuantity: number; // how many of `unit` the user had
   isIndian: boolean;
   category?: string;
+  confidence?: 'high' | 'medium' | 'low'; // how sure the model is about the nutrition
   nutrients: NutrientInfo; // per ONE unit
 }
 
+// What the assistant wants to do with the meal it has understood.
+export type MealChatAction = 'log' | 'update' | 'delete';
+
 export interface MealChatResult {
   status: 'need_info' | 'ready';
+  action: MealChatAction; // log a new meal, edit an existing one, or delete one
+  targetMealId?: string | null; // id of the existing meal for update/delete
   message: string; // assistant's reply: a clarifying question or a confirmation summary
   mealType?: 'breakfast' | 'morning-snack' | 'lunch' | 'evening-snack' | 'dinner';
   time?: string | null; // HH:mm if known
   foods: ParsedMealFood[];
 }
 
+// Compact summary of an already-logged meal, given to the assistant so it can
+// reference, edit or delete existing meals by id.
+export interface LoggedMealSummary {
+  id: string;
+  mealType: string;
+  time?: string | null; // HH:mm if known
+  foods: { name: string; unitQuantity: number; unit: string }[];
+}
+
 const MEAL_CHAT_SYSTEM_PROMPT = `You are FitPal's agentic meal-logging assistant, an expert nutritionist specializing in Indian cuisine.
 
-The user describes, in natural language, what they ate and (optionally) when. Your job is to turn that into a precise, logged meal.
+The user describes, in natural language, what they ate and (optionally) when. You can LOG a new meal, EDIT (update) a meal that is already logged today, or DELETE a meal that is already logged today. Your job is to turn the conversation into a precise action.
+
+Choosing the action:
+- "log" — the user is reporting something they ate that is not already logged. Build the list of foods for the new meal.
+- "update" — the user wants to change a meal that already exists (e.g. "actually I had 3 rotis not 2", "add a glass of milk to my breakfast", "change lunch to non-veg"). Set "targetMealId" to the id of the meal being changed and return the COMPLETE new list of foods for that meal (the full corrected meal, not just the delta), since these foods REPLACE the existing ones.
+- "delete" — the user wants to remove a logged meal entirely (e.g. "delete my lunch", "remove the snack"). Set "targetMealId" and leave "foods" empty.
+You will be told which meals are already logged today, each with an id, meal type, time and foods. Match the user's request to the right meal by its type, time or foods. If you genuinely cannot tell which meal they mean, ask.
 
 Behaviour:
 1. Extract every food, its quantity, and the unit. Pick the unit Indians naturally use for each food:
@@ -532,15 +585,18 @@ Behaviour:
    - "glass" for milk, lassi, juice, buttermilk
    - "bowl"/"plate" for larger portions; "tbsp"/"tsp" for ghee, chutney, pickle, sugar
    - "slice" for bread/cake; otherwise "gram"/"ml"/"serving"/"cup"/"oz"
-2. Ask SHORT clarifying questions ONLY when something important is genuinely ambiguous (unclear quantity, unknown food, or you cannot reasonably infer the meal type). Do not over-ask — make sensible assumptions for obvious cases and state them.
+2. Ask SHORT clarifying questions ONLY when something important is genuinely ambiguous (unclear quantity, unknown food, which meal to edit, or you cannot reasonably infer the meal type). Do not over-ask — make sensible assumptions for obvious cases and state them.
 3. Infer mealType from the food or the stated time when possible (e.g. dosa in the morning -> breakfast).
 4. CRITICAL — the "nutrients" object MUST be for exactly ONE single unit of the food, NEVER for the total amount the user ate. The app multiplies these per-unit values by "unitQuantity" itself, so if you pre-multiply you will DOUBLE-COUNT. Set unitQuantity to how many units the user had, and keep nutrients for just one unit.
 5. Keep every nutrient realistic for a typical Indian home portion of ONE unit. Base estimates on the food's actual ingredients and standard portion weight, and stay within plausible ranges for that dish. Do not overstate calories, protein, carbs, fats or any micronutrient — when unsure, prefer a sensible mid-range value over an extreme one.
+6. Set "confidence" per food to how sure you are about its nutrition values: "high" for well-known dishes with reliable, standard nutrition; "medium" when you can reasonably estimate; "low" when the food is unusual, ambiguous, or you are largely guessing. Being honest with a "low" lets the user correct the calories.
 
 ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
 {
   "status": "need_info" | "ready",
-  "message": "If need_info: a short, friendly clarifying question. If ready: a one-line confirmation summary of what will be logged.",
+  "action": "log" | "update" | "delete",
+  "targetMealId": "id of the existing meal for update/delete, otherwise null",
+  "message": "If need_info: a short, friendly clarifying question. If ready: a one-line confirmation summary of what will be logged, updated or deleted.",
   "mealType": "breakfast" | "morning-snack" | "lunch" | "evening-snack" | "dinner" | null,
   "time": "HH:mm" or null,
   "foods": [
@@ -551,6 +607,7 @@ ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
       "unitQuantity": 2,
       "isIndian": true,
       "category": "lunch",
+      "confidence": "high" | "medium" | "low",
       "nutrients": {
         "calories": number, "protein": number, "carbs": number, "fats": number,
         "fiber": number, "sugar": number, "sodium": number,
@@ -561,7 +618,7 @@ ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
   ]
 }
 
-When status is "need_info", you may still include any foods you have already understood (with your best-guess quantities) so the user sees progress, but set status to "need_info" until the open question is resolved. When everything needed is known, set status to "ready" and include the full list of foods.`;
+For "delete", "foods" must be an empty array. For "update", "foods" must contain the full corrected list of foods for that meal. When status is "need_info", you may still include any foods you have already understood (with your best-guess quantities) so the user sees progress, but set status to "need_info" until the open question is resolved. When everything needed is known, set status to "ready".`;
 
 const MEAL_UNITS = [
   'serving', 'katori', 'bowl', 'plate', 'cup', 'glass', 'tbsp', 'tsp', 'piece', 'slice', 'gram', 'ml', 'oz',
@@ -570,6 +627,8 @@ const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'din
 
 const MealChatSchema = z.object({
   status: z.enum(['need_info', 'ready']),
+  action: z.enum(['log', 'update', 'delete']),
+  targetMealId: z.string().nullable(),
   message: z.string(),
   mealType: z.enum(MEAL_TYPES).nullable(),
   time: z.string().nullable(),
@@ -581,21 +640,28 @@ const MealChatSchema = z.object({
       unitQuantity: z.number(),
       isIndian: z.boolean(),
       category: z.string().nullable(),
+      confidence: z.enum(['high', 'medium', 'low']),
       nutrients: NutrientsSchema,
     })
   ),
 });
 
 export async function chatLogMeal(
-  history: { role: 'user' | 'assistant'; content: string }[]
+  history: { role: 'user' | 'assistant'; content: string }[],
+  loggedMeals: LoggedMealSummary[] = []
 ): Promise<MealChatResult> {
   const now = new Date();
+  const mealsContext =
+    loggedMeals.length > 0
+      ? `Meals already logged today (you may update or delete these by their id):\n${JSON.stringify(loggedMeals)}`
+      : 'No meals are logged yet today. The user can only "log" new meals right now.';
   const messages: OpenAIMessage[] = [
     { role: 'system', content: MEAL_CHAT_SYSTEM_PROMPT },
     {
       role: 'system',
       content: `Current local time is ${now.toLocaleString()}. Use this to infer meal type/time when the user does not specify it.`,
     },
+    { role: 'system', content: mealsContext },
     ...history,
   ];
 
@@ -603,6 +669,8 @@ export async function chatLogMeal(
 
   return {
     status: parsed.status,
+    action: parsed.action,
+    targetMealId: parsed.targetMealId ?? null,
     message: parsed.message || '',
     mealType: parsed.mealType ?? undefined,
     time: parsed.time ?? null,
@@ -613,6 +681,7 @@ export async function chatLogMeal(
       unitQuantity: f.unitQuantity,
       isIndian: f.isIndian,
       category: f.category ?? undefined,
+      confidence: f.confidence,
       nutrients: f.nutrients as NutrientInfo,
     })),
   };

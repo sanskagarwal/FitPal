@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Food, MealEntry, FoodEntry, NutrientInfo } from '../types';
-import { analyzeFoodWithAI, chatLogMeal, ParsedMealFood, MealChatResult } from '../services/openai';
+import { analyzeFoodWithAI, chatLogMeal, reestimateNutrientsForUnit, ParsedMealFood, MealChatResult, LoggedMealSummary } from '../services/openai';
 import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
 import { generateId, getStartOfDay, getEndOfDay } from '../utils/helpers';
 import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check } from 'lucide-react';
@@ -21,6 +21,26 @@ const formatUnit = (unit: string, quantity: number): string => {
   return `${unit}s`;
 };
 
+// Format a Date as HH:mm for the AI meal context.
+const toHHmm = (d: Date): string =>
+  `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+// Small badge shown when the AI is not fully confident about a food's nutrition.
+const ConfidenceBadge = ({ confidence }: { confidence?: 'high' | 'medium' | 'low' }) => {
+  if (!confidence || confidence === 'high') return null;
+  const isLow = confidence === 'low';
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+        isLow ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'
+      }`}
+      title="The AI estimated these values. You can edit the calories."
+    >
+      ~estimated
+    </span>
+  );
+};
+
 export const FoodLogger = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +54,8 @@ export const FoodLogger = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  // Index of the selected food whose nutrition is being re-estimated after a unit change.
+  const [reestimatingIndex, setReestimatingIndex] = useState<number | null>(null);
 
   // Agentic AI meal logging
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -68,7 +90,7 @@ export const FoodLogger = () => {
 
   // ---- Agentic AI meal logging --------------------------------------------
 
-  const buildMealFromParsed = (result: MealChatResult): MealEntry | null => {
+  const buildMealFromParsed = (result: MealChatResult, existing?: MealEntry): MealEntry | null => {
     if (!user || result.foods.length === 0) return null;
 
     const foods: FoodEntry[] = result.foods.map((f: ParsedMealFood) => ({
@@ -79,6 +101,7 @@ export const FoodLogger = () => {
         nutrients: f.nutrients,
         isIndian: f.isIndian ?? true,
         category: f.category,
+        confidence: f.confidence,
       },
       // nutrients are per single unit, so the multiplier is the unit count
       quantity: f.unitQuantity,
@@ -111,21 +134,21 @@ export const FoodLogger = () => {
     );
 
     // Resolve the meal date/time
-    let date = new Date();
+    let date = existing ? new Date(existing.date) : new Date();
     if (result.time && /^\d{1,2}:\d{2}$/.test(result.time)) {
       const [h, m] = result.time.split(':').map(Number);
-      date = new Date();
+      date = new Date(date);
       date.setHours(h, m, 0, 0);
     }
 
     return {
-      id: generateId(),
+      id: existing ? existing.id : generateId(),
       userId: user.id,
       date,
-      mealType: result.mealType || 'breakfast',
+      mealType: result.mealType || existing?.mealType || 'breakfast',
       foods,
       totalNutrients,
-      notes: undefined,
+      notes: existing?.notes,
     };
   };
 
@@ -140,9 +163,22 @@ export const FoodLogger = () => {
     setProposedMeal(null);
 
     try {
-      const result = await chatLogMeal(newHistory);
+      const loggedMeals: LoggedMealSummary[] = todayMeals.map((m) => ({
+        id: m.id,
+        mealType: m.mealType,
+        time: toHHmm(new Date(m.date)),
+        foods: m.foods.map((fe) => ({
+          name: fe.food.name,
+          unitQuantity: fe.unitQuantity,
+          unit: fe.unit,
+        })),
+      }));
+      const result = await chatLogMeal(newHistory, loggedMeals);
       setChatMessages([...newHistory, { role: 'assistant', content: result.message }]);
-      if (result.status === 'ready' && result.foods.length > 0) {
+      const isActionable =
+        result.status === 'ready' &&
+        (result.action === 'delete' ? !!result.targetMealId : result.foods.length > 0);
+      if (isActionable) {
         setProposedMeal(result);
       }
     } catch (err) {
@@ -157,19 +193,31 @@ export const FoodLogger = () => {
   };
 
   const confirmChatMeal = async () => {
-    if (!proposedMeal) return;
-    const meal = buildMealFromParsed(proposedMeal);
-    if (!meal) return;
+    if (!proposedMeal || !user) return;
 
     setChatLoading(true);
     try {
-      await saveMeal(meal);
+      if (proposedMeal.action === 'delete') {
+        if (!proposedMeal.targetMealId) return;
+        await deleteMeal(proposedMeal.targetMealId, user.id);
+        setToast({ message: 'Meal deleted successfully!', type: 'success' });
+      } else if (proposedMeal.action === 'update' && proposedMeal.targetMealId) {
+        const existing = todayMeals.find((m) => m.id === proposedMeal.targetMealId);
+        const meal = buildMealFromParsed(proposedMeal, existing);
+        if (!meal) return;
+        await updateMeal(meal);
+        setToast({ message: 'Meal updated successfully!', type: 'success' });
+      } else {
+        const meal = buildMealFromParsed(proposedMeal);
+        if (!meal) return;
+        await saveMeal(meal);
+        setToast({ message: 'Meal logged successfully!', type: 'success' });
+      }
       await loadTodayMeals();
-      setToast({ message: 'Meal logged successfully!', type: 'success' });
       resetChat();
     } catch (err) {
-      console.error('Error saving meal:', err);
-      setToast({ message: 'Failed to log meal. Please try again.', type: 'error' });
+      console.error('Error applying meal action:', err);
+      setToast({ message: 'Failed to apply the change. Please try again.', type: 'error' });
     } finally {
       setChatLoading(false);
     }
@@ -220,6 +268,60 @@ export const FoodLogger = () => {
     // In a real app, you'd convert units to servings properly
     updated[index].quantity = unitQuantity;
     setSelectedFoods(updated);
+  };
+
+  // Changing the unit changes what "one unit" means, so ask the AI to re-estimate
+  // the per-unit nutrition for the new unit.
+  const changeFoodUnit = async (index: number, unit: typeof QUANTITY_UNITS[number]) => {
+    const entry = selectedFoods[index];
+    if (!entry || entry.unit === unit) return;
+
+    // Apply the unit immediately for responsiveness.
+    const updated = [...selectedFoods];
+    updated[index] = { ...entry, unit };
+    setSelectedFoods(updated);
+
+    setReestimatingIndex(index);
+    try {
+      const { servingSize, confidence, nutrients } = await reestimateNutrientsForUnit(entry.food.name, unit);
+      setSelectedFoods((prev) =>
+        prev.map((e, i) =>
+          i === index
+            ? { ...e, unit, food: { ...e.food, servingSize, confidence, nutrients } }
+            : e
+        )
+      );
+    } catch (err) {
+      console.error('Error re-estimating nutrition for unit change:', err);
+      setToast({ message: 'Could not update nutrition for the new unit. Please check the calories.', type: 'error' });
+    } finally {
+      setReestimatingIndex(null);
+    }
+  };
+
+  // Override the per-unit calories of a selected food (used to correct AI estimates).
+  const updateFoodCalories = (index: number, calories: number) => {
+    const updated = [...selectedFoods];
+    const entry = updated[index];
+    entry.food = {
+      ...entry.food,
+      nutrients: { ...entry.food.nutrients, calories: Math.max(0, calories) },
+      confidence: 'high', // user has confirmed/corrected the value
+    };
+    setSelectedFoods(updated);
+  };
+
+  // Override the per-unit calories of a food in the AI chat proposal before confirming.
+  const updateProposedFoodCalories = (index: number, calories: number) => {
+    setProposedMeal((prev) => {
+      if (!prev) return prev;
+      const foods = prev.foods.map((f, i) =>
+        i === index
+          ? { ...f, nutrients: { ...f.nutrients, calories: Math.max(0, calories) }, confidence: 'high' as const }
+          : f
+      );
+      return { ...prev, foods };
+    });
   };
 
   const calculateTotalNutrients = (): NutrientInfo => {
@@ -368,9 +470,11 @@ export const FoodLogger = () => {
           <h2 className="text-lg font-semibold">Quick Log with AI</h2>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          Just describe your meal in plain language — e.g.{' '}
-          <span className="italic">"2 rotis and a katori of dal for lunch at 1pm"</span>. The
-          assistant will ask if it needs more detail, then log it for you.
+          Describe your meal in plain language — e.g.{' '}
+          <span className="italic">"2 rotis and a katori of dal for lunch at 1pm"</span>. You can also
+          edit or remove today's meals, like{' '}
+          <span className="italic">"add a glass of milk to breakfast"</span> or{' '}
+          <span className="italic">"delete my lunch"</span>.
         </p>
 
         {chatMessages.length > 0 && (
@@ -402,13 +506,23 @@ export const FoodLogger = () => {
           </div>
         )}
 
-        {/* Proposed meal preview */}
-        {proposedMeal && proposedMeal.foods.length > 0 && (
-          <div className="mb-4 p-4 border border-primary-200 bg-primary-50 rounded-lg">
+        {/* Proposed action preview */}
+        {proposedMeal && (proposedMeal.foods.length > 0 || proposedMeal.action === 'delete') && (
+          <div
+            className={`mb-4 p-4 border rounded-lg ${
+              proposedMeal.action === 'delete'
+                ? 'border-red-200 bg-red-50'
+                : 'border-primary-200 bg-primary-50'
+            }`}
+          >
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-gray-800">
-                Ready to log
-                {proposedMeal.mealType && (
+                {proposedMeal.action === 'delete'
+                  ? 'Ready to delete'
+                  : proposedMeal.action === 'update'
+                  ? 'Ready to update'
+                  : 'Ready to log'}
+                {proposedMeal.mealType && proposedMeal.action !== 'delete' && (
                   <span className="ml-2 text-sm font-normal text-gray-600 capitalize">
                     ({proposedMeal.mealType.replace('-', ' ')}
                     {proposedMeal.time ? ` • ${proposedMeal.time}` : ''})
@@ -416,21 +530,59 @@ export const FoodLogger = () => {
                 )}
               </h3>
             </div>
-            <ul className="space-y-1 mb-3">
-              {proposedMeal.foods.map((f, i) => (
-                <li key={i} className="text-sm text-gray-700 flex justify-between">
-                  <span>
-                    • {f.unitQuantity} {f.unit} {f.name}
-                  </span>
-                  <span className="text-gray-500">
-                    {Math.round(f.nutrients.calories * f.unitQuantity)} cal
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {proposedMeal.action === 'delete' ? (
+              (() => {
+                const target = todayMeals.find((m) => m.id === proposedMeal.targetMealId);
+                return (
+                  <p className="text-sm text-gray-700 mb-3">
+                    {target
+                      ? `This will remove your ${target.mealType.replace('-', ' ')} (${target.foods
+                          .map((fe) => fe.food.name)
+                          .join(', ')}).`
+                      : 'This will remove the selected meal.'}
+                  </p>
+                );
+              })()
+            ) : (
+              <ul className="space-y-1 mb-3">
+                {proposedMeal.foods.map((f, i) => (
+                  <li key={i} className="text-sm text-gray-700 flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="truncate">
+                        • {f.unitQuantity} {f.unit} {f.name}
+                      </span>
+                      <ConfidenceBadge confidence={f.confidence} />
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-500 shrink-0">
+                      <input
+                        type="number"
+                        min="0"
+                        step="10"
+                        value={Math.round(f.nutrients.calories)}
+                        onChange={(e) => updateProposedFoodCalories(i, parseFloat(e.target.value) || 0)}
+                        className="w-16 px-1.5 py-0.5 border border-gray-300 rounded text-sm bg-white"
+                        title="Calories per unit — edit if the estimate looks off"
+                      />
+                      <span>×{f.unitQuantity} = {Math.round(f.nutrients.calories * f.unitQuantity)} cal</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="flex gap-2">
-              <button onClick={confirmChatMeal} disabled={chatLoading} className="btn-primary text-sm flex items-center gap-1">
-                <Check className="w-4 h-4" /> Confirm &amp; Log
+              <button
+                onClick={confirmChatMeal}
+                disabled={chatLoading}
+                className={`text-sm flex items-center gap-1 ${
+                  proposedMeal.action === 'delete' ? 'btn-danger' : 'btn-primary'
+                }`}
+              >
+                <Check className="w-4 h-4" />{' '}
+                {proposedMeal.action === 'delete'
+                  ? 'Confirm & Delete'
+                  : proposedMeal.action === 'update'
+                  ? 'Confirm & Update'
+                  : 'Confirm & Log'}
               </button>
               <button onClick={resetChat} disabled={chatLoading} className="btn-secondary text-sm">
                 Discard
@@ -554,7 +706,10 @@ export const FoodLogger = () => {
                 className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div>
-                  <p className="font-medium">{food.name}</p>
+                  <p className="font-medium flex items-center gap-2">
+                    {food.name}
+                    <ConfidenceBadge confidence={food.confidence} />
+                  </p>
                   <p className="text-sm text-gray-600">
                     {food.servingSize} • {food.nutrients.calories} cal
                   </p>
@@ -580,10 +735,31 @@ export const FoodLogger = () => {
             {selectedFoods.map((entry, index) => (
               <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                 <div className="flex-1">
-                  <p className="font-medium">{entry.food.name}</p>
-                  <p className="text-sm text-gray-600">
-                    {entry.food.servingSize} • {entry.food.nutrients.calories} cal each
+                  <p className="font-medium flex items-center gap-2">
+                    {entry.food.name}
+                    <ConfidenceBadge confidence={entry.food.confidence} />
                   </p>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
+                    <span>{entry.food.servingSize} •</span>
+                    {reestimatingIndex === index ? (
+                      <span className="flex items-center gap-1 text-gray-500">
+                        <Spinner className="w-3.5 h-3.5" /> updating…
+                      </span>
+                    ) : (
+                      <>
+                        <input
+                          type="number"
+                          min="0"
+                          step="10"
+                          value={Math.round(entry.food.nutrients.calories)}
+                          onChange={(e) => updateFoodCalories(index, parseFloat(e.target.value) || 0)}
+                          className="w-16 px-1.5 py-0.5 border border-gray-300 rounded text-sm"
+                          title="Calories per unit — edit if the estimate looks off"
+                        />
+                        <span>cal each</span>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
@@ -593,11 +769,13 @@ export const FoodLogger = () => {
                     value={entry.unitQuantity}
                     onChange={(e) => updateQuantity(index, parseFloat(e.target.value) || 1, entry.unit)}
                     className="w-20 px-2 py-1 border border-gray-300 rounded"
+                    disabled={reestimatingIndex === index}
                   />
                   <select
                     value={entry.unit}
-                    onChange={(e) => updateQuantity(index, entry.unitQuantity, e.target.value as typeof QUANTITY_UNITS[number])}
-                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                    onChange={(e) => changeFoodUnit(index, e.target.value as typeof QUANTITY_UNITS[number])}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
+                    disabled={reestimatingIndex === index}
                   >
                     {QUANTITY_UNITS.map((unit) => (
                       <option key={unit} value={unit}>{unit}</option>
