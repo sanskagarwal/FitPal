@@ -29,6 +29,9 @@ export const Dashboard = () => {
   const [suggestingMeal, setSuggestingMeal] = useState(false);
   const [nutrientSuggestion, setNutrientSuggestion] = useState<{nutrient: string, suggestion: string} | null>(null);
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
+  const [dietPreference, setDietPreference] = useState<'vegetarian' | 'eggetarian' | 'non-vegetarian'>(
+    user?.profile.dietPreference || 'vegetarian'
+  );
 
   useEffect(() => {
     loadDashboardData();
@@ -204,7 +207,8 @@ export const Dashboard = () => {
         remainingCarbs,
         remainingFats,
         remainingFiber,
-        mealType
+        mealType,
+        dietPreference
       );
       
       // Try to parse if it's JSON and format it nicely
@@ -490,14 +494,27 @@ export const Dashboard = () => {
             <Sparkles className="w-6 h-6 text-primary-600" />
             <h2 className="text-xl font-semibold">AI Meal Suggestion</h2>
           </div>
-          <button
-            onClick={handleMealSuggestion}
-            disabled={suggestingMeal}
-            className="btn-primary flex items-center gap-2"
-          >
-            {suggestingMeal && <Spinner className="w-4 h-4" />}
-            {suggestingMeal ? 'Generating...' : 'Get Suggestion'}
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={dietPreference}
+              onChange={(e) => setDietPreference(e.target.value as any)}
+              disabled={suggestingMeal}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+              aria-label="Dietary preference"
+            >
+              <option value="vegetarian">Vegetarian</option>
+              <option value="eggetarian">Eggetarian</option>
+              <option value="non-vegetarian">Non-vegetarian</option>
+            </select>
+            <button
+              onClick={handleMealSuggestion}
+              disabled={suggestingMeal}
+              className="btn-primary flex items-center gap-2"
+            >
+              {suggestingMeal && <Spinner className="w-4 h-4" />}
+              {suggestingMeal ? 'Generating...' : 'Get Suggestion'}
+            </button>
+          </div>
         </div>
         {suggestingMeal ? (
           <div className="bg-white p-4 rounded-lg">

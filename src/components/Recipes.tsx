@@ -10,6 +10,9 @@ export const Recipes = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(false);
   const [preferences, setPreferences] = useState('');
+  const [dietPreference, setDietPreference] = useState<'vegetarian' | 'eggetarian' | 'non-vegetarian'>(
+    user?.profile.dietPreference || 'vegetarian'
+  );
   const [error, setError] = useState<string | null>(null);
 
   const loadRecipes = async () => {
@@ -19,7 +22,7 @@ export const Recipes = () => {
     setError(null);
     try {
       const goals = `Target: ${user.profile.goals.targetWeight}kg, ${user.profile.goals.targetCalories} cal/day`;
-      const results = await getRecipeSuggestions(preferences || 'vegetarian', goals, []);
+      const results = await getRecipeSuggestions(preferences, goals, [], dietPreference);
       setRecipes(results);
     } catch (error) {
       console.error('Error loading recipes:', error);
@@ -38,12 +41,22 @@ export const Recipes = () => {
           <ChefHat className="w-6 h-6 text-primary-600" />
           <h2 className="text-xl font-semibold">Get AI-Powered Recipe Ideas</h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select
+            value={dietPreference}
+            onChange={(e) => setDietPreference(e.target.value as any)}
+            className="input-field sm:w-48"
+            aria-label="Dietary preference"
+          >
+            <option value="vegetarian">Vegetarian</option>
+            <option value="eggetarian">Eggetarian</option>
+            <option value="non-vegetarian">Non-vegetarian</option>
+          </select>
           <input
             type="text"
             value={preferences}
             onChange={(e) => setPreferences(e.target.value)}
-            placeholder="e.g., vegetarian, high protein, low carb..."
+            placeholder="e.g., high protein, low carb, quick to make..."
             className="input-field flex-1"
           />
           <button
