@@ -546,7 +546,7 @@ export const FoodLogger = () => {
             ) : (
               <ul className="space-y-1 mb-3">
                 {proposedMeal.foods.map((f, i) => (
-                  <li key={i} className="text-sm text-gray-700 flex items-center justify-between gap-2">
+                  <li key={i} className="text-sm text-gray-700 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                     <span className="flex items-center gap-2 min-w-0">
                       <span className="truncate">
                         • {f.unitQuantity} {f.unit} {f.name}
@@ -560,7 +560,7 @@ export const FoodLogger = () => {
                         step="10"
                         value={Math.round(f.nutrients.calories)}
                         onChange={(e) => updateProposedFoodCalories(i, parseFloat(e.target.value) || 0)}
-                        className="w-16 px-1.5 py-0.5 border border-gray-300 rounded text-sm bg-white"
+                        className="w-16 px-1.5 py-1 border border-gray-300 rounded text-sm bg-white"
                         title="Calories per unit — edit if the estimate looks off"
                       />
                       <span>×{f.unitQuantity} = {Math.round(f.nutrients.calories * f.unitQuantity)} cal</span>
@@ -703,11 +703,11 @@ export const FoodLogger = () => {
             {searchResults.map((food) => (
               <div
                 key={food.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
-                <div>
+                <div className="min-w-0">
                   <p className="font-medium flex items-center gap-2">
-                    {food.name}
+                    <span className="truncate">{food.name}</span>
                     <ConfidenceBadge confidence={food.confidence} />
                   </p>
                   <p className="text-sm text-gray-600">
@@ -716,7 +716,7 @@ export const FoodLogger = () => {
                 </div>
                 <button
                   onClick={() => addFood(food)}
-                  className="btn-primary text-sm"
+                  className="btn-primary text-sm shrink-0"
                 >
                   <Plus className="inline w-4 h-4" />
                   Add
@@ -733,13 +733,13 @@ export const FoodLogger = () => {
           <h3 className="font-medium text-gray-700 mb-4">Selected Foods</h3>
           <div className="space-y-3">
             {selectedFoods.map((entry, index) => (
-              <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
+              <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-1 min-w-0">
                   <p className="font-medium flex items-center gap-2">
-                    {entry.food.name}
+                    <span className="truncate">{entry.food.name}</span>
                     <ConfidenceBadge confidence={entry.food.confidence} />
                   </p>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
+                  <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-sm text-gray-600 mt-0.5">
                     <span>{entry.food.servingSize} •</span>
                     {reestimatingIndex === index ? (
                       <span className="flex items-center gap-1 text-gray-500">
@@ -761,33 +761,34 @@ export const FoodLogger = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <input
                     type="number"
                     min="0.25"
                     step="0.25"
                     value={entry.unitQuantity}
                     onChange={(e) => updateQuantity(index, parseFloat(e.target.value) || 1, entry.unit)}
-                    className="w-20 px-2 py-1 border border-gray-300 rounded"
+                    className="w-20 px-2 py-2 border border-gray-300 rounded"
                     disabled={reestimatingIndex === index}
                   />
                   <select
                     value={entry.unit}
                     onChange={(e) => changeFoodUnit(index, e.target.value as typeof QUANTITY_UNITS[number])}
-                    className="px-2 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
+                    className="flex-1 sm:flex-none px-2 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
                     disabled={reestimatingIndex === index}
                   >
                     {QUANTITY_UNITS.map((unit) => (
                       <option key={unit} value={unit}>{unit}</option>
                     ))}
                   </select>
+                  <button
+                    onClick={() => removeFood(index)}
+                    className="text-red-500 hover:text-red-700 p-2"
+                    aria-label={`Remove ${entry.food.name}`}
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => removeFood(index)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
             ))}
           </div>

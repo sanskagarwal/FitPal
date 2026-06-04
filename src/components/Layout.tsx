@@ -80,6 +80,10 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 bg-white">
             <nav className="p-4 space-y-2">
+              <div className="px-4 pb-2 mb-1 border-b border-gray-100">
+                <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              </div>
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
