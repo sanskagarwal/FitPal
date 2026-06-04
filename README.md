@@ -11,15 +11,16 @@ FitPal is a modern Progressive Web App (PWA) that helps you track Indian meals, 
 - ⚖️ **Weight Tracking** - Monitor weight, BMI, and body fat with streak tracking for consistency
 - 🎯 **Personalized Goals** - Auto-calculated maintenance calories based on your profile with customizable targets
 - 👨‍🍳 **Recipe Suggestions** - Get healthy Indian recipe ideas tailored to your goals
-- � **Smart Suggestions** - AI-powered food recommendations to meet your remaining daily nutrient targets
-- � **PWA Support** - Install as an app, works offline, responsive on all devices
+- 💡 **Smart Suggestions** - AI-powered food recommendations to meet your remaining daily nutrient targets
+- 📱 **PWA Support** - Install as an app, works offline, responsive on all devices
 - 🔒 **Privacy First** - File-based storage with no cloud dependency, your data stays yours
 - ✏️ **Full CRUD** - Edit and delete meal and weight entries anytime
+- 📤 **Data Export/Import** - Export your data as JSON or CSV, and restore from backups
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ installed
+- Node.js 22+ installed
 - Azure OpenAI account with GPT-4o deployment (optional for development)
 
 ### Installation
@@ -67,7 +68,7 @@ npm run server
 ## 🛠️ Tech Stack
 
 **Frontend:**
-- React 18 + TypeScript
+- React 19 + TypeScript
 - Vite (build tool)
 - Tailwind CSS (styling)
 - Recharts (data visualization)

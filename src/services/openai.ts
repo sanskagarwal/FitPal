@@ -233,6 +233,27 @@ Give 3-5 specific, actionable recommendations for achieving their goals through 
   }
 }
 
+export interface MealSuggestion {
+  name: string;
+  description: string;
+  mealType: string;
+  ingredients: { item: string; portion: string }[];
+  nutrition: { calories: number; protein: number; carbs: number; fats: number; fiber: number };
+  reason: string;
+}
+
+export interface NutrientFoodItem {
+  name: string;
+  content: string;
+  portion: string;
+}
+
+export interface NutrientSuggestion {
+  nutrient: string;
+  foods: NutrientFoodItem[];
+  tips: string[];
+}
+
 export async function suggestMeal(
   remainingCalories: number,
   remainingProtein: number,
@@ -241,7 +262,7 @@ export async function suggestMeal(
   remainingFiber: number,
   mealType: string,
   dietPreference?: string
-): Promise<string> {
+): Promise<MealSuggestion> {
   const dietLine = dietPreference
     ? `\nDietary type: ${dietPreference}. ${
         dietPreference === 'vegetarian'
@@ -255,33 +276,71 @@ export async function suggestMeal(
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Suggest an Indian ${mealType} meal to help meet these remaining daily targets:
+      content: `Suggest a single Indian ${mealType} meal to help meet these remaining daily targets:
 Calories: ${remainingCalories} kcal
 Protein: ${remainingProtein}g
 Carbs: ${remainingCarbs}g
 Fats: ${remainingFats}g
 Fiber: ${remainingFiber}g${dietLine}
 
-IMPORTANT: Respond in **MARKDOWN format** with clear structure.
+Return ONLY a JSON object (no markdown, no extra text) with this EXACT structure:
+{
+  "name": "Name of the meal",
+  "description": "One short sentence describing the meal",
+  "ingredients": [
+    { "item": "Ingredient name", "portion": "1 katori" }
+  ],
+  "nutrition": { "calories": number, "protein": number, "carbs": number, "fats": number, "fiber": number },
+  "reason": "One or two short sentences explaining why this meal fits the remaining goals"
+}
 
-Provide:
-1. A specific meal suggestion with ingredients and portion sizes
-2. Approximate nutritional breakdown (calories, protein, carbs, fats, fiber)
-3. Why this meal fits the remaining goals
-
-Use markdown formatting:
-- Use **bold** for headings and important terms
-- Use bullet points (-) for lists
-- Use proper line breaks for readability
-- Keep it practical and focused on common Indian foods`
+Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). All nutrition numbers must be totals for the whole meal.`
     }
   ];
 
   try {
-    return await callAzureOpenAI(messages);
+    const raw = await callAzureOpenAI(messages);
+    const parsed = parseJSONResponse(raw);
+    const n = parsed.nutrition || {};
+    return {
+      name: parsed.name || `${mealType} suggestion`,
+      description: parsed.description || '',
+      mealType,
+      ingredients: Array.isArray(parsed.ingredients)
+        ? parsed.ingredients
+            .map((i: any) => ({ item: String(i.item || ''), portion: String(i.portion || '') }))
+            .filter((i: any) => i.item)
+        : [],
+      nutrition: {
+        calories: Math.round(Number(n.calories) || 0),
+        protein: Math.round(Number(n.protein) || 0),
+        carbs: Math.round(Number(n.carbs) || 0),
+        fats: Math.round(Number(n.fats) || 0),
+        fiber: Math.round(Number(n.fiber) || 0),
+      },
+      reason: parsed.reason || '',
+    };
   } catch (error) {
     console.error('Error getting meal suggestion:', error);
-    return 'Try a balanced meal with dal (protein), roti or rice (carbs), vegetables (fiber and micronutrients), and a small amount of healthy fats like ghee or nuts.';
+    return {
+      name: 'Balanced Indian plate',
+      description: 'A simple, balanced meal using everyday Indian foods.',
+      mealType,
+      ingredients: [
+        { item: 'Dal (lentils)', portion: '1 katori' },
+        { item: 'Roti or rice', portion: '2 pieces / 1 katori' },
+        { item: 'Mixed vegetable sabzi', portion: '1 katori' },
+        { item: 'Curd', portion: '1 katori' },
+      ],
+      nutrition: {
+        calories: Math.max(0, Math.round(remainingCalories)),
+        protein: Math.max(0, Math.round(remainingProtein)),
+        carbs: Math.max(0, Math.round(remainingCarbs)),
+        fats: Math.max(0, Math.round(remainingFats)),
+        fiber: Math.max(0, Math.round(remainingFiber)),
+      },
+      reason: 'Balances protein, carbs, fibre and a little healthy fat to fill your remaining goals.',
+    };
   }
 }
 
@@ -289,7 +348,7 @@ export async function suggestFoodForNutrient(
   nutrientName: string,
   currentAmount: number,
   targetAmount: number
-): Promise<string> {
+): Promise<NutrientSuggestion> {
   const deficit = targetAmount - currentAmount;
   const messages: OpenAIMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -301,26 +360,48 @@ Current: ${Math.round(currentAmount)}
 Target: ${Math.round(targetAmount)}
 Need: ${Math.round(deficit)} more
 
-IMPORTANT: Respond in **MARKDOWN format** with clear structure.
+Return ONLY a JSON object (no markdown, no extra text) with this EXACT structure:
+{
+  "foods": [
+    { "name": "Food name", "content": "amount of ${nutrientName} per portion e.g. 12g", "portion": "1 katori" }
+  ],
+  "tips": [
+    "Short, practical tip to add this food to a meal"
+  ]
+}
 
-Provide:
-1. Top 3-5 Indian foods high in ${nutrientName} with their ${nutrientName} content
-2. Specific portion sizes that would help meet the deficit
-3. Simple ways to incorporate these foods into meals
-
-Use markdown formatting:
-- Use **bold** for headings and important terms
-- Use bullet points (-) for lists
-- Use proper line breaks for readability
-- Keep suggestions practical and focused on commonly available Indian ingredients`
+Provide 3-5 commonly available Indian foods high in ${nutrientName}, with realistic portions, and 2-3 short tips.`
     }
   ];
 
   try {
-    return await callAzureOpenAI(messages);
+    const raw = await callAzureOpenAI(messages);
+    const parsed = parseJSONResponse(raw);
+    const foodsRaw = parsed.foods || parsed.top_foods || [];
+    return {
+      nutrient: nutrientName,
+      foods: Array.isArray(foodsRaw)
+        ? foodsRaw
+            .map((f: any) => ({
+              name: String(f.name || f.item || ''),
+              content: String(f.content || f.amount || ''),
+              portion: String(f.portion || ''),
+            }))
+            .filter((f: any) => f.name)
+        : [],
+      tips: Array.isArray(parsed.tips)
+        ? parsed.tips.map((t: any) => String(t)).filter(Boolean)
+        : [],
+    };
   } catch (error) {
     console.error('Error getting food suggestion:', error);
-    return `Include more ${nutrientName}-rich foods in your diet. Common sources include dairy, pulses, vegetables, and whole grains.`;
+    return {
+      nutrient: nutrientName,
+      foods: [],
+      tips: [
+        `Include more ${nutrientName}-rich foods such as dairy, pulses, vegetables and whole grains.`,
+      ],
+    };
   }
 }
 
