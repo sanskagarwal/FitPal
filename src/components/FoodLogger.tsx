@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Food, MealEntry, FoodEntry, NutrientInfo } from '../types';
 import { analyzeFoodWithAI, chatLogMeal, ParsedMealFood, MealChatResult } from '../services/openai';
@@ -40,6 +40,13 @@ export const FoodLogger = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll the chat to the latest message.
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [chatMessages, chatLoading]);
 
   useEffect(() => {
     loadTodayMeals();
@@ -367,7 +374,7 @@ export const FoodLogger = () => {
         </p>
 
         {chatMessages.length > 0 && (
-          <div className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
+          <div ref={chatScrollRef} className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
             {chatMessages.map((msg, i) => (
               <div
                 key={i}

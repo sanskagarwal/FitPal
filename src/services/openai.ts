@@ -1,15 +1,19 @@
+import OpenAI, { AzureOpenAI } from 'openai';
+import { zodResponseFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
 import { Food, NutrientInfo, Recipe } from '../types';
 
 // Azure OpenAI Configuration
-// Users will need to set these in their environment or config
+// Users set these in their environment (.env). Note: in a browser build the key
+// is shipped to the client, so use a key scoped/proxied appropriately for prod.
 const AZURE_OPENAI_ENDPOINT = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || '';
 const AZURE_OPENAI_KEY = import.meta.env.VITE_AZURE_OPENAI_KEY || '';
 const AZURE_OPENAI_DEPLOYMENT = import.meta.env.VITE_AZURE_OPENAI_DEPLOYMENT || 'gpt-4o';
+const AZURE_OPENAI_API_VERSION = import.meta.env.VITE_AZURE_OPENAI_API_VERSION || '2024-08-01-preview';
 
-interface OpenAIMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
+// Kept as an alias so existing `messages: OpenAIMessage[]` annotations still compile.
+type OpenAIMessage = ChatMessage;
 
 const SYSTEM_PROMPT = `You are FitPal, an expert nutritionist specializing in Indian cuisine. You help users track their nutrition by providing accurate nutritional information about Indian foods and meals. 
 
@@ -20,122 +24,115 @@ Key responsibilities:
 4. Recommend healthy Indian recipes
 5. Give personalized dietary insights for weight management and fitness goals
 
-Always respond in JSON format when analyzing foods. Be culturally accurate and focus on Indian meals, ingredients, and cooking methods.`;
+Be culturally accurate and focus on Indian meals, ingredients, and cooking methods.`;
 
-// Helper function to parse JSON that might be wrapped in markdown code blocks
-function parseJSONResponse(response: string): any {
-  // Remove markdown code blocks if present
-  let cleanedResponse = response.trim();
-  
-  // Remove ```json and ``` markers
-  if (cleanedResponse.startsWith('```json')) {
-    cleanedResponse = cleanedResponse.slice(7);
-  } else if (cleanedResponse.startsWith('```')) {
-    cleanedResponse = cleanedResponse.slice(3);
-  }
-  
-  if (cleanedResponse.endsWith('```')) {
-    cleanedResponse = cleanedResponse.slice(0, -3);
-  }
-  
-  cleanedResponse = cleanedResponse.trim();
-  
-  try {
-    return JSON.parse(cleanedResponse);
-  } catch (error) {
-    throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : 'Unknown error'}. Response was: ${cleanedResponse.substring(0, 200)}...`);
-  }
-}
-
-async function callAzureOpenAI(messages: OpenAIMessage[], temperature = 0.7): Promise<string> {
+// Lazily-created Azure OpenAI client. `dangerouslyAllowBrowser` is required because
+// this app calls the API directly from the browser (same posture as the previous fetch).
+let azureClient: AzureOpenAI | null = null;
+function getClient(): AzureOpenAI {
   if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_KEY) {
     throw new Error('Azure OpenAI credentials not configured. Please set VITE_AZURE_OPENAI_ENDPOINT and VITE_AZURE_OPENAI_KEY in your .env file.');
   }
-
-  const response = await fetch(`${AZURE_OPENAI_ENDPOINT}/openai/deployments/${AZURE_OPENAI_DEPLOYMENT}/chat/completions?api-version=2024-08-01-preview`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-key': AZURE_OPENAI_KEY,
-    },
-    body: JSON.stringify({
-      messages,
-      temperature,
-      max_tokens: 2000,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Azure OpenAI API error: ${response.status} - ${error}`);
+  if (!azureClient) {
+    azureClient = new AzureOpenAI({
+      endpoint: AZURE_OPENAI_ENDPOINT,
+      apiKey: AZURE_OPENAI_KEY,
+      apiVersion: AZURE_OPENAI_API_VERSION,
+      deployment: AZURE_OPENAI_DEPLOYMENT,
+      dangerouslyAllowBrowser: true,
+    });
   }
-
-  const data = await response.json();
-  
-  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-    throw new Error('Invalid response from Azure OpenAI API');
-  }
-  
-  return data.choices[0].message.content;
+  return azureClient;
 }
+
+// Free-form text completion (for non-JSON responses).
+async function completeText(messages: ChatMessage[], temperature = 0.7): Promise<string> {
+  const completion = await getClient().chat.completions.create({
+    model: AZURE_OPENAI_DEPLOYMENT,
+    messages,
+    temperature,
+    max_tokens: 2000,
+  });
+  return completion.choices[0]?.message?.content?.trim() || '';
+}
+
+// Structured completion using OpenAI structured outputs (strict JSON schema from zod).
+async function completeStructured<T>(
+  messages: ChatMessage[],
+  schema: z.ZodType<T>,
+  schemaName: string,
+  temperature = 0.7
+): Promise<T> {
+  const completion = await getClient().chat.completions.parse({
+    model: AZURE_OPENAI_DEPLOYMENT,
+    messages,
+    temperature,
+    response_format: zodResponseFormat(schema, schemaName),
+  });
+  const parsed = completion.choices[0]?.message?.parsed;
+  if (parsed == null) {
+    throw new Error('Model did not return a structured response.');
+  }
+  return parsed;
+}
+
+// Shared nutrient schema. Values correspond to the stated portion. All fields are
+// required (structured outputs strict mode); the model fills 0 when not applicable.
+const NutrientsSchema = z.object({
+  calories: z.number(),
+  protein: z.number(),
+  carbs: z.number(),
+  fats: z.number(),
+  fiber: z.number(),
+  sugar: z.number(),
+  sodium: z.number(),
+  vitaminA: z.number(),
+  vitaminC: z.number(),
+  vitaminD: z.number(),
+  calcium: z.number(),
+  iron: z.number(),
+  magnesium: z.number(),
+  potassium: z.number(),
+});
+
+const FoodAnalysisSchema = z.object({
+  foods: z.array(
+    z.object({
+      name: z.string(),
+      servingSize: z.string(),
+      isIndian: z.boolean(),
+      category: z.string(),
+      nutrients: NutrientsSchema,
+    })
+  ),
+});
 
 export async function analyzeFoodWithAI(foodQuery: string): Promise<Food[]> {
   const messages: OpenAIMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Analyze this Indian food query: "${foodQuery}"
-      
-Return a JSON array of matching foods with this structure:
-[{
-  "name": "Food name",
-  "servingSize": "1 standard serving described in the most natural unit for this food",
-  "isIndian": true,
-  "category": "breakfast/lunch/dinner/snack",
-  "nutrients": {
-    "calories": number,
-    "protein": number,
-    "carbs": number,
-    "fats": number,
-    "fiber": number,
-    "sugar": number,
-    "sodium": number,
-    "vitaminA": number,
-    "vitaminC": number,
-    "vitaminD": number,
-    "calcium": number,
-    "iron": number,
-    "magnesium": number,
-    "potassium": number
-  }
-}]
+      content: `Analyze this Indian food query: "${foodQuery}" and return up to 3 likely matching foods.
 
-For servingSize, use the unit Indians naturally use for that food and include an approximate gram/ml weight in parentheses:
-- Use "katori" for dal, sabzi, curry, rice, kheer (e.g., "1 katori (~150g)")
-- Use "piece" for roti, chapati, idli, samosa, paratha, dosa (e.g., "1 piece (~40g)")
-- Use "glass" for milk, lassi, juice (e.g., "1 glass (~250ml)")
-- Use "bowl" or "plate" for larger portions, "tbsp"/"tsp" for ghee, chutney, pickle
-The nutrients you return MUST correspond to exactly ONE of that serving unit.
+For each food, set "servingSize" using the unit Indians naturally use, including an approximate gram/ml weight in parentheses:
+- "katori" for dal, sabzi, curry, rice, kheer (e.g., "1 katori (~150g)")
+- "piece" for roti, chapati, idli, samosa, paratha, dosa (e.g., "1 piece (~40g)")
+- "glass" for milk, lassi, juice (e.g., "1 glass (~250ml)")
+- "bowl"/"plate" for larger portions, "tbsp"/"tsp" for ghee, chutney, pickle
 
-If the food is misspelled or incomplete, suggest the most likely Indian foods. Return up to 3 matching options.`
-    }
+"category" should be one of breakfast/lunch/dinner/snack. The "nutrients" MUST correspond to exactly ONE of that serving unit. If the query is misspelled or incomplete, suggest the most likely Indian foods.`,
+    },
   ];
 
   try {
-    const response = await callAzureOpenAI(messages, 0.2);
-    const foods = parseJSONResponse(response);
-    
-    if (!Array.isArray(foods)) {
-      throw new Error('Expected an array of foods from AI response');
-    }
-    
-    return foods.map((food: any) => ({
+    const { foods } = await completeStructured(messages, FoodAnalysisSchema, 'food_analysis', 0.2);
+    return foods.map((food) => ({
       id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: food.name,
       servingSize: food.servingSize,
       isIndian: food.isIndian ?? true,
       category: food.category,
-      nutrients: food.nutrients
+      nutrients: food.nutrients as NutrientInfo,
     }));
   } catch (error) {
     console.error('Error analyzing food:', error);
@@ -143,6 +140,25 @@ If the food is misspelled or incomplete, suggest the most likely Indian foods. R
     throw error;
   }
 }
+
+const RecipesSchema = z.object({
+  recipes: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      ingredients: z.array(z.string()),
+      instructions: z.array(z.string()),
+      prepTime: z.string(),
+      servings: z.number(),
+      nutrients: z.object({
+        calories: z.number(),
+        protein: z.number(),
+        carbs: z.number(),
+        fats: z.number(),
+      }),
+    })
+  ),
+});
 
 export async function getRecipeSuggestions(
   preferences: string,
@@ -166,37 +182,21 @@ export async function getRecipeSuggestions(
       content: `Suggest 3 healthy Indian recipes based on:
 Preferences: ${preferences}
 Goals: ${goals}
-Recent foods: ${recentFoods.join(', ')}${dietLine}
-
-Return JSON array:
-[{
-  "name": "Recipe name",
-  "description": "Brief description",
-  "ingredients": ["ingredient 1", "ingredient 2"],
-  "instructions": ["step 1", "step 2"],
-  "prepTime": "30 minutes",
-  "servings": 2,
-  "nutrients": {
-    "calories": number,
-    "protein": number,
-    "carbs": number,
-    "fats": number
-  }
-}]`
-    }
+Recent foods: ${recentFoods.join(', ')}${dietLine}`,
+    },
   ];
 
   try {
-    const response = await callAzureOpenAI(messages);
-    const recipes = parseJSONResponse(response);
-    
-    if (!Array.isArray(recipes)) {
-      throw new Error('Expected an array of recipes from AI response');
-    }
-    
-    return recipes.map((recipe: any) => ({
+    const { recipes } = await completeStructured(messages, RecipesSchema, 'recipe_suggestions', 0.5);
+    return recipes.map((recipe) => ({
       id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      ...recipe
+      name: recipe.name,
+      description: recipe.description,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      prepTime: recipe.prepTime,
+      servings: recipe.servings,
+      nutrients: recipe.nutrients as NutrientInfo,
     }));
   } catch (error) {
     console.error('Error getting recipes:', error);
@@ -221,12 +221,12 @@ Target weight: ${targetWeight}kg
 Recent daily average nutrition: ${JSON.stringify(recentNutrition)}
 Goals: ${goals}
 
-Give 3-5 specific, actionable recommendations for achieving their goals through Indian cuisine.`
-    }
+Give 3-5 specific, actionable recommendations for achieving their goals through Indian cuisine.`,
+    },
   ];
 
   try {
-    return await callAzureOpenAI(messages);
+    return await completeText(messages);
   } catch (error) {
     console.error('Error getting insights:', error);
     return 'Focus on portion control and include more protein-rich foods like dal, paneer, and yogurt. Stay hydrated and maintain regular meal times.';
@@ -253,6 +253,20 @@ export interface NutrientSuggestion {
   foods: NutrientFoodItem[];
   tips: string[];
 }
+
+const MealSuggestionSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  ingredients: z.array(z.object({ item: z.string(), portion: z.string() })),
+  nutrition: z.object({
+    calories: z.number(),
+    protein: z.number(),
+    carbs: z.number(),
+    fats: z.number(),
+    fiber: z.number(),
+  }),
+  reason: z.string(),
+});
 
 export async function suggestMeal(
   remainingCalories: number,
@@ -283,40 +297,25 @@ Carbs: ${remainingCarbs}g
 Fats: ${remainingFats}g
 Fiber: ${remainingFiber}g${dietLine}
 
-Return ONLY a JSON object (no markdown, no extra text) with this EXACT structure:
-{
-  "name": "Name of the meal",
-  "description": "One short sentence describing the meal",
-  "ingredients": [
-    { "item": "Ingredient name", "portion": "1 katori" }
-  ],
-  "nutrition": { "calories": number, "protein": number, "carbs": number, "fats": number, "fiber": number },
-  "reason": "One or two short sentences explaining why this meal fits the remaining goals"
-}
-
-Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). All nutrition numbers must be totals for the whole meal.`
-    }
+Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). All nutrition numbers must be the totals for the whole meal.`,
+    },
   ];
 
   try {
-    const raw = await callAzureOpenAI(messages);
-    const parsed = parseJSONResponse(raw);
-    const n = parsed.nutrition || {};
+    const parsed = await completeStructured(messages, MealSuggestionSchema, 'meal_suggestion', 0.5);
     return {
       name: parsed.name || `${mealType} suggestion`,
       description: parsed.description || '',
       mealType,
-      ingredients: Array.isArray(parsed.ingredients)
-        ? parsed.ingredients
-            .map((i: any) => ({ item: String(i.item || ''), portion: String(i.portion || '') }))
-            .filter((i: any) => i.item)
-        : [],
+      ingredients: parsed.ingredients
+        .map((i) => ({ item: String(i.item || ''), portion: String(i.portion || '') }))
+        .filter((i) => i.item),
       nutrition: {
-        calories: Math.round(Number(n.calories) || 0),
-        protein: Math.round(Number(n.protein) || 0),
-        carbs: Math.round(Number(n.carbs) || 0),
-        fats: Math.round(Number(n.fats) || 0),
-        fiber: Math.round(Number(n.fiber) || 0),
+        calories: Math.round(parsed.nutrition.calories || 0),
+        protein: Math.round(parsed.nutrition.protein || 0),
+        carbs: Math.round(parsed.nutrition.carbs || 0),
+        fats: Math.round(parsed.nutrition.fats || 0),
+        fiber: Math.round(parsed.nutrition.fiber || 0),
       },
       reason: parsed.reason || '',
     };
@@ -344,6 +343,11 @@ Use common, easily available Indian foods. Keep portions realistic (katori, piec
   }
 }
 
+const NutrientSuggestionSchema = z.object({
+  foods: z.array(z.object({ name: z.string(), content: z.string(), portion: z.string() })),
+  tips: z.array(z.string()),
+});
+
 export async function suggestFoodForNutrient(
   nutrientName: string,
   currentAmount: number,
@@ -360,38 +364,18 @@ Current: ${Math.round(currentAmount)}
 Target: ${Math.round(targetAmount)}
 Need: ${Math.round(deficit)} more
 
-Return ONLY a JSON object (no markdown, no extra text) with this EXACT structure:
-{
-  "foods": [
-    { "name": "Food name", "content": "amount of ${nutrientName} per portion e.g. 12g", "portion": "1 katori" }
-  ],
-  "tips": [
-    "Short, practical tip to add this food to a meal"
-  ]
-}
-
-Provide 3-5 commonly available Indian foods high in ${nutrientName}, with realistic portions, and 2-3 short tips.`
-    }
+Provide 3-5 commonly available Indian foods high in ${nutrientName}. For each, "content" is the amount of ${nutrientName} per portion (e.g. "12g") and "portion" is a realistic serving (e.g. "1 katori"). Also give 2-3 short, practical tips for adding these foods to meals.`,
+    },
   ];
 
   try {
-    const raw = await callAzureOpenAI(messages);
-    const parsed = parseJSONResponse(raw);
-    const foodsRaw = parsed.foods || parsed.top_foods || [];
+    const parsed = await completeStructured(messages, NutrientSuggestionSchema, 'nutrient_suggestion', 0.3);
     return {
       nutrient: nutrientName,
-      foods: Array.isArray(foodsRaw)
-        ? foodsRaw
-            .map((f: any) => ({
-              name: String(f.name || f.item || ''),
-              content: String(f.content || f.amount || ''),
-              portion: String(f.portion || ''),
-            }))
-            .filter((f: any) => f.name)
-        : [],
-      tips: Array.isArray(parsed.tips)
-        ? parsed.tips.map((t: any) => String(t)).filter(Boolean)
-        : [],
+      foods: parsed.foods
+        .map((f) => ({ name: String(f.name || ''), content: String(f.content || ''), portion: String(f.portion || '') }))
+        .filter((f) => f.name),
+      tips: parsed.tips.map((t) => String(t)).filter(Boolean),
     };
   } catch (error) {
     console.error('Error getting food suggestion:', error);
@@ -404,6 +388,15 @@ Provide 3-5 commonly available Indian foods high in ${nutrientName}, with realis
     };
   }
 }
+
+const GoalsSchema = z.object({
+  calories: z.number(),
+  protein: z.number(),
+  carbs: z.number(),
+  fats: z.number(),
+  fiber: z.number(),
+  explanation: z.string(),
+});
 
 export async function suggestGoals(
   height: number,
@@ -439,23 +432,12 @@ Goal direction: ${
           : 'weight maintenance (no deficit or surplus)'
       }
 
-Provide goals in JSON format:
-{
-  "calories": number,
-  "protein": number,
-  "carbs": number,
-  "fats": number,
-  "fiber": number,
-  "explanation": "brief explanation of why these goals are appropriate"
-}
-
-First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-St Jeor or Harris-Benedict) times an activity factor. Then adjust the calorie target toward the target weight: apply a safe deficit of about 300-500 kcal/day for weight loss, or a surplus of about 250-500 kcal/day for weight gain, and no adjustment for maintenance. Never recommend fewer than 1200 kcal/day for women or 1500 kcal/day for men. Keep protein high enough to preserve muscle during a deficit, and use macronutrient ratios appropriate for an Indian diet. In the explanation, state the maintenance calories, the deficit/surplus applied, and why.`
-    }
+First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-St Jeor or Harris-Benedict) times an activity factor. Then adjust the calorie target toward the target weight: apply a safe deficit of about 300-500 kcal/day for weight loss, or a surplus of about 250-500 kcal/day for weight gain, and no adjustment for maintenance. Never recommend fewer than 1200 kcal/day for women or 1500 kcal/day for men. Keep protein high enough to preserve muscle during a deficit, and use macronutrient ratios appropriate for an Indian diet. In the explanation, state the maintenance calories, the deficit/surplus applied, and why.`,
+    },
   ];
 
   try {
-    const response = await callAzureOpenAI(messages);
-    return JSON.parse(response);
+    return await completeStructured(messages, GoalsSchema, 'nutrition_goals', 0.3);
   } catch (error) {
     console.error('Error getting goal suggestions:', error);
     // Return basic calculations as fallback
@@ -581,6 +563,29 @@ ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
 
 When status is "need_info", you may still include any foods you have already understood (with your best-guess quantities) so the user sees progress, but set status to "need_info" until the open question is resolved. When everything needed is known, set status to "ready" and include the full list of foods.`;
 
+const MEAL_UNITS = [
+  'serving', 'katori', 'bowl', 'plate', 'cup', 'glass', 'tbsp', 'tsp', 'piece', 'slice', 'gram', 'ml', 'oz',
+] as const;
+const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
+
+const MealChatSchema = z.object({
+  status: z.enum(['need_info', 'ready']),
+  message: z.string(),
+  mealType: z.enum(MEAL_TYPES).nullable(),
+  time: z.string().nullable(),
+  foods: z.array(
+    z.object({
+      name: z.string(),
+      servingSize: z.string(),
+      unit: z.enum(MEAL_UNITS),
+      unitQuantity: z.number(),
+      isIndian: z.boolean(),
+      category: z.string().nullable(),
+      nutrients: NutrientsSchema,
+    })
+  ),
+});
+
 export async function chatLogMeal(
   history: { role: 'user' | 'assistant'; content: string }[]
 ): Promise<MealChatResult> {
@@ -594,18 +599,21 @@ export async function chatLogMeal(
     ...history,
   ];
 
-  const response = await callAzureOpenAI(messages, 0.2);
-  const parsed = parseJSONResponse(response) as MealChatResult;
-
-  if (!parsed || (parsed.status !== 'need_info' && parsed.status !== 'ready')) {
-    throw new Error('Unexpected response from meal assistant.');
-  }
+  const parsed = await completeStructured(messages, MealChatSchema, 'meal_chat', 0.2);
 
   return {
     status: parsed.status,
     message: parsed.message || '',
     mealType: parsed.mealType ?? undefined,
     time: parsed.time ?? null,
-    foods: Array.isArray(parsed.foods) ? parsed.foods : [],
+    foods: parsed.foods.map((f) => ({
+      name: f.name,
+      servingSize: f.servingSize,
+      unit: f.unit,
+      unitQuantity: f.unitQuantity,
+      isIndian: f.isIndian,
+      category: f.category ?? undefined,
+      nutrients: f.nutrients as NutrientInfo,
+    })),
   };
 }
