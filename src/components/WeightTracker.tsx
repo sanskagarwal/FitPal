@@ -290,6 +290,7 @@ export const WeightTracker = () => {
               step="0.1"
               value={newWeight}
               onChange={(e) => setNewWeight(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && newWeight && !loading && logWeight()}
               className="input-field"
               placeholder="e.g., 70.5"
             />
@@ -303,6 +304,7 @@ export const WeightTracker = () => {
               step="0.1"
               value={bodyFat}
               onChange={(e) => setBodyFat(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && newWeight && !loading && logWeight()}
               className="input-field"
               placeholder="e.g., 18.5"
             />
@@ -315,6 +317,7 @@ export const WeightTracker = () => {
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && newWeight && !loading && logWeight()}
               className="input-field"
               placeholder="Feeling great!"
             />
@@ -395,6 +398,10 @@ export const WeightTracker = () => {
                             step="0.1"
                             value={editWeight}
                             onChange={(e) => setEditWeight(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(entry.id);
+                              else if (e.key === 'Escape') cancelEdit();
+                            }}
                             className="w-20 px-2 py-1 border border-gray-300 rounded"
                           />
                         </td>
@@ -407,6 +414,10 @@ export const WeightTracker = () => {
                             step="0.1"
                             value={editBodyFat}
                             onChange={(e) => setEditBodyFat(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(entry.id);
+                              else if (e.key === 'Escape') cancelEdit();
+                            }}
                             className="w-20 px-2 py-1 border border-gray-300 rounded"
                             placeholder="-"
                           />
@@ -416,6 +427,10 @@ export const WeightTracker = () => {
                             type="text"
                             value={editNotes}
                             onChange={(e) => setEditNotes(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit(entry.id);
+                              else if (e.key === 'Escape') cancelEdit();
+                            }}
                             className="w-32 px-2 py-1 border border-gray-300 rounded"
                             placeholder="Notes"
                           />

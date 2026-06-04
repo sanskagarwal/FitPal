@@ -56,6 +56,7 @@ export const Recipes = () => {
             type="text"
             value={preferences}
             onChange={(e) => setPreferences(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !loading && loadRecipes()}
             placeholder="e.g., high protein, low carb, quick to make..."
             className="input-field flex-1"
           />

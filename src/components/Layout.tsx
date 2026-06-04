@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, Menu, X, UserCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -77,8 +78,15 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
         </div>
 
         {/* Mobile Menu */}
+        <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 bg-white">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
+          >
             <nav className="p-4 space-y-2">
               <div className="px-4 pb-2 mb-1 border-b border-gray-100">
                 <p className="text-sm font-medium text-gray-900">{user?.name}</p>
@@ -112,8 +120,9 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                 Logout
               </button>
             </nav>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </header>
 
       {/* Main Content */}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { Food, MealEntry, FoodEntry, NutrientInfo } from '../types';
 import { analyzeFoodWithAI, chatLogMeal, reestimateNutrientsForUnit, ParsedMealFood, MealChatResult, LoggedMealSummary } from '../services/openai';
@@ -480,8 +481,11 @@ export const FoodLogger = () => {
         {chatMessages.length > 0 && (
           <div ref={chatScrollRef} className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
             {chatMessages.map((msg, i) => (
-              <div
+              <motion.div
                 key={i}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
@@ -493,7 +497,7 @@ export const FoodLogger = () => {
                 >
                   {msg.content}
                 </div>
-              </div>
+              </motion.div>
             ))}
             {chatLoading && (
               <div className="flex justify-start">
@@ -507,8 +511,13 @@ export const FoodLogger = () => {
         )}
 
         {/* Proposed action preview */}
+        <AnimatePresence>
         {proposedMeal && (proposedMeal.foods.length > 0 || proposedMeal.action === 'delete') && (
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             className={`mb-4 p-4 border rounded-lg ${
               proposedMeal.action === 'delete'
                 ? 'border-red-200 bg-red-50'
@@ -588,8 +597,9 @@ export const FoodLogger = () => {
                 Discard
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
 
         <div className="flex gap-2">
           <input
@@ -650,7 +660,7 @@ export const FoodLogger = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => e.key === 'Enter' && !searching && handleSearch()}
             placeholder="e.g., dosa, dal, roti, paneer tikka..."
             className="input-field flex-1"
           />
@@ -847,8 +857,17 @@ export const FoodLogger = () => {
         <div className="card">
           <h3 className="text-xl font-semibold mb-4">Today's Meals</h3>
           <div className="space-y-3">
+            <AnimatePresence initial={false}>
             {todayMeals.map((meal) => (
-              <div key={meal.id} className="p-4 bg-gray-50 rounded-lg">
+              <motion.div
+                key={meal.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0, overflow: 'hidden' }}
+                transition={{ duration: 0.22, ease: 'easeOut' }}
+                className="p-4 bg-gray-50 rounded-lg"
+              >
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h4 className="font-medium text-gray-900 capitalize">
@@ -930,8 +949,9 @@ export const FoodLogger = () => {
                 {meal.notes && (
                   <p className="text-sm text-gray-600 mt-2 italic">Note: {meal.notes}</p>
                 )}
-              </div>
+              </motion.div>
             ))}
+            </AnimatePresence>
           </div>
         </div>
       )}

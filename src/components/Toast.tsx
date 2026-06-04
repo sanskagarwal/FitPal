@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { motion } from 'motion/react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -53,7 +54,12 @@ export const Toast = ({ message, type, onClose, duration = 4000 }: ToastProps) =
   const Icon = styles.icon;
 
   return (
-    <div className={`fixed top-4 right-4 z-50 max-w-md w-full shadow-lg rounded-lg border ${styles.bg} ${styles.border} p-4 animate-slide-in`}>
+    <motion.div
+      initial={{ opacity: 0, x: 24, scale: 0.98 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+      className={`fixed top-4 right-4 z-50 max-w-md w-full shadow-lg rounded-lg border ${styles.bg} ${styles.border} p-4`}
+    >
       <div className="flex items-start gap-3">
         <Icon className={`w-5 h-5 ${styles.iconColor} flex-shrink-0 mt-0.5`} />
         <p className={`flex-1 text-sm font-medium ${styles.text}`}>{message}</p>
@@ -64,6 +70,6 @@ export const Toast = ({ message, type, onClose, duration = 4000 }: ToastProps) =
           <X className="w-4 h-4" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };

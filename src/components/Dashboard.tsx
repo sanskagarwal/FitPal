@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { MealEntry, DailyStats, WeightEntry, NutrientInfo } from '../types';
 import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
@@ -7,6 +8,16 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp, Lightbulb, X, UtensilsCrossed } from 'lucide-react';
 import { suggestMeal, suggestFoodForNutrient, MealSuggestion, NutrientSuggestion } from '../services/openai';
 import { Spinner, LoadingBlock } from './Spinner';
+
+// Subtle staggered entrance for the overview stat cards.
+const statsContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+const statCardItem = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' as const } },
+};
 
 interface MealTypeStats {
   mealType: string;
@@ -280,8 +291,13 @@ export const Dashboard = () => {
       )}
 
       {/* Today's Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="stat-card">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        variants={statsContainer}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div className="stat-card" variants={statCardItem}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-primary-700 font-medium">Calories</p>
@@ -298,9 +314,9 @@ export const Dashboard = () => {
               style={{ width: `${Math.min(caloriePercentage, 100)}%` }}
             ></div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="stat-card">
+        <motion.div className="stat-card" variants={statCardItem}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-primary-700 font-medium">Protein</p>
@@ -325,9 +341,9 @@ export const Dashboard = () => {
             <Lightbulb className="w-3 h-3" />
             Suggest Foods
           </button>
-        </div>
+        </motion.div>
 
-        <div className="stat-card">
+        <motion.div className="stat-card" variants={statCardItem}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-primary-700 font-medium">Carbs</p>
@@ -352,9 +368,9 @@ export const Dashboard = () => {
             <Lightbulb className="w-3 h-3" />
             Suggest Foods
           </button>
-        </div>
+        </motion.div>
 
-        <div className="stat-card">
+        <motion.div className="stat-card" variants={statCardItem}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-primary-700 font-medium">Fats</p>
@@ -379,8 +395,8 @@ export const Dashboard = () => {
             <Lightbulb className="w-3 h-3" />
             Suggest Foods
           </button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* AI Meal Suggestion */}
       <div className="card bg-gradient-to-br from-primary-50 to-primary-100">
