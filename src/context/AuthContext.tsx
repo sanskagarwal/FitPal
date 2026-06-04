@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserProfile, UserGoals } from '../types';
 import { saveUser, getUser, getUserByEmail } from '../utils/db';
-import { hashPassword, verifyPassword, generateId, calculateDailyCalories, calculateMacros } from '../utils/helpers';
+import { hashPassword, verifyPassword, generateId, calculateDailyCalories, calculateMacros, calculateAge } from '../utils/helpers';
 
 interface AuthContextType {
   user: User | null;
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const dailyCalories = calculateDailyCalories(
         profile.goals.targetWeight,
         profile.height,
-        profile.age,
+        calculateAge(profile.dateOfBirth),
         profile.gender,
         profile.activityLevel
       );

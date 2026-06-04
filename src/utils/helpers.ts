@@ -17,6 +17,20 @@ export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+// Calculate age in whole years from a date of birth (YYYY-MM-DD)
+export const calculateAge = (dateOfBirth: string): number => {
+  if (!dateOfBirth) return 0;
+  const dob = new Date(dateOfBirth);
+  if (isNaN(dob.getTime())) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 // BMI Calculation
 export const calculateBMI = (weight: number, height: number): number => {
   // weight in kg, height in cm

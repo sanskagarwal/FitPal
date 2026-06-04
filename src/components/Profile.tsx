@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Ruler, Calendar, Activity, Users } from 'lucide-react';
+import { calculateAge } from '../utils/helpers';
 
 export const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    age: user?.profile.age || 0,
+    dateOfBirth: user?.profile.dateOfBirth || '',
     gender: user?.profile.gender || 'male',
     height: user?.profile.height || 0,
     activityLevel: user?.profile.activityLevel || 'moderate',
@@ -22,7 +23,7 @@ export const Profile = () => {
 
     try {
       await updateProfile({
-        age: formData.age,
+        dateOfBirth: formData.dateOfBirth,
         gender: formData.gender as 'male' | 'female' | 'other',
         height: formData.height,
         activityLevel: formData.activityLevel as any,
@@ -88,17 +89,21 @@ export const Profile = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                Age
+                Date of Birth
               </label>
               <input
-                type="number"
-                value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
+                type="date"
+                value={formData.dateOfBirth}
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
                 className="input-field"
                 required
-                min="10"
-                max="120"
               />
+              {formData.dateOfBirth && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Age: {calculateAge(formData.dateOfBirth)} years
+                </p>
+              )}
             </div>
 
             <div>

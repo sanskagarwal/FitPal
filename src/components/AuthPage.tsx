@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus } from 'lucide-react';
 import { saveWeight } from '../utils/db';
-import { generateId, calculateBMI } from '../utils/helpers';
+import { generateId, calculateBMI, calculateAge } from '../utils/helpers';
 import { WeightEntry } from '../types';
 
 export const AuthPage = () => {
@@ -11,7 +11,7 @@ export const AuthPage = () => {
     name: '',
     email: '',
     password: '',
-    age: '',
+    dateOfBirth: '',
     gender: 'male' as 'male' | 'female' | 'other',
     height: '',
     currentWeight: '',
@@ -34,14 +34,14 @@ export const AuthPage = () => {
           setError('Invalid email or password');
         }
       } else {
-        if (!formData.name || !formData.email || !formData.password || !formData.age || !formData.height || !formData.currentWeight) {
+        if (!formData.name || !formData.email || !formData.password || !formData.dateOfBirth || !formData.height || !formData.currentWeight) {
           setError('Please fill in all required fields');
           setLoading(false);
           return;
         }
 
         // Calculate default maintenance calories based on BMR and activity level
-        const age = parseInt(formData.age);
+        const age = calculateAge(formData.dateOfBirth);
         const height = parseInt(formData.height);
         const weight = parseInt(formData.currentWeight);
         
@@ -65,7 +65,7 @@ export const AuthPage = () => {
         const carbs = Math.round((maintenanceCalories - (protein * 4) - (fats * 9)) / 4);
 
         const success = await register(formData.name, formData.email, formData.password, {
-          age: parseInt(formData.age),
+          dateOfBirth: formData.dateOfBirth,
           gender: formData.gender,
           height: parseInt(formData.height),
           activityLevel: formData.activityLevel,
@@ -180,24 +180,31 @@ export const AuthPage = () => {
           {!isLogin && (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  placeholder="Age"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  className="input-field"
-                  required
-                />
-                <select
-                  value={formData.gender}
-                  onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
-                  className="input-field"
-                  required
-                >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Date of Birth</label>
+                  <input
+                    type="date"
+                    placeholder="Date of Birth"
+                    value={formData.dateOfBirth}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    className="input-field"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Gender</label>
+                  <select
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                    className="input-field"
+                    required
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

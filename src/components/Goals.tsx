@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Target, TrendingUp, Sparkles } from 'lucide-react';
 import { suggestGoals } from '../services/openai';
+import { calculateAge } from '../utils/helpers';
 
 export const Goals = () => {
   const { user, updateGoals } = useAuth();
@@ -37,7 +38,7 @@ export const Goals = () => {
       const suggestions = await suggestGoals(
         user.profile.height,
         user.profile.goals.targetWeight,
-        user.profile.age,
+        calculateAge(user.profile.dateOfBirth),
         user.profile.gender,
         user.profile.activityLevel,
         formData.targetWeight

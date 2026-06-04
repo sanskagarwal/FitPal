@@ -9,7 +9,7 @@ export interface User {
 }
 
 export interface UserProfile {
-  age: number;
+  dateOfBirth: string; // ISO date string (YYYY-MM-DD)
   gender: 'male' | 'female' | 'other';
   height: number; // in cm
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
