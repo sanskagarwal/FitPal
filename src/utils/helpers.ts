@@ -108,6 +108,53 @@ export const getDaysInRange = (startDate: Date, endDate: Date): Date[] => {
   return dates;
 };
 
+// True when two dates fall on the same calendar day (local time).
+export const isSameDay = (a: Date, b: Date): boolean => {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+};
+
+// Format a Date as a local YYYY-MM-DD string for <input type="date"> (avoids UTC shift).
+export const toDateInputValue = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// Parse a YYYY-MM-DD string into a local Date at start of day.
+export const parseDateInputValue = (value: string): Date => {
+  return new Date(`${value}T00:00:00`);
+};
+
+// Apply the current wall-clock time to a given calendar day (used when logging
+// meals on a day other than today so ordering/time context is preserved).
+export const combineDateWithCurrentTime = (date: Date): Date => {
+  const now = new Date();
+  const result = new Date(date);
+  result.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+  return result;
+};
+
+// Human-friendly label for a selected day, relative to today.
+export const formatDayLabel = (date: Date): string => {
+  const today = getStartOfDay(new Date());
+  const target = getStartOfDay(date);
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === -1) return 'Yesterday';
+  if (diffDays === 1) return 'Tomorrow';
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: today.getFullYear() === target.getFullYear() ? undefined : 'numeric',
+  });
+};
+
 // Calculate streak
 export const calculateStreak = (dates: Date[]): number => {
   if (dates.length === 0) return 0;

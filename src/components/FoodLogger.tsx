@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useSelectedDate } from '../context/DateContext';
+import { DateNavigator } from './DateNavigator';
 import { Food, MealEntry, FoodEntry, NutrientInfo } from '../types';
 import { analyzeFoodWithAI, chatLogMeal, reestimateNutrientsForUnit, ParsedMealFood, MealChatResult, LoggedMealSummary } from '../services/openai';
 import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
-import { generateId, getStartOfDay, getEndOfDay } from '../utils/helpers';
+import { generateId, getStartOfDay, getEndOfDay, combineDateWithCurrentTime, formatDayLabel } from '../utils/helpers';
 import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check } from 'lucide-react';
 import { Toast, ToastType } from './Toast';
 import { Spinner } from './Spinner';
@@ -44,6 +46,7 @@ const ConfidenceBadge = ({ confidence }: { confidence?: 'high' | 'medium' | 'low
 
 export const FoodLogger = () => {
   const { user } = useAuth();
+  const { selectedDate, isToday } = useSelectedDate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<Food[]>([]);
@@ -74,13 +77,12 @@ export const FoodLogger = () => {
 
   useEffect(() => {
     loadTodayMeals();
-  }, [user]);
+  }, [user, selectedDate]);
 
   const loadTodayMeals = async () => {
     if (!user) return;
-    const today = new Date();
-    const startOfToday = getStartOfDay(today);
-    const endOfToday = getEndOfDay(today);
+    const startOfToday = getStartOfDay(selectedDate);
+    const endOfToday = getEndOfDay(selectedDate);
     
     const meals = await getMealsByUser(user.id);
     const todaysMeals = meals.filter(meal => {
@@ -136,7 +138,7 @@ export const FoodLogger = () => {
     );
 
     // Resolve the meal date/time
-    let date = existing ? new Date(existing.date) : new Date();
+    let date = existing ? new Date(existing.date) : combineDateWithCurrentTime(selectedDate);
     if (result.time && /^\d{1,2}:\d{2}$/.test(result.time)) {
       const [h, m] = result.time.split(':').map(Number);
       date = new Date(date);
@@ -376,7 +378,7 @@ export const FoodLogger = () => {
     const meal: MealEntry = {
       id: generateId(),
       userId: user.id,
-      date: new Date(),
+      date: combineDateWithCurrentTime(selectedDate),
       mealType,
       foods: selectedFoods,
       totalNutrients,
@@ -465,7 +467,18 @@ export const FoodLogger = () => {
         />
       )}
       
-      <h1 className="text-3xl font-bold text-gray-900">Log Your Meal</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Log Your Meal</h1>
+        <DateNavigator />
+      </div>
+
+      {!isToday && (
+        <div className="card bg-amber-50 border border-amber-200 py-3">
+          <p className="text-sm text-amber-800">
+            You're logging for <span className="font-semibold">{formatDayLabel(selectedDate)}</span>. New meals will be saved to this date.
+          </p>
+        </div>
+      )}
 
       {/* Agentic AI Meal Logging */}
       <div className="card">
@@ -871,7 +884,7 @@ export const FoodLogger = () => {
       {/* Today's Meals History */}
       {todayMeals.length > 0 && (
         <div className="card">
-          <h3 className="text-xl font-semibold mb-4">Today's Meals</h3>
+          <h3 className="text-xl font-semibold mb-4">{isToday ? "Today's Meals" : `Meals · ${formatDayLabel(selectedDate)}`}</h3>
           <div className="space-y-3">
             <AnimatePresence initial={false}>
             {todayMeals.map((meal) => (

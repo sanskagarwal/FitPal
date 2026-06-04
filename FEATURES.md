@@ -30,9 +30,16 @@ Everything FitPal can do — your AI-powered Indian nutrition tracker.
 - **Notes** — add context to any meal.
 - **Edit & delete** — change or remove logged meals anytime (delete asks for confirmation).
 
-## 📊 Dashboard
+## � Date Navigation
 
-- **Today's overview** — animated stat cards for calories, protein, carbs, and fats vs. targets.
+- **Any-day logging & review** — a date picker on the Dashboard and Log Food pages lets you move to any past day.
+- **Quick navigation** — previous/next-day arrows, a calendar picker, and a one-tap **Today** shortcut.
+- **Everything follows the date** — stats, meal breakdowns, micronutrients, the weekly view, and the meal list all reflect the selected day.
+- **Safe by default** — future dates are disabled, and a banner reminds you when you're logging for a day other than today.
+
+## � Dashboard
+
+- **Daily overview** — animated stat cards for calories, protein, carbs, and fats vs. targets, for the selected day.
 - **Macro distribution** — pie chart of protein/carbs/fats.
 - **Weekly trends** — line charts of recent nutrition.
 - **Progress bars** — at-a-glance goal progress per nutrient.

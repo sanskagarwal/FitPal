@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
+import { useSelectedDate } from '../context/DateContext';
+import { DateNavigator } from './DateNavigator';
 import { MealEntry, DailyStats, WeightEntry, NutrientInfo } from '../types';
 import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
-import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage } from '../utils/helpers';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp, Lightbulb, X, UtensilsCrossed } from 'lucide-react';
+import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage, formatDayLabel } from '../utils/helpers';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie } from 'recharts';
+import { Flame, Drumstick, Wheat, Droplet, AlertCircle, Sparkles, TrendingUp, Lightbulb, X, UtensilsCrossed } from 'lucide-react';
 import { suggestMeal, suggestFoodForNutrient, MealSuggestion, NutrientSuggestion } from '../services/openai';
 import { Spinner, LoadingBlock } from './Spinner';
 
@@ -30,6 +32,7 @@ interface MealTypeStats {
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const { selectedDate, isToday } = useSelectedDate();
   const [todayStats, setTodayStats] = useState<DailyStats | null>(null);
   const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
   const [weeklyData, setWeeklyData] = useState<DailyStats[]>([]);
@@ -45,30 +48,30 @@ export const Dashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
-  }, [user]);
+  }, [user, selectedDate]);
 
   const loadDashboardData = async () => {
     if (!user) return;
 
     setLoading(true);
     try {
-      const today = new Date();
-      const startOfToday = getStartOfDay(today);
-      const endOfToday = getEndOfDay(today);
-      const startOfWeek = getStartOfWeek(today);
+      const day = selectedDate;
+      const startOfToday = getStartOfDay(day);
+      const endOfToday = getEndOfDay(day);
+      const startOfWeek = getStartOfWeek(day);
 
-      // Load today's meals
+      // Load the selected day's meals
       const meals = await getMealsByDateRange(user.id, startOfToday, endOfToday);
       setTodayMeals(meals);
       const todayTotals = calculateTotals(meals);
       setTodayStats({
-        date: today,
+        date: day,
         ...todayTotals,
         mealsLogged: meals.length,
       });
 
-      // Load weekly data
-      const weekDays = getDaysInRange(startOfWeek, today);
+      // Load the week containing the selected day (week start through selected day)
+      const weekDays = getDaysInRange(startOfWeek, day);
       const weeklyStats: DailyStats[] = [];
       
       for (const day of weekDays) {
@@ -259,9 +262,9 @@ export const Dashboard = () => {
   const fatsPercentage = todayStats ? getGoalPercentage(todayStats.totalFats, goals?.targetFats || 65) : 0;
 
   const macroData = [
-    { name: 'Protein', value: todayStats?.totalProtein || 0, color: '#ef4444' },
-    { name: 'Carbs', value: todayStats?.totalCarbs || 0, color: '#3b82f6' },
-    { name: 'Fats', value: todayStats?.totalFats || 0, color: '#f59e0b' },
+    { name: 'Protein', value: todayStats?.totalProtein || 0, fill: '#ef4444' },
+    { name: 'Carbs', value: todayStats?.totalCarbs || 0, fill: '#3b82f6' },
+    { name: 'Fats', value: todayStats?.totalFats || 0, fill: '#f59e0b' },
   ];
 
   const weeklyChartData = weeklyData.map(day => ({
@@ -278,7 +281,10 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <DateNavigator />
+      </div>
 
       {/* Motivational Message */}
       {motivationalMsg && (
@@ -306,7 +312,7 @@ export const Dashboard = () => {
               </p>
               <p className="text-xs text-gray-600">of {goals?.targetCalories || 2000}</p>
             </div>
-            <Target className="w-10 h-10 text-primary-600" />
+            <Flame className="w-10 h-10 text-primary-600" />
           </div>
           <div className="mt-2 bg-gray-200 rounded-full h-2">
             <div
@@ -325,7 +331,7 @@ export const Dashboard = () => {
               </p>
               <p className="text-xs text-gray-600">of {goals?.targetProtein || 150}g</p>
             </div>
-            <Award className="w-10 h-10 text-red-500" />
+            <Drumstick className="w-10 h-10 text-red-500" />
           </div>
           <div className="mt-2 bg-gray-200 rounded-full h-2">
             <div
@@ -352,7 +358,7 @@ export const Dashboard = () => {
               </p>
               <p className="text-xs text-gray-600">of {goals?.targetCarbs || 250}g</p>
             </div>
-            <Calendar className="w-10 h-10 text-blue-500" />
+            <Wheat className="w-10 h-10 text-blue-500" />
           </div>
           <div className="mt-2 bg-gray-200 rounded-full h-2">
             <div
@@ -379,7 +385,7 @@ export const Dashboard = () => {
               </p>
               <p className="text-xs text-gray-600">of {goals?.targetFats || 65}g</p>
             </div>
-            <TrendingDown className="w-10 h-10 text-amber-500" />
+            <Droplet className="w-10 h-10 text-amber-500" />
           </div>
           <div className="mt-2 bg-gray-200 rounded-full h-2">
             <div
@@ -513,7 +519,7 @@ export const Dashboard = () => {
       {/* Meal Breakdown */}
       {mealTypeStats.length > 0 && (
         <div className="card">
-          <h2 className="text-xl font-semibold mb-4">Today's Meal Breakdown</h2>
+          <h2 className="text-xl font-semibold mb-4">{isToday ? "Today's" : `${formatDayLabel(selectedDate)}'s`} Meal Breakdown</h2>
           <div className="space-y-3">
             {mealTypeStats.map((stat) => (
               <div key={stat.mealType} className="p-4 bg-gray-50 rounded-lg">
@@ -548,7 +554,7 @@ export const Dashboard = () => {
 
       {/* Micronutrients */}
       <div className="card">
-        <h2 className="text-xl font-semibold mb-4">Today's Micronutrients</h2>
+        <h2 className="text-xl font-semibold mb-4">{isToday ? "Today's" : `${formatDayLabel(selectedDate)}'s`} Micronutrients</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-3 bg-purple-50 rounded-lg">
             <p className="text-sm text-gray-600">Fiber</p>
@@ -759,7 +765,7 @@ export const Dashboard = () => {
 
       {/* Macro Distribution */}
       <div className="card">
-        <h2 className="text-xl font-semibold mb-4">Today's Macro Distribution</h2>
+        <h2 className="text-xl font-semibold mb-4">{isToday ? "Today's" : `${formatDayLabel(selectedDate)}'s`} Macro Distribution</h2>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -771,11 +777,7 @@ export const Dashboard = () => {
               outerRadius={100}
               fill="#8884d8"
               dataKey="value"
-            >
-              {macroData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
+            />
             <Tooltip />
           </PieChart>
         </ResponsiveContainer>

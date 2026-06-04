@@ -6,7 +6,7 @@ FitPal is a Progressive Web App (PWA) that helps you log Indian meals in plain l
 
 ![FitPal dashboard](docs/dashboard.png)
 
-> More screens (Login, Log Food, Goals, Recipes) are in the [docs/](docs/) folder.
+> More screens (Login, Log Food, Weight, Goals, Recipes, Profile) are in the [docs/](docs/) folder.
 
 ---
 
