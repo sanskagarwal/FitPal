@@ -40,7 +40,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                 <button
                   key={item.id}
                   onClick={() => onNavigate(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
                     currentPage === item.id
                       ? 'bg-primary-100 text-primary-700'
                       : 'text-gray-600 hover:bg-gray-100'
@@ -89,7 +89,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                       onNavigate(item.id);
                       setMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    className={`w-full flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
                       currentPage === item.id
                         ? 'bg-primary-100 text-primary-700'
                         : 'text-gray-600 hover:bg-gray-100'

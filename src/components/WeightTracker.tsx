@@ -3,8 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { WeightEntry, Streak } from '../types';
 import { saveWeight, getWeightsByUser, saveStreak, getStreak, updateWeight, deleteWeight } from '../utils/db';
 import { generateId, calculateBMI, calculateStreak } from '../utils/helpers';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingDown, Award, Calendar, Edit2, Trash2, Save, X } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { TrendingDown, TrendingUp, Minus, Award, Calendar, Edit2, Trash2, Save, X } from 'lucide-react';
 
 export const WeightTracker = () => {
   const { user } = useAuth();
@@ -177,7 +177,27 @@ export const WeightTracker = () => {
     }));
 
   const latestWeight = weights[0];
+  const previousWeight = weights[1];
+  const startWeight = weights[weights.length - 1];
   const targetWeight = user?.profile.goals.targetWeight || 0;
+
+  // Change since the previous weigh-in
+  const weightChange =
+    latestWeight && previousWeight
+      ? Number((latestWeight.weight - previousWeight.weight).toFixed(1))
+      : null;
+
+  // Progress from start weight toward the target weight (0-100%)
+  let goalProgress: number | null = null;
+  if (latestWeight && startWeight && targetWeight > 0) {
+    const totalDistance = Math.abs(startWeight.weight - targetWeight);
+    const remaining = Math.abs(latestWeight.weight - targetWeight);
+    if (totalDistance === 0) {
+      goalProgress = 100;
+    } else {
+      goalProgress = Math.max(0, Math.min(100, ((totalDistance - remaining) / totalDistance) * 100));
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -195,6 +215,27 @@ export const WeightTracker = () => {
               {latestWeight && (
                 <p className="text-sm text-gray-600">BMI: {latestWeight.bmi}</p>
               )}
+              {weightChange !== null && (
+                <p
+                  className={`text-sm font-medium flex items-center gap-1 mt-1 ${
+                    weightChange < 0
+                      ? 'text-green-600'
+                      : weightChange > 0
+                      ? 'text-red-600'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  {weightChange < 0 ? (
+                    <TrendingDown className="w-4 h-4" />
+                  ) : weightChange > 0 ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <Minus className="w-4 h-4" />
+                  )}
+                  {weightChange > 0 ? '+' : ''}
+                  {weightChange} kg since last
+                </p>
+              )}
             </div>
             <TrendingDown className="w-12 h-12 text-primary-600" />
           </div>
@@ -208,6 +249,17 @@ export const WeightTracker = () => {
               <p className="text-sm text-gray-600">
                 {latestWeight ? `${Math.abs(latestWeight.weight - targetWeight).toFixed(1)} kg to go` : ''}
               </p>
+              {goalProgress !== null && (
+                <div className="mt-2">
+                  <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                      style={{ width: `${goalProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{Math.round(goalProgress)}% to goal</p>
+                </div>
+              )}
             </div>
             <Award className="w-12 h-12 text-amber-500" />
           </div>
@@ -278,15 +330,23 @@ export const WeightTracker = () => {
       </div>
 
       {/* Weight Progress Chart */}
-      {weights.length > 0 && (
+      {weights.length > 0 ? (
         <div className="card">
           <h2 className="text-xl font-semibold mb-4">Weight Progress</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
+              <YAxis domain={['auto', 'auto']} unit=" kg" width={70} />
+              <Tooltip formatter={(value) => [`${value} kg`, 'Weight']} />
+              {targetWeight > 0 && (
+                <ReferenceLine
+                  y={targetWeight}
+                  stroke="#f59e0b"
+                  strokeDasharray="6 4"
+                  label={{ value: `Target ${targetWeight} kg`, position: 'insideTopRight', fill: '#b45309', fontSize: 12 }}
+                />
+              )}
               <Line
                 type="monotone"
                 dataKey="weight"
@@ -296,6 +356,12 @@ export const WeightTracker = () => {
               />
             </LineChart>
           </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="card text-center py-12">
+          <TrendingDown className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <h2 className="text-lg font-semibold text-gray-700">No weigh-ins yet</h2>
+          <p className="text-sm text-gray-500">Log your first weight above to start tracking your progress.</p>
         </div>
       )}
 
