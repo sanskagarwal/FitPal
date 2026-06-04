@@ -4,9 +4,9 @@ import { MealEntry, DailyStats, WeightEntry, NutrientInfo } from '../types';
 import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
 import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp, Lightbulb, X } from 'lucide-react';
-import { suggestMeal, suggestFoodForNutrient } from '../services/openai';
-import ReactMarkdown from 'react-markdown';
+import { TrendingDown, Target, Award, Calendar, AlertCircle, Sparkles, TrendingUp, Lightbulb, X, UtensilsCrossed } from 'lucide-react';
+import { suggestMeal, suggestFoodForNutrient, MealSuggestion, NutrientSuggestion } from '../services/openai';
+import { Spinner, LoadingBlock } from './Spinner';
 
 interface MealTypeStats {
   mealType: string;
@@ -24,10 +24,11 @@ export const Dashboard = () => {
   const [weeklyData, setWeeklyData] = useState<DailyStats[]>([]);
   const [recentWeight, setRecentWeight] = useState<WeightEntry | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mealSuggestion, setMealSuggestion] = useState<string>('');
+  const [mealSuggestion, setMealSuggestion] = useState<MealSuggestion | null>(null);
   const [suggestingMeal, setSuggestingMeal] = useState(false);
-  const [nutrientSuggestion, setNutrientSuggestion] = useState<{nutrient: string, suggestion: string} | null>(null);
+  const [nutrientSuggestion, setNutrientSuggestion] = useState<NutrientSuggestion | null>(null);
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
+  const [dietPreference, setDietPreference] = useState<'vegetarian' | 'eggetarian' | 'non-vegetarian'>('vegetarian');
 
   useEffect(() => {
     loadDashboardData();
@@ -179,7 +180,7 @@ export const Dashboard = () => {
     if (!user || !todayStats) return;
 
     setSuggestingMeal(true);
-    setMealSuggestion('');
+    setMealSuggestion(null);
 
     const goals = user.profile.goals;
     const remainingCalories = goals.targetCalories - todayStats.totalCalories;
@@ -198,62 +199,20 @@ export const Dashboard = () => {
 
     try {
       const suggestion = await suggestMeal(
-        remainingCalories,
-        remainingProtein,
-        remainingCarbs,
-        remainingFats,
-        remainingFiber,
-        mealType
+        Math.round(remainingCalories),
+        Math.round(remainingProtein),
+        Math.round(remainingCarbs),
+        Math.round(remainingFats),
+        Math.round(remainingFiber),
+        mealType,
+        dietPreference
       );
-      
-      // Try to parse if it's JSON and format it nicely
-      try {
-        const parsed = JSON.parse(suggestion);
-        const formatted = formatMealSuggestionFromJSON(parsed);
-        setMealSuggestion(formatted);
-      } catch {
-        // Not JSON, use as is
-        setMealSuggestion(suggestion);
-      }
+      setMealSuggestion(suggestion);
     } catch (error) {
       console.error('Error getting meal suggestion:', error);
-      setMealSuggestion('Unable to get meal suggestion. Please try again.');
     } finally {
       setSuggestingMeal(false);
     }
-  };
-
-  const formatMealSuggestionFromJSON = (data: any): string => {
-    let formatted = '';
-    
-    if (data.meal_suggestion) {
-      formatted += `## ${data.meal_suggestion.name}\n\n`;
-      
-      if (data.meal_suggestion.ingredients) {
-        formatted += '**Ingredients:**\n\n';
-        data.meal_suggestion.ingredients.forEach((ing: any) => {
-          formatted += `- **${ing.item}**: ${ing.portion}\n`;
-        });
-        formatted += '\n';
-      }
-    }
-    
-    if (data.nutritional_breakdown) {
-      formatted += '**Nutritional Breakdown:**\n\n';
-      const nutrients = data.nutritional_breakdown;
-      formatted += `- **Calories**: ${nutrients.calories}\n`;
-      formatted += `- **Protein**: ${nutrients.protein}\n`;
-      formatted += `- **Carbs**: ${nutrients.carbohydrates}\n`;
-      formatted += `- **Fats**: ${nutrients.fats}\n`;
-      formatted += `- **Fiber**: ${nutrients.fiber}\n\n`;
-    }
-    
-    if (data.meal_fit_justification) {
-      formatted += '**Why This Meal?**\n\n';
-      formatted += data.meal_fit_justification;
-    }
-    
-    return formatted;
   };
 
   const handleNutrientSuggestion = async (nutrientName: string, currentAmount: number, targetAmount: number) => {
@@ -264,73 +223,12 @@ export const Dashboard = () => {
 
     try {
       const suggestion = await suggestFoodForNutrient(nutrientName, currentAmount, targetAmount);
-      
-      // Try to parse if it's JSON and format it nicely
-      try {
-        const parsed = JSON.parse(suggestion);
-        const formatted = formatNutrientSuggestionFromJSON(parsed, nutrientName);
-        setNutrientSuggestion({ nutrient: nutrientName, suggestion: formatted });
-      } catch {
-        // Not JSON, use as is
-        setNutrientSuggestion({ nutrient: nutrientName, suggestion });
-      }
+      setNutrientSuggestion(suggestion);
     } catch (error) {
       console.error('Error getting nutrient suggestion:', error);
-      setNutrientSuggestion({ 
-        nutrient: nutrientName, 
-        suggestion: 'Unable to get suggestion. Please try again.' 
-      });
     } finally {
       setSuggestingNutrient(false);
     }
-  };
-
-  const formatNutrientSuggestionFromJSON = (data: any, nutrientName: string): string => {
-    let formatted = '';
-    
-    if (data.top_foods || data.foods) {
-      const foods = data.top_foods || data.foods;
-      formatted += `**Top ${nutrientName}-Rich Indian Foods:**\n\n`;
-      
-      if (Array.isArray(foods)) {
-        foods.forEach((food: any) => {
-          if (typeof food === 'string') {
-            formatted += `- ${food}\n`;
-          } else if (food.name && food.content) {
-            formatted += `- **${food.name}**: ${food.content}\n`;
-          } else if (food.item && food.portion) {
-            formatted += `- **${food.item}** (${food.portion})\n`;
-          }
-        });
-      }
-      formatted += '\n';
-    }
-    
-    if (data.portion_sizes) {
-      formatted += '**Recommended Portions:**\n\n';
-      if (Array.isArray(data.portion_sizes)) {
-        data.portion_sizes.forEach((portion: any) => {
-          formatted += `- ${portion}\n`;
-        });
-      } else if (typeof data.portion_sizes === 'string') {
-        formatted += data.portion_sizes + '\n';
-      }
-      formatted += '\n';
-    }
-    
-    if (data.meal_ideas || data.incorporation_tips) {
-      formatted += '**How to Add to Your Meals:**\n\n';
-      const tips = data.meal_ideas || data.incorporation_tips;
-      if (Array.isArray(tips)) {
-        tips.forEach((tip: any) => {
-          formatted += `- ${tip}\n`;
-        });
-      } else if (typeof tips === 'string') {
-        formatted += tips;
-      }
-    }
-    
-    return formatted;
   };
 
   if (loading) {
@@ -484,39 +382,101 @@ export const Dashboard = () => {
 
       {/* AI Meal Suggestion */}
       <div className="card bg-gradient-to-br from-primary-50 to-primary-100">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-primary-600" />
             <h2 className="text-xl font-semibold">AI Meal Suggestion</h2>
           </div>
-          <button
-            onClick={handleMealSuggestion}
-            disabled={suggestingMeal}
-            className="btn-primary"
-          >
-            {suggestingMeal ? 'Generating...' : 'Get Suggestion'}
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={dietPreference}
+              onChange={(e) => setDietPreference(e.target.value as any)}
+              disabled={suggestingMeal}
+              className="flex-1 sm:flex-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+              aria-label="Dietary preference"
+            >
+              <option value="vegetarian">Vegetarian</option>
+              <option value="eggetarian">Eggetarian</option>
+              <option value="non-vegetarian">Non-vegetarian</option>
+            </select>
+            <button
+              onClick={handleMealSuggestion}
+              disabled={suggestingMeal}
+              className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              {suggestingMeal && <Spinner className="w-4 h-4" />}
+              {suggestingMeal ? 'Generating...' : 'Get Suggestion'}
+            </button>
+          </div>
         </div>
-        {mealSuggestion ? (
+        {suggestingMeal ? (
           <div className="bg-white p-4 rounded-lg">
-            <div className="prose prose-sm max-w-none">
-              <ReactMarkdown
-                components={{
-                  h1: ({node, ...props}) => <h1 className="text-xl font-bold text-gray-900 mb-3" {...props} />,
-                  h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-4" {...props} />,
-                  h3: ({node, ...props}) => <h3 className="text-base font-semibold text-gray-800 mb-2 mt-3" {...props} />,
-                  p: ({node, ...props}) => <p className="text-gray-700 mb-2" {...props} />,
-                  ul: ({node, ...props}) => <ul className="list-disc list-inside ml-2 mb-3 space-y-1" {...props} />,
-                  ol: ({node, ...props}) => <ol className="list-decimal list-inside ml-2 mb-3 space-y-1" {...props} />,
-                  li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
-                  strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-                  em: ({node, ...props}) => <em className="italic text-gray-700" {...props} />,
-                  code: ({node, ...props}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props} />,
-                }}
-              >
-                {mealSuggestion}
-              </ReactMarkdown>
+            <LoadingBlock label="Building a meal around your remaining goals…" />
+          </div>
+        ) : mealSuggestion ? (
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+            {/* Meal header */}
+            <div className="flex items-start gap-3 p-4 border-b border-gray-100">
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
+                <UtensilsCrossed className="w-5 h-5 text-primary-600" />
+              </div>
+              <div className="min-w-0">
+                <span className="inline-block text-[11px] font-medium uppercase tracking-wide text-primary-600 capitalize">
+                  {mealSuggestion.mealType}
+                </span>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-snug break-words">
+                  {mealSuggestion.name}
+                </h3>
+                {mealSuggestion.description && (
+                  <p className="text-sm text-gray-600 mt-0.5">{mealSuggestion.description}</p>
+                )}
+              </div>
             </div>
+
+            {/* Nutrition pills */}
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-4 border-b border-gray-100">
+              {[
+                { label: 'Calories', value: mealSuggestion.nutrition.calories, unit: '', color: 'text-gray-900' },
+                { label: 'Protein', value: mealSuggestion.nutrition.protein, unit: 'g', color: 'text-red-600' },
+                { label: 'Carbs', value: mealSuggestion.nutrition.carbs, unit: 'g', color: 'text-blue-600' },
+                { label: 'Fats', value: mealSuggestion.nutrition.fats, unit: 'g', color: 'text-amber-600' },
+                { label: 'Fiber', value: mealSuggestion.nutrition.fiber, unit: 'g', color: 'text-purple-600' },
+              ].map((m) => (
+                <div key={m.label} className="text-center bg-gray-50 rounded-lg py-2 px-1">
+                  <p className={`text-base sm:text-lg font-bold ${m.color}`}>{m.value}{m.unit}</p>
+                  <p className="text-[11px] text-gray-500">{m.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Ingredients */}
+            {mealSuggestion.ingredients.length > 0 && (
+              <div className="p-4 border-b border-gray-100">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
+                  What's in it
+                </h4>
+                <ul className="space-y-1.5">
+                  {mealSuggestion.ingredients.map((ing, i) => (
+                    <li key={i} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-gray-800">{ing.item}</span>
+                      <span className="flex-shrink-0 text-xs font-medium text-gray-600 bg-gray-100 rounded-full px-2.5 py-0.5">
+                        {ing.portion}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Why this meal */}
+            {mealSuggestion.reason && (
+              <div className="p-4 bg-primary-50/50">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-primary-700 mb-1">
+                  Why this meal
+                </h4>
+                <p className="text-sm text-gray-700">{mealSuggestion.reason}</p>
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-gray-600">
@@ -676,36 +636,59 @@ export const Dashboard = () => {
       {nutrientSuggestion && (
         <div className="card bg-gradient-to-br from-blue-50 to-indigo-100">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="w-6 h-6 text-blue-600" />
-              <h3 className="text-lg font-semibold">Food Suggestions for {nutrientSuggestion.nutrient}</h3>
+            <div className="flex items-center gap-2 min-w-0">
+              <Lightbulb className="w-6 h-6 text-blue-600 flex-shrink-0" />
+              <h3 className="text-lg font-semibold truncate">
+                {nutrientSuggestion.nutrient}-rich foods
+              </h3>
             </div>
             <button
               onClick={() => setNutrientSuggestion(null)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 flex-shrink-0"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="bg-white p-4 rounded-lg">
-            <div className="prose prose-sm max-w-none">
-              <ReactMarkdown
-                components={{
-                  h1: ({node, ...props}) => <h1 className="text-xl font-bold text-gray-900 mb-3" {...props} />,
-                  h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-gray-800 mb-2 mt-4" {...props} />,
-                  h3: ({node, ...props}) => <h3 className="text-base font-semibold text-gray-800 mb-2 mt-3" {...props} />,
-                  p: ({node, ...props}) => <p className="text-gray-700 mb-2" {...props} />,
-                  ul: ({node, ...props}) => <ul className="list-disc list-inside ml-2 mb-3 space-y-1" {...props} />,
-                  ol: ({node, ...props}) => <ol className="list-decimal list-inside ml-2 mb-3 space-y-1" {...props} />,
-                  li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
-                  strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-                  em: ({node, ...props}) => <em className="italic text-gray-700" {...props} />,
-                  code: ({node, ...props}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props} />,
-                }}
-              >
-                {nutrientSuggestion.suggestion}
-              </ReactMarkdown>
-            </div>
+
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {nutrientSuggestion.foods.length > 0 ? (
+              <ul className="divide-y divide-gray-100">
+                {nutrientSuggestion.foods.map((food, i) => (
+                  <li key={i} className="flex items-center justify-between gap-3 p-3 sm:p-4">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{food.name}</p>
+                      {food.portion && (
+                        <p className="text-xs text-gray-500">{food.portion}</p>
+                      )}
+                    </div>
+                    {food.content && (
+                      <span className="flex-shrink-0 text-xs font-semibold text-blue-700 bg-blue-50 rounded-full px-2.5 py-1">
+                        {food.content}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="p-4 text-sm text-gray-600">No specific foods returned.</p>
+            )}
+
+            {nutrientSuggestion.tips.length > 0 && (
+              <div className="p-3 sm:p-4 bg-blue-50/50 border-t border-gray-100">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-blue-700 mb-2">
+                  Tips
+                </h4>
+                <ul className="space-y-1.5">
+                  {nutrientSuggestion.tips.map((tip, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-gray-700">
+                      <span className="text-blue-500 flex-shrink-0">•</span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       )}
