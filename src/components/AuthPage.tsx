@@ -147,7 +147,16 @@ export const AuthPage = () => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !loading) {
+              e.preventDefault();
+              e.currentTarget.requestSubmit();
+            }
+          }}
+          className="space-y-4"
+        >
           {!isLogin && (
             <input
               type="text"

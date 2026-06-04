@@ -37,6 +37,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "playwright": "^1.60.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
@@ -46,6 +47,6 @@
     "workbox-window": "^7.4.1"
   },
   "engines": {
-    "node": ">=20.19"
+    "node": ">=24"
   }
 }

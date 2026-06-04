@@ -1,31 +1,39 @@
 # FitPal 🥗
 
-**AI-powered nutrition tracker for Indian cuisine with complete privacy**
+**AI-powered nutrition tracker built for Indian cuisine — private by design.**
 
-FitPal is a modern Progressive Web App (PWA) that helps you track Indian meals, monitor weight, and achieve your fitness goals. Built with React, TypeScript, and Azure OpenAI, it provides intelligent food analysis while keeping your data completely private.
+FitPal is a Progressive Web App (PWA) that helps you log Indian meals in plain language, track weight and goals, and get AI-driven nutrition insights. It runs as a React single-page app with a lightweight local Express server for storage, so your data stays on your own machine.
 
-## ✨ Key Features
+![FitPal dashboard](docs/dashboard.png)
 
-- 🍛 **AI-Powered Food Logging** - Identify and log Indian foods with nutritional analysis powered by Azure OpenAI GPT-4o
-- 📊 **Smart Dashboard** - Track calories, macros, and micronutrients with interactive visualizations
-- ⚖️ **Weight Tracking** - Monitor weight, BMI, and body fat with streak tracking for consistency
-- 🎯 **Personalized Goals** - Auto-calculated maintenance calories based on your profile with customizable targets
-- 👨‍🍳 **Recipe Suggestions** - Get healthy Indian recipe ideas tailored to your goals
-- 💡 **Smart Suggestions** - AI-powered food recommendations to meet your remaining daily nutrient targets
-- 📱 **PWA Support** - Install as an app, works offline, responsive on all devices
-- 🔒 **Privacy First** - File-based storage with no cloud dependency, your data stays yours
-- ✏️ **Full CRUD** - Edit and delete meal and weight entries anytime
-- 📤 **Data Export/Import** - Export your data as JSON or CSV, and restore from backups
+> More screens (Login, Log Food, Goals, Recipes) are in the [docs/](docs/) folder.
+
+---
+
+## ✨ Highlights
+
+- 🤖 **Agentic meal logging** — describe meals in natural language ("2 rotis and a katori of dal for lunch at 1pm"), and the AI logs, updates, or deletes entries for you.
+- 🍛 **AI food analysis** — accurate macro + micronutrient estimates for Indian dishes, with a confidence indicator and editable calories when an estimate looks off.
+- 📊 **Smart dashboard** — animated stat cards, macro pie chart, and weekly trend lines powered by Recharts.
+- ⚖️ **Weight tracking** — BMI, body-fat, goal progress, and a streak system to reward consistency.
+- 🎯 **Goal setting** — auto-calculated calorie/macro targets from your profile (Mifflin–St Jeor), fully customizable.
+- 👨‍🍳 **Recipe suggestions** — healthy Indian recipes tailored to your diet preference and goals.
+- 💡 **Nutrient suggestions** — one-click AI food ideas to close the gap on any remaining nutrient.
+- 📱 **Installable PWA** — works offline, responsive across phone/tablet/desktop.
+- 🔒 **Privacy first** — file-based local storage, no third-party cloud beyond your own Azure OpenAI resource.
+
+See **[FEATURES.md](FEATURES.md)** for the full feature breakdown.
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 22+ installed
-- Azure OpenAI account with GPT-4o deployment (optional for development)
+- **Node.js 24+**
+- An **Azure OpenAI** resource with a GPT-4o (or compatible) deployment — required for AI features.
 
-### Installation
+### 1. Install
 
-1. **Clone and install dependencies:**
 ```bash
 git clone <repository-url>
 cd FitPal
@@ -33,85 +41,112 @@ npm install
 cd server && npm install && cd ..
 ```
 
-2. **Configure environment:**
+### 2. Configure
+
 ```bash
 cp .env.example .env
-# Edit .env with your Azure OpenAI credentials
 ```
 
-3. **Run the application:**
+Edit `.env` with your Azure OpenAI details:
+
+```env
+VITE_AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+VITE_AZURE_OPENAI_KEY=your_api_key_here
+VITE_AZURE_OPENAI_DEPLOYMENT=gpt-4o
+VITE_API_URL=http://localhost:3001/api
+```
+
+> ⚠️ The AI calls run **client-side**, so the key is shipped to the browser in a dev build. Use a scoped/proxied key for any real deployment — never a production secret.
+
+### 3. Run
+
 ```bash
 npm run dev:all
 ```
 
-This starts both the frontend (http://localhost:5173) and backend server (http://localhost:3001).
+- Frontend → http://localhost:5173
+- Storage server → http://localhost:3001
 
-### Alternative: Run Separately
+Or run them in separate terminals:
+
 ```bash
-# Terminal 1 - Frontend
-npm run dev
-
-# Terminal 2 - Backend
-npm run server
+npm run dev      # frontend
+npm run server   # storage server
 ```
 
-## 📖 Usage
+---
 
-1. **Register** - Create an account with your current weight and activity level
-2. **Set Goals** - Adjust your target weight and nutrition goals
-3. **Log Meals** - Search for Indian foods and log your daily meals
-4. **Track Weight** - Record your weight regularly to maintain streaks
-5. **View Progress** - Monitor your nutrition and weight trends on the dashboard
-6. **Get Suggestions** - Use AI to find foods that help you meet your nutrient goals
-7. **Discover Recipes** - Explore healthy Indian recipes personalized for you
+## 🧭 Usage
+
+1. **Register** with your basics (DOB, height, activity level) — FitPal estimates your starting goals.
+2. **Set goals** — tweak target weight, calories, and macros, or let AI suggest them.
+3. **Log meals** — use the natural-language quick-log, or search foods and add them manually.
+4. **Track weight** — log regularly to build a streak and watch goal progress.
+5. **Review the dashboard** — daily totals, macro split, and weekly trends.
+6. **Discover recipes** and **nutrient suggestions** to hit your targets.
+
+---
 
 ## 🛠️ Tech Stack
 
-**Frontend:**
+**Frontend**
 - React 19 + TypeScript
-- Vite (build tool)
-- Tailwind CSS (styling)
-- Recharts (data visualization)
-- Vite PWA Plugin (offline support)
+- Vite 8 (build/dev)
+- Tailwind CSS v4
+- Recharts (charts) · Motion / Framer Motion (animations) · Lucide (icons) · react-markdown
+- vite-plugin-pwa (offline + installable)
 
-**Backend:**
-- Express.js (REST API)
-- File-based JSON storage
-- TypeScript
+**Storage server**
+- Express 5 + TypeScript (tsx for dev)
+- File-based JSON storage under `server/data/`
 
-**AI Integration:**
-- Azure OpenAI GPT-4o (food analysis, recipes, suggestions)
+**AI**
+- Azure OpenAI (GPT-4o) via the `openai` SDK with structured outputs (`zod`)
+
+---
 
 ## 📁 Project Structure
 
 ```
 FitPal/
-├── src/                    # Frontend source
-│   ├── components/        # React components
-│   ├── context/          # React context (auth)
-│   ├── services/         # API services (OpenAI)
-│   ├── utils/           # Utilities (database, helpers)
-│   └── types/           # TypeScript types
-├── server/               # Backend server
-│   ├── index.ts         # Express server
-│   └── data/            # JSON file storage
-├── .env                 # Environment config
-└── package.json         # Dependencies
+├── src/                  # Frontend SPA
+│   ├── components/       # UI (Dashboard, FoodLogger, WeightTracker, …)
+│   ├── context/          # AuthContext
+│   ├── services/         # openai.ts (Azure OpenAI integration)
+│   ├── utils/            # db.ts (API client), helpers, export/import
+│   └── types/            # Shared TypeScript types
+├── server/               # Local Express storage server
+│   ├── index.ts          # REST API
+│   └── data/             # JSON files (per user)
+├── public/               # PWA icons & static assets
+├── vite.config.ts        # Vite + PWA config
+└── package.json
 ```
-
-## 🔗 Learn More
-
-- **[FEATURES.md](FEATURES.md)** - Complete feature list and capabilities
-- **[DEVELOPER.md](DEVELOPER.md)** - Setup instructions, API documentation, and development guide
-
-## 📄 License
-
-See [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-Built with ❤️ for the Indian fitness community. Powered by Azure OpenAI for intelligent food tracking.
 
 ---
 
-**FitPal** - Track meals for Fitness and Health 🥗💪
+## 📦 Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Vite dev server |
+| `npm run server` | Start the local storage server |
+| `npm run dev:all` | Run frontend + server together |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Run ESLint |
+
+---
+
+## 🔗 More Docs
+
+- **[FEATURES.md](FEATURES.md)** — complete feature list
+- **[DEVELOPER.md](DEVELOPER.md)** — architecture, API reference, data models, and contribution guide
+
+## 📄 License
+
+See [LICENSE](LICENSE).
+
+---
+
+**FitPal** — track Indian meals smartly & privately 🥗💪

@@ -1,991 +1,460 @@
 # FitPal Developer Documentation 🛠️
 
-Complete guide for developers to set up, run, and extend FitPal.
+A guide to setting up, running, and extending FitPal.
 
 ## Table of Contents
 
+- [Architecture Overview](#architecture-overview)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [Project Architecture](#project-architecture)
-- [API Documentation](#api-documentation)
-- [Database Schema](#database-schema)
-- [Adding New Features](#adding-new-features)
+- [Running the App](#running-the-app)
+- [Scripts](#scripts)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [AI Integration](#ai-integration)
+- [Storage API Reference](#storage-api-reference)
+- [Data Models](#data-models)
+- [Extending FitPal](#extending-fitpal)
 - [Building for Production](#building-for-production)
 - [Troubleshooting](#troubleshooting)
 
+---
+
+## Architecture Overview
+
+FitPal has three parts:
+
+1. **Frontend SPA** (`src/`) — React 19 + TypeScript + Vite. All UI, state, and navigation live here. Navigation is **state-based** (a `currentPage` string with a `switch` in `App.tsx`), not React Router.
+2. **AI service** (`src/services/openai.ts`) — calls **Azure OpenAI directly from the browser** using the `openai` SDK's `AzureOpenAI` client with **structured outputs** validated by `zod`. (Because the call is client-side, the API key is exposed in the build — use a scoped/proxied key for real deployments.)
+3. **Storage server** (`server/`) — a small **Express 5** app that persists data as **JSON files** under `server/data/`. The frontend talks to it via a REST client in `src/utils/db.ts`.
+
+```
+Browser (React SPA) ──HTTP──> Express storage server ──> server/data/*.json
+        │
+        └──HTTPS──> Azure OpenAI (GPT-4o, structured outputs)
+```
+
+---
+
 ## Prerequisites
 
-### Required Software
-- **Node.js** 18+ ([download](https://nodejs.org/))
-- **npm** (comes with Node.js)
-- **Git** (for cloning the repository)
+- **Node.js 24+** ([download](https://nodejs.org/))
+- **npm** (bundled with Node)
+- **Git**
+- An **Azure OpenAI** resource with a GPT-4o (or compatible) deployment — required for AI features.
 
-### Optional
-- **Azure OpenAI Account** with GPT-4o deployment
-  - Required for AI-powered features (food search, recipes, suggestions)
-  - App works with mock data without it for development
-
-### System Requirements
-- **RAM:** 4GB minimum, 8GB recommended
-- **Storage:** 500MB for dependencies
-- **OS:** macOS, Linux, or Windows
+---
 
 ## Installation
 
-### 1. Clone the Repository
 ```bash
 git clone <repository-url>
 cd FitPal
+
+# Frontend deps
+npm install
+
+# Storage server deps
+cd server && npm install && cd ..
 ```
 
-### 2. Install Frontend Dependencies
-```bash
-npm install
-```
-
-### 3. Install Backend Dependencies
-```bash
-cd server
-npm install
-cd ..
-```
+---
 
 ## Configuration
 
-### Environment Variables
-
-Create a `.env` file in the project root:
+Create a `.env` in the project root:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your configuration:
-
 ```env
-# Azure OpenAI Configuration (Optional for development)
+# Azure OpenAI (used client-side by src/services/openai.ts)
 VITE_AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
 VITE_AZURE_OPENAI_KEY=your_api_key_here
 VITE_AZURE_OPENAI_DEPLOYMENT=gpt-4o
+# Optional — defaults to 2024-08-01-preview
+VITE_AZURE_OPENAI_API_VERSION=2024-08-01-preview
 
-# API Configuration
+# Storage server base URL
 VITE_API_URL=http://localhost:3001/api
 ```
 
-### Azure OpenAI Setup (Optional)
+> Only `VITE_`-prefixed variables are exposed to the frontend. The Azure key ships to the browser in a dev/local build — never use an unrestricted production secret.
 
-1. **Create Azure OpenAI Resource:**
-   - Go to [Azure Portal](https://portal.azure.com)
-   - Create a new Azure OpenAI resource
-   - You may need to [request access](https://aka.ms/oai/access) first
+### Storage server port
 
-2. **Deploy GPT-4o Model:**
-   - Open Azure OpenAI Studio
-   - Go to "Deployments"
-   - Create a new deployment
-   - Select "gpt-4o" as the model
-   - Note the deployment name
+The server defaults to port `3001`. Override with the `PORT` env var or edit `server/index.ts`:
 
-3. **Get Credentials:**
-   - In Azure Portal, go to your OpenAI resource
-   - Navigate to "Keys and Endpoint"
-   - Copy the endpoint URL and API key
-   - Add them to your `.env` file
-
-### Server Configuration
-
-The server runs on port 3001 by default. To change:
-
-Edit `server/index.ts`:
-```typescript
+```ts
 const PORT = process.env.PORT || 3001;
 ```
 
-## Running the Application
+---
 
-### Development Mode
+## Running the App
 
-#### Option 1: Run Both (Recommended)
+### Both together (recommended)
+
 ```bash
 npm run dev:all
 ```
-This starts both frontend and backend concurrently.
 
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3001
+- Frontend → http://localhost:5173
+- Storage server → http://localhost:3001
 
-#### Option 2: Run Separately
+### Separately
+
 ```bash
-# Terminal 1 - Frontend
-npm run dev
-
-# Terminal 2 - Backend  
-npm run server
+npm run dev      # frontend (Vite)
+npm run server   # storage server (tsx watch)
 ```
 
-### Available Scripts
+---
 
-**Frontend:**
-```bash
-npm run dev       # Start Vite dev server (port 5173)
-npm run build     # Build for production
-npm run preview   # Preview production build
-npm run lint      # Run ESLint
-```
+## Scripts
 
-**Backend:**
-```bash
-npm run server    # Start backend server (runs: cd server && npm run dev)
-```
+**Root (`package.json`)**
 
-**In server/ directory:**
-```bash
-npm run dev       # Start with hot reload (tsx watch)
-npm run build     # Compile TypeScript to JavaScript
-npm start         # Run compiled version
-```
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Vite dev server |
+| `npm run server` | Start the storage server (`cd server && npm run dev`) |
+| `npm run dev:all` | Run frontend + server concurrently |
+| `npm run build` | `tsc` type-check + `vite build` |
+| `npm run preview` | Preview the production build |
+| `npm run lint` | Run ESLint |
 
-## Project Architecture
+**Server (`server/package.json`)**
 
-### Directory Structure
+| Command | Description |
+| --- | --- |
+| `npm run dev` | `tsx watch index.ts` (hot reload) |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm start` | Run the compiled server |
+
+---
+
+## Project Structure
 
 ```
 FitPal/
-├── src/                          # Frontend source code
-│   ├── components/              # React components
-│   │   ├── AuthPage.tsx        # Login/Registration
-│   │   ├── Dashboard.tsx       # Main dashboard
-│   │   ├── FoodLogger.tsx      # Food logging
-│   │   ├── WeightTracker.tsx   # Weight tracking
-│   │   ├── Goals.tsx           # Goal management
-│   │   ├── Recipes.tsx         # Recipe suggestions
-│   │   ├── Profile.tsx         # User profile
-│   │   └── Layout.tsx          # App layout
-│   ├── context/                # React Context
-│   │   └── AuthContext.tsx     # Authentication state
-│   ├── services/               # External services
-│   │   └── openai.ts          # Azure OpenAI integration
-│   ├── utils/                  # Utility functions
-│   │   ├── db.ts              # API client for backend
-│   │   ├── helpers.ts         # Helper functions
-│   │   └── exportImport.ts    # Data export/import
-│   ├── types/                  # TypeScript type definitions
-│   │   └── index.ts           # All type interfaces
-│   ├── App.tsx                # Root component
-│   ├── main.tsx               # Entry point
-│   └── index.css              # Global styles
-├── server/                     # Backend server
-│   ├── index.ts               # Express server
-│   ├── data/                  # JSON file storage
-│   │   ├── user-*.json       # User profiles
-│   │   ├── meals-*.json      # Meal logs
-│   │   ├── weights-*.json    # Weight logs
-│   │   ├── notifications-*.json # Settings
-│   │   └── streak-*.json     # Streak data
-│   ├── package.json          # Backend dependencies
-│   └── tsconfig.json         # Backend TS config
-├── public/                     # Static assets
-├── index.html                  # HTML template
-├── vite.config.ts             # Vite configuration
-├── tailwind.config.js         # Tailwind CSS config
-├── tsconfig.json              # TypeScript config
-├── package.json               # Frontend dependencies
-├── .env                       # Environment variables (not in git)
-├── .env.example               # Environment template
-├── README.md                  # Project overview
-├── FEATURES.md                # Feature documentation
-└── DEVELOPER.md               # This file
-```
-
-### Tech Stack
-
-**Frontend:**
-- React 18.2.0 - UI framework
-- TypeScript 5.2.2 - Type safety
-- Vite 5.0.8 - Build tool and dev server
-- Tailwind CSS 3.3.6 - Styling
-- React Router 6.20.0 - Navigation
-- Recharts 2.10.3 - Data visualization
-- Lucide React 0.292.0 - Icons
-- date-fns 3.0.0 - Date utilities
-- Vite PWA Plugin 0.17.4 - Progressive Web App
-
-**Backend:**
-- Express 4.18.2 - Web framework
-- TypeScript 5.3.3 - Type safety
-- CORS 2.8.5 - Cross-origin requests
-- tsx 4.7.0 - TypeScript execution
-
-**AI Integration:**
-- Azure OpenAI Service - GPT-4o model
-
-## API Documentation
-
-### Base URL
-```
-http://localhost:3001/api
-```
-
-### Authentication
-No authentication required. User identification via `userId` in requests.
-
----
-
-### User Endpoints
-
-#### Create User
-```http
-POST /api/users
-Content-Type: application/json
-
-{
-  "id": "string",
-  "name": "string",
-  "email": "string",
-  "password": "string",
-  "age": number,
-  "gender": "male" | "female",
-  "height": number,
-  "currentWeight": number,
-  "activityLevel": "sedentary" | "light" | "moderate" | "active" | "very_active",
-  "goals": {
-    "targetWeight": number,
-    "dailyCalories": number,
-    "protein": number,
-    "carbs": number,
-    "fats": number,
-    "fiber": number
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "user": { /* user object */ }
-}
-```
-
-#### Get User by ID
-```http
-GET /api/users/:id
-```
-
-**Response:**
-```json
-{
-  "id": "string",
-  "name": "string",
-  "email": "string",
-  // ... rest of user data
-}
-```
-
-#### Get User by Email
-```http
-GET /api/users/email/:email
-```
-
-**Response:** Same as Get User by ID
-
-#### Update User
-```http
-PUT /api/users/:id
-Content-Type: application/json
-
-{
-  // Updated user object
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "user": { /* updated user object */ }
-}
+├── src/
+│   ├── components/
+│   │   ├── AuthPage.tsx        # Login / registration
+│   │   ├── Dashboard.tsx       # Overview, charts, AI suggestions
+│   │   ├── FoodLogger.tsx      # Agentic chat + search + manual logging
+│   │   ├── WeightTracker.tsx   # Weight, BMI, streaks
+│   │   ├── Goals.tsx           # Goal setting + AI suggestions
+│   │   ├── Recipes.tsx         # AI recipe suggestions
+│   │   ├── Profile.tsx         # Edit profile
+│   │   ├── Layout.tsx          # Header / nav / shell
+│   │   ├── Toast.tsx           # Toast notifications
+│   │   └── Spinner.tsx         # Loading indicators
+│   ├── context/
+│   │   └── AuthContext.tsx     # Auth state & actions
+│   ├── services/
+│   │   └── openai.ts           # Azure OpenAI integration (structured outputs)
+│   ├── utils/
+│   │   ├── db.ts               # REST client for the storage server
+│   │   ├── helpers.ts          # Dates, formatting, calculations
+│   │   └── exportImport.ts     # Data export / import
+│   ├── types/
+│   │   └── index.ts            # Shared TypeScript types
+│   ├── App.tsx                 # Root + state-based routing
+│   ├── main.tsx                # Entry point
+│   └── index.css               # Tailwind + global styles
+├── server/
+│   ├── index.ts                # Express REST API
+│   ├── data/                   # Per-user JSON files
+│   ├── package.json
+│   └── tsconfig.json
+├── public/                     # PWA icons & static assets
+├── index.html
+├── vite.config.ts              # Vite + PWA config
+├── tailwind.config.js
+├── tsconfig.json
+└── package.json
 ```
 
 ---
 
-### Meal Endpoints
+## Tech Stack
 
-#### Create Meal
-```http
-POST /api/meals
-Content-Type: application/json
+**Frontend**
+- React 19 + TypeScript
+- Vite 8 (dev server + build)
+- Tailwind CSS v4 (`@tailwindcss/postcss`)
+- Recharts (charts), Motion / Framer Motion (animations), Lucide (icons), react-markdown
+- vite-plugin-pwa + workbox-window (installable, offline)
 
-{
-  "id": "string",
-  "userId": "string",
-  "date": "ISO 8601 date string",
-  "mealType": "breakfast" | "lunch" | "dinner" | "snack",
-  "foods": [
-    {
-      "name": "string",
-      "quantity": number,
-      "unit": "string"
-    }
-  ],
-  "nutrition": {
-    "calories": number,
-    "protein": number,
-    "carbs": number,
-    "fats": number,
-    "fiber": number,
-    "vitaminA": number,
-    "vitaminC": number,
-    "vitaminD": number,
-    "calcium": number,
-    "iron": number,
-    "magnesium": number,
-    "potassium": number
-  },
-  "notes": "string"
-}
-```
+**Storage server**
+- Express 5 + TypeScript
+- CORS
+- tsx (dev execution)
 
-**Response:**
-```json
-{
-  "success": true,
-  "meal": { /* meal object */ }
-}
-```
-
-#### Get All Meals for User
-```http
-GET /api/meals/:userId
-```
-
-**Response:**
-```json
-[
-  {
-    "id": "string",
-    "userId": "string",
-    "date": "string",
-    // ... rest of meal data
-  }
-]
-```
-
-#### Update Meal
-```http
-PUT /api/meals/:id
-Content-Type: application/json
-
-{
-  // Updated meal object including userId
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "meal": { /* updated meal object */ }
-}
-```
-
-#### Delete Meal
-```http
-DELETE /api/meals/:userId/:id
-```
-
-**Response:**
-```json
-{
-  "success": true
-}
-```
+**AI**
+- Azure OpenAI (GPT-4o) via the `openai` SDK
+- `zod` schemas + `zodResponseFormat` for strict structured outputs
 
 ---
 
-### Weight Endpoints
+## AI Integration
 
-#### Create Weight Entry
-```http
-POST /api/weights
-Content-Type: application/json
+All AI logic lives in `src/services/openai.ts`.
 
-{
-  "id": "string",
-  "userId": "string",
-  "date": "ISO 8601 date string",
-  "weight": number,
-  "bmi": number,
-  "bodyFat": number,
-  "notes": "string"
-}
-```
+- **Client** — `getClient()` lazily creates an `AzureOpenAI` instance with `dangerouslyAllowBrowser: true`. It throws a clear error if `VITE_AZURE_OPENAI_ENDPOINT` / `VITE_AZURE_OPENAI_KEY` are missing.
+- **Helpers**
+  - `completeText(messages, temperature?)` — free-form text via `chat.completions.create`.
+  - `completeStructured(messages, schema, schemaName, temperature?)` — strict JSON via `chat.completions.parse` + `zodResponseFormat`.
+- **Structured outputs** use `zod` schemas. Because strict mode requires every field, mark optional fields with `.nullable()`.
+- **Key functions** include food analysis (with a `confidence` field), per-unit nutrient re-estimation, agentic meal chat (log/update/delete actions), recipe suggestions, dietary insights, and goal/nutrient suggestions.
 
-**Response:**
-```json
-{
-  "success": true,
-  "weight": { /* weight object */ }
-}
-```
-
-#### Get All Weights for User
-```http
-GET /api/weights/:userId
-```
-
-**Response:**
-```json
-[
-  {
-    "id": "string",
-    "userId": "string",
-    "date": "string",
-    "weight": number,
-    // ... rest of weight data
-  }
-]
-```
-
-#### Update Weight Entry
-```http
-PUT /api/weights/:id
-Content-Type: application/json
-
-{
-  // Updated weight object including userId
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "weight": { /* updated weight object */ }
-}
-```
-
-#### Delete Weight Entry
-```http
-DELETE /api/weights/:userId/:id
-```
-
-**Response:**
-```json
-{
-  "success": true
-}
-```
+To add a new AI capability, define a `zod` schema, build your messages, and call `completeStructured` — follow the existing functions as templates.
 
 ---
 
-### Notification Settings Endpoints
+## Storage API Reference
 
-#### Save Notification Settings
-```http
-POST /api/notifications
-Content-Type: application/json
+Base URL: `http://localhost:3001/api`. No auth; the user is identified by `userId` in the path/body.
 
-{
-  "userId": "string",
-  "enabled": boolean,
-  "times": ["string"]
-}
-```
+### Users
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/users` | Create or save a user |
+| `GET` | `/users/:id` | Get user by id |
+| `GET` | `/users/email/:email` | Get user by email |
+| `PUT` | `/users/:id` | Update a user |
 
-**Response:**
-```json
-{
-  "success": true,
-  "settings": { /* settings object */ }
-}
-```
+### Meals
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/meals` | Create a meal |
+| `GET` | `/meals/:userId` | List a user's meals |
+| `PUT` | `/meals/:id` | Update a meal (body includes `userId`) |
+| `DELETE` | `/meals/:userId/:id` | Delete a meal |
 
-#### Get Notification Settings
-```http
-GET /api/notifications/:userId
-```
+### Weights
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/weights` | Create a weight entry |
+| `GET` | `/weights/:userId` | List a user's weight entries |
+| `PUT` | `/weights/:id` | Update a weight entry (body includes `userId`) |
+| `DELETE` | `/weights/:userId/:id` | Delete a weight entry |
 
-**Response:**
-```json
-{
-  "userId": "string",
-  "enabled": boolean,
-  "times": ["string"]
-}
-```
+### Notifications
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/notifications` | Save notification settings |
+| `GET` | `/notifications/:userId` | Get notification settings |
 
----
+### Streaks
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/streaks` | Save streak data |
+| `GET` | `/streaks/:userId` | Get streak data |
 
-### Streak Endpoints
+### Health
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/health` | Server health check |
 
-#### Save Streak Data
-```http
-POST /api/streaks
-Content-Type: application/json
-
-{
-  "userId": "string",
-  "currentStreak": number,
-  "longestStreak": number,
-  "lastLogDate": "ISO 8601 date string"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "streak": { /* streak object */ }
-}
-```
-
-#### Get Streak Data
-```http
-GET /api/streaks/:userId
-```
-
-**Response:**
-```json
-{
-  "userId": "string",
-  "currentStreak": number,
-  "longestStreak": number,
-  "lastLogDate": "string"
-}
-```
+Errors return `404` (not found) or `500` (operation failed) with an `{ "error": "..." }` body.
 
 ---
 
-### Health Check
+## Data Models
 
-#### Server Health
-```http
-GET /api/health
-```
+These mirror `src/types/index.ts`. Files are stored per user under `server/data/` (e.g. `user-<id>.json`, `meals-<id>.json`, `weights-<id>.json`, `streak-<id>.json`).
 
-**Response:**
-```json
-{
-  "status": "ok",
-  "message": "FitPal server is running"
-}
-```
-
----
-
-### Error Responses
-
-All endpoints may return error responses:
-
-**404 Not Found:**
-```json
-{
-  "error": "Resource not found"
-}
-```
-
-**500 Internal Server Error:**
-```json
-{
-  "error": "Failed to perform operation"
-}
-```
-
-## Database Schema
-
-### Data Storage
-FitPal uses file-based JSON storage. Each user's data is stored in separate files in `server/data/`:
-
-### File Naming Convention
-- `user-{userId}.json` - User profile
-- `meals-{userId}.json` - Array of meal entries
-- `weights-{userId}.json` - Array of weight entries
-- `notifications-{userId}.json` - Notification settings
-- `streak-{userId}.json` - Streak tracking data
-
-### Data Models
-
-#### User
-```typescript
+```ts
 interface User {
-  id: string;                    // Unique user ID (timestamp-based)
-  name: string;                  // Full name
-  email: string;                 // Email address
-  password: string;              // SHA-256 hashed password
-  age: number;                   // Age in years
-  gender: 'male' | 'female';    // Gender
-  height: number;                // Height in cm
-  currentWeight: number;         // Current weight in kg
-  activityLevel: ActivityLevel;  // Activity level
-  goals: Goals;                  // Nutrition goals
+  id: string;
+  name: string;
+  email: string;
+  password: string;        // hashed locally
+  createdAt: Date;
+  profile: UserProfile;
 }
 
-type ActivityLevel = 
-  | 'sedentary'    // Little to no exercise
-  | 'light'        // Exercise 1-3 days/week
-  | 'moderate'     // Exercise 3-5 days/week
-  | 'active'       // Exercise 6-7 days/week
-  | 'very_active'; // Exercise twice per day
+interface UserProfile {
+  dateOfBirth: string;     // ISO YYYY-MM-DD
+  gender: 'male' | 'female' | 'other';
+  height: number;          // cm
+  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
+  dietPreference?: 'vegetarian' | 'eggetarian' | 'non-vegetarian';
+  goals: UserGoals;
+}
 
-interface Goals {
-  targetWeight: number;    // Target weight in kg (0 = not set)
-  dailyCalories: number;   // Daily calorie target
-  protein: number;         // Daily protein target (g)
-  carbs: number;          // Daily carbs target (g)
-  fats: number;           // Daily fats target (g)
-  fiber: number;          // Daily fiber target (g)
+interface UserGoals {
+  targetWeight: number;          // kg
+  weightLossRate?: number;       // kg/week
+  targetCalories: number;
+  targetProtein: number;         // g
+  targetCarbs: number;           // g
+  targetFats: number;            // g
+  targetFiber: number;           // g
+  // Optional micronutrient targets (mcg/mg): vitaminA/C/D/E/B12,
+  // calcium, iron, magnesium, potassium, zinc, plus customNutrients{}
 }
 ```
 
-#### Meal Entry
-```typescript
+```ts
+interface Food {
+  id: string;
+  name: string;
+  servingSize: string;
+  nutrients: NutrientInfo;
+  isIndian: boolean;
+  category?: string;
+  confidence?: 'high' | 'medium' | 'low';   // AI confidence in the estimate
+}
+
+interface NutrientInfo {
+  calories: number;
+  protein: number; carbs: number; fats: number;   // g
+  fiber?: number; sugar?: number; sodium?: number;
+  // Optional micros: vitaminA/C/D/E/B12, calcium, iron, magnesium, potassium, zinc
+}
+```
+
+```ts
 interface MealEntry {
-  id: string;                  // Unique meal ID
-  userId: string;              // User ID
-  date: string;                // ISO 8601 date string
-  mealType: MealType;          // Type of meal
-  foods: FoodItem[];           // List of foods
-  nutrition: NutritionInfo;    // Total nutrition
-  notes?: string;              // Optional notes
-}
-
-type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-
-interface FoodItem {
-  name: string;       // Food name
-  quantity: number;   // Quantity (serving size multiplier)
-  unit: string;       // Unit of measurement
-}
-
-interface NutritionInfo {
-  calories: number;    // kcal
-  protein: number;     // g
-  carbs: number;       // g
-  fats: number;        // g
-  fiber: number;       // g
-  vitaminA: number;    // μg
-  vitaminC: number;    // mg
-  vitaminD: number;    // μg
-  calcium: number;     // mg
-  iron: number;        // mg
-  magnesium: number;   // mg
-  potassium: number;   // mg
-}
-```
-
-#### Weight Entry
-```typescript
-interface WeightEntry {
-  id: string;          // Unique weight entry ID
-  userId: string;      // User ID
-  date: string;        // ISO 8601 date string
-  weight: number;      // Weight in kg
-  bmi: number;         // Calculated BMI
-  bodyFat?: number;    // Optional body fat %
-  notes?: string;      // Optional notes
-}
-```
-
-#### Notification Settings
-```typescript
-interface NotificationSettings {
-  userId: string;      // User ID
-  enabled: boolean;    // Notifications enabled
-  times: string[];     // Array of notification times
-}
-```
-
-#### Streak Data
-```typescript
-interface StreakData {
-  userId: string;          // User ID
-  currentStreak: number;   // Current consecutive days
-  longestStreak: number;   // Longest streak ever
-  lastLogDate: string;     // Last weight log date
-}
-```
-
-## Adding New Features
-
-### Adding a New Component
-
-1. **Create component file:**
-```bash
-touch src/components/NewFeature.tsx
-```
-
-2. **Component template:**
-```typescript
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-
-export default function NewFeature() {
-  const { user } = useAuth();
-
-  return (
-    <div className="max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">
-        New Feature
-      </h1>
-      {/* Your content */}
-    </div>
-  );
-}
-```
-
-3. **Add route in App.tsx:**
-```typescript
-import NewFeature from './components/NewFeature';
-
-// In Routes:
-<Route path="/new-feature" element={<NewFeature />} />
-```
-
-4. **Add navigation in Layout.tsx:**
-```typescript
-{
-  name: 'New Feature',
-  href: '/new-feature',
-  icon: IconName
-}
-```
-
-### Adding a New API Endpoint
-
-1. **Edit server/index.ts:**
-```typescript
-app.post('/api/newresource', async (req: Request, res: Response) => {
-  try {
-    const data = req.body;
-    await writeJSONFile(`newresource-${data.userId}.json`, data);
-    res.json({ success: true, data });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to save data' });
-  }
-});
-```
-
-2. **Add corresponding function in src/utils/db.ts:**
-```typescript
-export async function saveNewResource(data: NewResourceType) {
-  const response = await fetch(`${API_URL}/newresource`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  return response.json();
-}
-```
-
-3. **Add TypeScript types in src/types/index.ts:**
-```typescript
-export interface NewResourceType {
   id: string;
   userId: string;
-  // ... other fields
+  date: Date;
+  mealType: 'breakfast' | 'morning-snack' | 'lunch' | 'evening-snack' | 'dinner';
+  foods: FoodEntry[];
+  totalNutrients: NutrientInfo;
+  notes?: string;
+}
+
+interface FoodEntry {
+  food: Food;
+  quantity: number;        // multiplier of serving size
+  unit: 'serving' | 'katori' | 'bowl' | 'plate' | 'cup' | 'glass'
+      | 'tbsp' | 'tsp' | 'piece' | 'slice' | 'gram' | 'ml' | 'oz';
+  unitQuantity: number;    // e.g. 1.5 cups
 }
 ```
 
-### Adding a New AI Feature
+```ts
+interface WeightEntry {
+  id: string;
+  userId: string;
+  date: Date;
+  weight: number;          // kg
+  bodyFat?: number;        // %
+  bmi: number;
+  notes?: string;
+}
 
-1. **Add function in src/services/openai.ts:**
-```typescript
-export async function newAIFeature(prompt: string): Promise<string> {
-  // Follow pattern from existing functions
-  const systemPrompt = "Your system prompt...";
-  const userPrompt = `User query: ${prompt}`;
-  
-  const result = await callOpenAI(systemPrompt, userPrompt);
-  return result;
+interface Streak {
+  userId: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastLogDate: Date;
+}
+
+interface Recipe {
+  id: string;
+  name: string;
+  description: string;
+  ingredients: string[];
+  instructions: string[];
+  nutrients: NutrientInfo;
+  prepTime: string;
+  servings: number;
 }
 ```
 
-2. **Use in component:**
-```typescript
-import { newAIFeature } from '../services/openai';
+---
 
-const result = await newAIFeature(userInput);
-```
+## Extending FitPal
+
+### Add a screen / component
+
+1. Create `src/components/MyFeature.tsx`.
+2. Add a `currentPage` case in `App.tsx`'s `renderPage()` switch.
+3. Add a nav entry in `Layout.tsx`'s `menuItems` (or wire a button to `onNavigate`).
+
+### Add a storage endpoint
+
+1. Add a route in `server/index.ts` using the `readJSONFile` / `writeJSONFile` helpers.
+2. Add a matching call in `src/utils/db.ts` (use the `apiCall` helper).
+3. Add/extend types in `src/types/index.ts`.
+
+### Add an AI feature
+
+1. Define a `zod` schema for the output (use `.nullable()` for optional fields).
+2. Build the chat messages and call `completeStructured(...)` in `src/services/openai.ts`.
+3. Consume it from a component.
+
+---
 
 ## Building for Production
 
-### Frontend Build
-
 ```bash
+# Frontend → dist/ (includes PWA service worker + manifest)
 npm run build
+
+# Storage server → server/dist/
+cd server && npm run build && cd ..
 ```
 
-Output: `dist/` directory
-
-### Backend Build
+Run the built output:
 
 ```bash
-cd server
-npm run build
-```
-
-Output: `server/dist/` directory
-
-### Running Production Build
-
-```bash
-# Serve frontend (using any static server)
+# Serve the static frontend
 npx serve -s dist -l 5173
 
-# Run backend
-cd server
-npm start
+# Run the storage server
+cd server && npm start
 ```
 
-### Deployment Options
+Set production env values (scoped Azure key, production `VITE_API_URL`) before building, since `VITE_` vars are inlined at build time.
 
-**Frontend:**
-- Vercel
-- Netlify
-- GitHub Pages
-- Azure Static Web Apps
-- Any static hosting service
+> The PWA service worker only runs in a production build served over HTTPS or localhost.
 
-**Backend:**
-- Heroku
-- Railway
-- Render
-- DigitalOcean
-- AWS EC2
-- Azure App Service
-
-### Environment Variables for Production
-
-Update `.env` for production:
-```env
-VITE_AZURE_OPENAI_ENDPOINT=<production-endpoint>
-VITE_AZURE_OPENAI_KEY=<production-key>
-VITE_AZURE_OPENAI_DEPLOYMENT=gpt-4o
-VITE_API_URL=https://your-backend-domain.com/api
-```
+---
 
 ## Troubleshooting
 
-### Common Issues
-
-#### Port Already in Use
+**Port already in use**
 ```bash
-# Find process using port
-lsof -ti:5173  # or :3001 for backend
-kill -9 <PID>
-
-# Or use different ports
+lsof -ti:5173 | xargs kill -9   # or :3001 for the server
 PORT=5174 npm run dev
 ```
 
-#### Dependencies Not Installing
+**Reinstall from scratch**
 ```bash
-# Clear cache and reinstall
 rm -rf node_modules package-lock.json
 npm cache clean --force
 npm install
 ```
 
-#### Azure OpenAI Not Working
-- Verify endpoint URL format: `https://xxx.openai.azure.com`
-- Check API key is correct
-- Ensure deployment name matches
-- Verify model is deployed in Azure
-- Check Azure OpenAI quotas
+**AI not working**
+- Verify `VITE_AZURE_OPENAI_ENDPOINT` looks like `https://xxx.openai.azure.com`.
+- Confirm the key and that the deployment name matches a deployed model.
+- Check your Azure OpenAI quota/region.
 
-#### CORS Errors
-- Ensure backend is running
-- Check `VITE_API_URL` in `.env`
-- Verify CORS is enabled in server
+**CORS / network errors**
+- Ensure the storage server is running and `VITE_API_URL` points to it.
 
-#### Data Not Persisting
-- Check `server/data/` directory exists
-- Verify file permissions
-- Check server logs for errors
-- Ensure userId is consistent
+**Data not persisting**
+- Confirm `server/data/` exists and is writable.
+- Check the server logs and that `userId` is consistent.
 
-### Debugging
-
-#### Frontend Debugging
-```bash
-# Enable verbose logging
-npm run dev -- --debug
-
-# Check browser console (F12)
-```
-
-#### Backend Debugging
-```bash
-# Add console.logs in server/index.ts
-console.log('Request received:', req.body);
-
-# Check server output
-npm run server
-```
-
-#### Network Debugging
-- Use browser DevTools Network tab
-- Check API request/response
-- Verify request headers and body
-
-### Getting Help
-
-1. Check existing documentation
-2. Search GitHub issues
-3. Create new issue with:
-   - FitPal version
-   - Node.js version
-   - Error messages
-   - Steps to reproduce
+---
 
 ## Best Practices
 
-### Code Style
-- Use TypeScript for type safety
-- Follow ESLint rules
-- Use functional components
-- Keep components small and focused
-- Extract reusable logic to utils
-
-### State Management
-- Use React Context for global state
-- Local state for component-specific data
-- Avoid prop drilling
-
-### Performance
-- Lazy load components when possible
-- Memoize expensive calculations
-- Optimize re-renders with React.memo
-- Use proper keys in lists
-
-### Security
-- Never commit `.env` file
-- Hash passwords before storing
-- Validate user input
-- Sanitize data before storing
-
-### Data Management
-- Always include userId in data
-- Use ISO 8601 for dates
-- Validate data before saving
-- Handle errors gracefully
+- Keep components small; lift shared state into context where needed.
+- Validate AI responses with `zod` and handle errors gracefully.
+- Never commit `.env`.
+- Use ISO date strings/`Date` consistently and always scope data by `userId`.
 
 ---
 
-## Additional Resources
-
-- [React Documentation](https://react.dev/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [Vite Guide](https://vitejs.dev/guide/)
-- [Tailwind CSS Docs](https://tailwindcss.com/docs)
-- [Express.js Guide](https://expressjs.com/en/guide/routing.html)
-- [Azure OpenAI Docs](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
-
----
-
-**Happy Coding!** 🚀
-
-If you have questions or need help, feel free to open an issue on GitHub.
+**Happy building!** 🚀
