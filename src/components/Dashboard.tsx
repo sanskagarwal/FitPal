@@ -2,14 +2,11 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
-import { NutrientInfo, DietPreference } from '../types';
+import { NutrientInfo, DietPreference, MealSuggestion, NutrientSuggestion, DietaryInsight } from '../types';
 import {
   suggestMeal,
   suggestFoodForNutrient,
   getDietaryInsights,
-  MealSuggestion,
-  NutrientSuggestion,
-  DietaryInsight,
 } from '../services/openai';
 import { useDashboardData } from './dashboard/useDashboardData';
 import { MotivationalBanner } from './dashboard/MotivationalBanner';

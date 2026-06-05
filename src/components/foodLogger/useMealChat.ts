@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { FoodEntry, MealEntry, MealType, NutrientInfo, User } from '../../types';
-import { saveMeal, updateMeal, deleteMeal } from '../../utils/db';
 import {
-  chatLogMealStream,
+  FoodEntry,
+  MealEntry,
+  MealType,
+  NutrientInfo,
+  User,
   ParsedMealFood,
   MealChatResult,
   LoggedMealSummary,
-} from '../../services/openai';
+} from '../../types';
+import { saveMeal, updateMeal, deleteMeal } from '../../utils/db';
+import { chatLogMealStream } from '../../services/openai';
 import { generateId, combineDateWithCurrentTime } from '../../utils/helpers';
 import { ToastType } from '../Toast';
 import { ChatMessage, clampNumber, describeChatError, sumNutrients, toHHmm, MAX_CALORIES } from './foodLoggerUtils';

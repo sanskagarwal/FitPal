@@ -1,6 +1,5 @@
 import { Sparkles, X, UtensilsCrossed } from 'lucide-react';
-import { DietPreference } from '../../types';
-import { MealSuggestion } from '../../services/openai';
+import { DietPreference, MealSuggestion } from '../../types';
 import { Spinner, LoadingBlock } from '../Spinner';
 
 interface MealSuggestionPanelProps {

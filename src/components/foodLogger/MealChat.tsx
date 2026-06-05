@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Sparkles, Send, X } from 'lucide-react';
-import { MealEntry } from '../../types';
-import { MealChatResult } from '../../services/openai';
+import { MealEntry, MealChatResult } from '../../types';
 import { Spinner } from '../Spinner';
 import { ChatMessage } from './foodLoggerUtils';
 import { MealProposal } from './MealProposal';

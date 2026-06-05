@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Lightbulb, X } from 'lucide-react';
-import { NutrientSuggestion } from '../../services/openai';
+import { NutrientSuggestion } from '../../types';
 import { LoadingBlock } from '../Spinner';
 
 interface NutrientSuggestionPanelProps {

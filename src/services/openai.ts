@@ -1,4 +1,16 @@
-import { Food, NutrientInfo, Recipe, DietPreference, MealType, MealUnit } from '../types';
+import {
+  Food,
+  NutrientInfo,
+  Recipe,
+  DietPreference,
+  DietaryInsight,
+  MealSuggestion,
+  NutrientSuggestion,
+  MealChatResult,
+  LoggedMealSummary,
+  MealChatMessage,
+} from '../types';
+import { readNdjsonStream } from './ndjsonStream';
 
 // All AI work now runs on the FitPal server (so the Azure OpenAI key never
 // reaches the browser). These helpers just call the backend `/api/ai/*` routes
@@ -47,26 +59,6 @@ export async function getRecipeSuggestions(
   return aiCall<Recipe[]>('recipes', { preferences, goals, recentFoods, dietPreference });
 }
 
-export type InsightCategory =
-  | 'calories'
-  | 'protein'
-  | 'carbs'
-  | 'fats'
-  | 'fiber'
-  | 'hydration'
-  | 'general';
-
-export interface InsightRecommendation {
-  title: string;
-  detail: string;
-  category: InsightCategory;
-}
-
-export interface DietaryInsight {
-  summary: string;
-  recommendations: InsightRecommendation[];
-}
-
 const INSIGHTS_FALLBACK: DietaryInsight = {
   summary: 'A few simple habits will help you move toward your goal.',
   recommendations: [
@@ -105,27 +97,6 @@ export async function getDietaryInsights(
     console.error('Error getting insights:', error);
     return INSIGHTS_FALLBACK;
   }
-}
-
-export interface MealSuggestion {
-  name: string;
-  description: string;
-  mealType: string;
-  ingredients: { item: string; portion: string }[];
-  nutrition: { calories: number; protein: number; carbs: number; fats: number; fiber: number };
-  reason: string;
-}
-
-export interface NutrientFoodItem {
-  name: string;
-  content: string;
-  portion: string;
-}
-
-export interface NutrientSuggestion {
-  nutrient: string;
-  foods: NutrientFoodItem[];
-  tips: string[];
 }
 
 export async function suggestMeal(
@@ -189,41 +160,8 @@ export async function suggestGoals(
 // Agentic, conversational meal logging
 // ---------------------------------------------------------------------------
 
-export interface ParsedMealFood {
-  name: string;
-  servingSize: string; // describes ONE unit, e.g. "1 katori (~150g)"
-  unit: MealUnit;
-  unitQuantity: number; // how many of `unit` the user had
-  isIndian: boolean;
-  category?: string;
-  confidence?: 'high' | 'medium' | 'low'; // how sure the model is about the nutrition
-  nutrients: NutrientInfo; // per ONE unit
-}
-
-// What the assistant wants to do with the meal it has understood.
-export type MealChatAction = 'log' | 'update' | 'delete';
-
-export interface MealChatResult {
-  status: 'need_info' | 'ready';
-  action: MealChatAction; // log a new meal, edit an existing one, or delete one
-  targetMealId?: string | null; // id of the existing meal for update/delete
-  message: string; // assistant's reply: a clarifying question or a confirmation summary
-  mealType?: MealType;
-  time?: string | null; // HH:mm if known
-  foods: ParsedMealFood[];
-}
-
-// Compact summary of an already-logged meal, given to the assistant so it can
-// reference, edit or delete existing meals by id.
-export interface LoggedMealSummary {
-  id: string;
-  mealType: string;
-  time?: string | null; // HH:mm if known
-  foods: { name: string; unitQuantity: number; unit: string }[];
-}
-
 export async function chatLogMeal(
-  history: { role: 'user' | 'assistant'; content: string }[],
+  history: MealChatMessage[],
   loggedMeals: LoggedMealSummary[] = []
 ): Promise<MealChatResult> {
   return aiCall<MealChatResult>('chat-meal', { history, loggedMeals });
@@ -233,7 +171,7 @@ export async function chatLogMeal(
 // generated, then resolves with the final, nutrition-grounded result. Falls
 // back to the non-streaming endpoint if streaming is unavailable.
 export async function chatLogMealStream(
-  history: { role: 'user' | 'assistant'; content: string }[],
+  history: MealChatMessage[],
   loggedMeals: LoggedMealSummary[],
   onMessage: (text: string) => void
 ): Promise<MealChatResult> {
@@ -261,43 +199,21 @@ export async function chatLogMealStream(
     return chatLogMeal(history, loggedMeals);
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let final: MealChatResult | null = null;
-
   // The server emits newline-delimited JSON: {"t":"msg"|"done"|"error","v":...}
-  const handleLine = (line: string) => {
-    const trimmed = line.trim();
-    if (!trimmed) return;
-    let event: { t: string; v: unknown };
-    try {
-      event = JSON.parse(trimmed);
-    } catch {
-      return; // ignore partial/garbled lines
-    }
+  let final: MealChatResult | null = null;
+  let streamError: string | null = null;
+
+  await readNdjsonStream(response.body, (event) => {
     if (event.t === 'msg' && typeof event.v === 'string') {
       onMessage(event.v);
     } else if (event.t === 'done') {
       final = event.v as MealChatResult;
     } else if (event.t === 'error') {
-      throw new Error(typeof event.v === 'string' ? event.v : 'AI request failed');
+      streamError = typeof event.v === 'string' ? event.v : 'AI request failed';
     }
-  };
+  });
 
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let newlineIndex: number;
-    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-      const line = buffer.slice(0, newlineIndex);
-      buffer = buffer.slice(newlineIndex + 1);
-      handleLine(line);
-    }
-  }
-  if (buffer.trim()) handleLine(buffer);
-
+  if (streamError) throw new Error(streamError);
   if (!final) throw new Error('AI request did not return a result');
   return final;
 }

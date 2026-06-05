@@ -215,3 +215,92 @@ export interface ExportData {
   weightEntries: WeightEntry[];
   notifications: NotificationSettings;
 }
+
+// ---------------------------------------------------------------------------
+// AI service types
+//
+// Shared shapes returned by the backend `/api/ai/*` routes. They live here (not
+// in the AI client) so components and hooks can consume them without importing
+// the service module.
+// ---------------------------------------------------------------------------
+
+export type InsightCategory =
+  | 'calories'
+  | 'protein'
+  | 'carbs'
+  | 'fats'
+  | 'fiber'
+  | 'hydration'
+  | 'general';
+
+export interface InsightRecommendation {
+  title: string;
+  detail: string;
+  category: InsightCategory;
+}
+
+export interface DietaryInsight {
+  summary: string;
+  recommendations: InsightRecommendation[];
+}
+
+export interface MealSuggestion {
+  name: string;
+  description: string;
+  mealType: string;
+  ingredients: { item: string; portion: string }[];
+  nutrition: { calories: number; protein: number; carbs: number; fats: number; fiber: number };
+  reason: string;
+}
+
+export interface NutrientFoodItem {
+  name: string;
+  content: string;
+  portion: string;
+}
+
+export interface NutrientSuggestion {
+  nutrient: string;
+  foods: NutrientFoodItem[];
+  tips: string[];
+}
+
+// Agentic, conversational meal logging.
+export interface ParsedMealFood {
+  name: string;
+  servingSize: string; // describes ONE unit, e.g. "1 katori (~150g)"
+  unit: MealUnit;
+  unitQuantity: number; // how many of `unit` the user had
+  isIndian: boolean;
+  category?: string;
+  confidence?: 'high' | 'medium' | 'low'; // how sure the model is about the nutrition
+  nutrients: NutrientInfo; // per ONE unit
+}
+
+// What the assistant wants to do with the meal it has understood.
+export type MealChatAction = 'log' | 'update' | 'delete';
+
+export interface MealChatResult {
+  status: 'need_info' | 'ready';
+  action: MealChatAction; // log a new meal, edit an existing one, or delete one
+  targetMealId?: string | null; // id of the existing meal for update/delete
+  message: string; // assistant's reply: a clarifying question or a confirmation summary
+  mealType?: MealType;
+  time?: string | null; // HH:mm if known
+  foods: ParsedMealFood[];
+}
+
+// Compact summary of an already-logged meal, given to the assistant so it can
+// reference, edit or delete existing meals by id.
+export interface LoggedMealSummary {
+  id: string;
+  mealType: string;
+  time?: string | null; // HH:mm if known
+  foods: { name: string; unitQuantity: number; unit: string }[];
+}
+
+// A single turn in the meal-logging chat.
+export interface MealChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}

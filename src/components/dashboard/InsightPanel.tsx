@@ -1,5 +1,5 @@
 import { Flame, Drumstick, Wheat, Droplet, Lightbulb, X, type LucideIcon } from 'lucide-react';
-import { DietaryInsight, InsightCategory } from '../../services/openai';
+import { DietaryInsight, InsightCategory } from '../../types';
 import { Spinner, LoadingBlock } from '../Spinner';
 
 // Icon + colour per dietary-insight category, used to give each recommendation

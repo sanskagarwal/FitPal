@@ -1,7 +1,6 @@
 import { motion } from 'motion/react';
 import { Check, AlertCircle } from 'lucide-react';
-import { MealEntry } from '../../types';
-import { MealChatResult } from '../../services/openai';
+import { MealEntry, MealChatResult } from '../../types';
 import { ConfidenceBadge } from './ConfidenceBadge';
 
 interface MealProposalProps {
