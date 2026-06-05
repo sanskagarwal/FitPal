@@ -23,7 +23,16 @@ export const authService = {
       createdAt: new Date().toISOString(),
       profile: input.profile,
     };
-    userRepository.save(user);
+    try {
+      userRepository.save(user);
+    } catch (err) {
+      // Backstop for the race between emailExists() and save(): the UNIQUE
+      // index on users(email) rejects a concurrent duplicate registration.
+      if ((err as { code?: string }).code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        throw new ConflictError('Email already exists');
+      }
+      throw err;
+    }
     return { user: toPublicUser(user)!, userId: user.id };
   },
 

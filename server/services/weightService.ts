@@ -20,6 +20,9 @@ export const weightService = {
   },
 
   delete(id: string, userId: string): void {
-    weightRepository.delete(id, userId);
+    const found = weightRepository.delete(id, userId);
+    if (!found) {
+      throw new NotFoundError('Weight');
+    }
   },
 };

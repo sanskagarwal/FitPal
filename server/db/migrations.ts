@@ -37,7 +37,7 @@ const MIGRATIONS: Migration[] = [
           email TEXT,
           data  TEXT NOT NULL
         );
-        CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
         CREATE TABLE IF NOT EXISTS meals (
           id      TEXT PRIMARY KEY,

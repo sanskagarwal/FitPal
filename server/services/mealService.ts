@@ -20,6 +20,9 @@ export const mealService = {
   },
 
   delete(id: string, userId: string): void {
-    mealRepository.delete(id, userId);
+    const found = mealRepository.delete(id, userId);
+    if (!found) {
+      throw new NotFoundError('Meal');
+    }
   },
 };

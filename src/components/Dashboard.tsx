@@ -35,6 +35,15 @@ export const Dashboard = () => {
     user?.profile.dietPreference || DietPreference.Vegetarian
   );
 
+  // Re-sync the diet preference when the signed-in user's preference changes
+  // (e.g. after re-login), so meal suggestions don't use a previous user's
+  // value. React's recommended "adjust state during render" pattern.
+  const [prevDietPreference, setPrevDietPreference] = useState(user?.profile.dietPreference);
+  if (user?.profile.dietPreference !== prevDietPreference) {
+    setPrevDietPreference(user?.profile.dietPreference);
+    setDietPreference(user?.profile.dietPreference || DietPreference.Vegetarian);
+  }
+
   const handleMealSuggestion = async () => {
     if (!user || !todayStats) return;
 

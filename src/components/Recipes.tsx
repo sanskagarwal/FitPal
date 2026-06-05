@@ -16,6 +16,15 @@ export const Recipes = () => {
   );
   const [error, setError] = useState<string | null>(null);
 
+  // Re-sync the diet preference when the signed-in user's preference changes,
+  // so a new user's preference isn't shadowed by the previous one's initial
+  // value. React's recommended "adjust state during render" pattern.
+  const [prevDietPreference, setPrevDietPreference] = useState(user?.profile.dietPreference);
+  if (user?.profile.dietPreference !== prevDietPreference) {
+    setPrevDietPreference(user?.profile.dietPreference);
+    setDietPreference(user?.profile.dietPreference || DietPreference.Vegetarian);
+  }
+
   const loadRecipes = async () => {
     if (!user) return;
 

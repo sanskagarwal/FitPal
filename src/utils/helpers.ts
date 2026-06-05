@@ -150,27 +150,34 @@ export const formatDayLabel = (date: Date): string => {
 // Calculate streak
 export const calculateStreak = (dates: Date[]): number => {
   if (dates.length === 0) return 0;
-  
-  const sortedDates = dates
-    .map(d => new Date(d).setHours(0, 0, 0, 0))
-    .sort((a, b) => b - a);
-  
-  let streak = 1;
-  const today = new Date().setHours(0, 0, 0, 0);
-  
-  if (sortedDates[0] !== today && sortedDates[0] !== today - 86400000) {
-    return 0; // No recent activity
+
+  // Work in calendar days, not raw millisecond offsets: a day is not always
+  // 86_400_000 ms (DST transitions make it 23h or 25h), so timestamp math
+  // would miscount streaks around those boundaries.
+  const startOfDay = (d: Date): Date => {
+    const copy = new Date(d);
+    copy.setHours(0, 0, 0, 0);
+    return copy;
+  };
+  const dayKey = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
+  const loggedDays = new Set(dates.map((d) => dayKey(startOfDay(new Date(d)))));
+
+  // A current streak must include today or yesterday; otherwise it's stale.
+  const cursor = startOfDay(new Date());
+  if (!loggedDays.has(dayKey(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+    if (!loggedDays.has(dayKey(cursor))) return 0;
   }
-  
-  for (let i = 1; i < sortedDates.length; i++) {
-    const diff = sortedDates[i - 1] - sortedDates[i];
-    if (diff === 86400000) { // 24 hours
-      streak++;
-    } else {
-      break;
-    }
+
+  // Walk back one calendar day at a time. setDate() adjusts wall-clock time
+  // correctly across DST and month/year boundaries.
+  let streak = 0;
+  while (loggedDays.has(dayKey(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
   }
-  
+
   return streak;
 };
 

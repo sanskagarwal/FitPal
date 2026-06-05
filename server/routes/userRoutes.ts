@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { userController } from '../controllers/userController.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
-import { requireAuth, requireOwnParam, requireOwnBody } from '../middleware/auth.js';
+import { requireAuth, requireOwnParam } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
 import { UserUpsertSchema } from '../validation.js';
 
@@ -11,12 +11,7 @@ export const userRoutes = Router();
 
 userRoutes.use(requireAuth);
 
-userRoutes.post(
-  '/',
-  validateBody(UserUpsertSchema),
-  requireOwnBody('id'),
-  asyncHandler(userController.upsert)
-);
+userRoutes.post('/', validateBody(UserUpsertSchema), asyncHandler(userController.upsert));
 userRoutes.get('/:id', requireOwnParam('id'), asyncHandler(userController.get));
 userRoutes.put(
   '/:id',
