@@ -24,6 +24,7 @@ import {
   getStreak,
 } from './storage.js';
 import { validateMeal } from './validation.js';
+import { aiRateLimit } from './rateLimit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,7 +41,8 @@ app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
 // AI proxy routes — Azure OpenAI calls run here so the key stays server-side.
-app.use('/api/ai', aiRouter);
+// Rate-limited because these are the only externally-billed endpoints.
+app.use('/api/ai', aiRateLimit, aiRouter);
 
 // Initialise the SQLite store (creates the DB/schema and imports any legacy
 // JSON files from the old file-based store on first run).

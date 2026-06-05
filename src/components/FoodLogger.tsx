@@ -7,7 +7,7 @@ import { Food, MealEntry, FoodEntry, NutrientInfo, MealType, MealUnit } from '..
 import { analyzeFoodWithAI, chatLogMealStream, reestimateNutrientsForUnit, ParsedMealFood, MealChatResult, LoggedMealSummary } from '../services/openai';
 import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
 import { generateId, getStartOfDay, getEndOfDay, combineDateWithCurrentTime, formatDayLabel } from '../utils/helpers';
-import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check } from 'lucide-react';
+import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check, AlertCircle } from 'lucide-react';
 import { Toast, ToastType } from './Toast';
 import { Spinner } from './Spinner';
 
@@ -15,6 +15,42 @@ const MEAL_TYPES = Object.values(MealType);
 const QUANTITY_UNITS = Object.values(MealUnit);
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
+
+// Upper bounds mirror the server's meal validation so the UI never produces a
+// value the backend will reject. They are deliberately generous.
+const MAX_CALORIES = 100000;
+const MAX_QUANTITY = 10000;
+
+// Clamp a possibly-NaN/Infinity/out-of-range number into [min, max], falling
+// back to `fallback` when the value isn't a finite number.
+const clampNumber = (value: number, min: number, max: number, fallback: number): number => {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+};
+
+// Turn a chat failure into a user-facing message that reflects the actual
+// cause, instead of always telling the user to rephrase. A connectivity or
+// server-side outage is not the user's fault and rephrasing won't help.
+const describeChatError = (err: unknown): string => {
+  // fetch() rejects with a TypeError on network failure; also check offline.
+  const isNetwork =
+    (typeof navigator !== 'undefined' && navigator.onLine === false) ||
+    (err instanceof TypeError &&
+      /failed to fetch|network|load failed/i.test(err.message));
+  if (isNetwork) {
+    return "I couldn't reach the server. Check your connection and try again.";
+  }
+  // Server/model outages surface as 5xx or known AI failure messages.
+  const message = err instanceof Error ? err.message : '';
+  if (/too many|rate limit|429/i.test(message)) {
+    return message || 'Too many requests. Please wait a moment and try again.';
+  }
+  if (/ai request failed|unavailable|timeout|timed out|5\d\d|environment variable/i.test(message)) {
+    return 'The assistant is temporarily unavailable. Please try again in a moment.';
+  }
+  // Otherwise it's most likely genuine ambiguity in the request.
+  return 'Sorry, I had trouble understanding that. Could you rephrase what you ate?';
+};
 
 // Pluralize a serving unit for display (e.g. 2 "katoris", 3 "pieces").
 const formatUnit = (unit: string, quantity: number): string => {
@@ -200,7 +236,7 @@ export const FoodLogger = () => {
       console.error('Meal chat error:', err);
       setChatMessages([
         ...newHistory,
-        { role: 'assistant', content: 'Sorry, I had trouble understanding that. Could you rephrase what you ate?' },
+        { role: 'assistant', content: describeChatError(err) },
       ]);
     } finally {
       setChatLoading(false);
@@ -278,12 +314,13 @@ export const FoodLogger = () => {
   };
 
   const updateQuantity = (index: number, unitQuantity: number, unit: MealUnit) => {
+    const safeQuantity = clampNumber(unitQuantity, 0, MAX_QUANTITY, 1);
     const updated = [...selectedFoods];
-    updated[index].unitQuantity = unitQuantity;
+    updated[index].unitQuantity = safeQuantity;
     updated[index].unit = unit;
     // Calculate multiplier based on unit (for now, use unitQuantity as multiplier)
     // In a real app, you'd convert units to servings properly
-    updated[index].quantity = unitQuantity;
+    updated[index].quantity = safeQuantity;
     setSelectedFoods(updated);
   };
 
@@ -318,11 +355,12 @@ export const FoodLogger = () => {
 
   // Override the per-unit calories of a selected food (used to correct AI estimates).
   const updateFoodCalories = (index: number, calories: number) => {
+    const safeCalories = clampNumber(calories, 0, MAX_CALORIES, 0);
     const updated = [...selectedFoods];
     const entry = updated[index];
     entry.food = {
       ...entry.food,
-      nutrients: { ...entry.food.nutrients, calories: Math.max(0, calories) },
+      nutrients: { ...entry.food.nutrients, calories: safeCalories },
       confidence: 'high', // user has confirmed/corrected the value
     };
     setSelectedFoods(updated);
@@ -330,11 +368,12 @@ export const FoodLogger = () => {
 
   // Override the per-unit calories of a food in the AI chat proposal before confirming.
   const updateProposedFoodCalories = (index: number, calories: number) => {
+    const safeCalories = clampNumber(calories, 0, MAX_CALORIES, 0);
     setProposedMeal((prev) => {
       if (!prev) return prev;
       const foods = prev.foods.map((f, i) =>
         i === index
-          ? { ...f, nutrients: { ...f.nutrients, calories: Math.max(0, calories) }, confidence: 'high' as const }
+          ? { ...f, nutrients: { ...f.nutrients, calories: safeCalories }, confidence: 'high' as const }
           : f
       );
       return { ...prev, foods };
@@ -609,6 +648,17 @@ export const FoodLogger = () => {
                 ))}
               </ul>
             )}
+            {proposedMeal.action !== 'delete' &&
+              proposedMeal.foods.some((f) => f.confidence === 'low') && (
+                <div className="mb-3 flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>
+                    Some items are rough estimates (marked{' '}
+                    <span className="font-medium">~estimated</span>). Please review the calories
+                    above and adjust any that look off before confirming.
+                  </span>
+                </div>
+              )}
             <div className="flex gap-2">
               <button
                 onClick={confirmChatMeal}

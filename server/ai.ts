@@ -332,6 +332,45 @@ Give 3-5 specific, actionable recommendations for achieving their goals through 
   }
 }
 
+// Streaming variant of dietary insights: emits text chunks via `onChunk` as the
+// model generates them. Returns the full text. Throws on failure so the caller
+// can fall back to the buffered (fallback-bearing) getDietaryInsights.
+async function getDietaryInsightsStream(
+  currentWeight: number,
+  targetWeight: number,
+  recentNutrition: NutrientInfo,
+  goals: string,
+  onChunk: (text: string) => void
+): Promise<string> {
+  const messages: ChatMessage[] = [
+    {
+      role: 'user',
+      content: `Provide dietary insights for an Indian diet:
+Current weight: ${currentWeight}kg
+Target weight: ${targetWeight}kg
+Recent daily average nutrition: ${JSON.stringify(recentNutrition)}
+Goals: ${goals}
+
+Give 3-5 specific, actionable recommendations for achieving their goals through Indian cuisine.`,
+    },
+  ];
+
+  const result = streamText({
+    model: getModel(),
+    system: SYSTEM_PROMPT,
+    messages,
+    temperature: 0.7,
+    maxOutputTokens: 2000,
+  });
+
+  let full = '';
+  for await (const delta of result.textStream) {
+    full += delta;
+    onChunk(delta);
+  }
+  return full.trim();
+}
+
 // ---------------------------------------------------------------------------
 // Meal suggestion
 // ---------------------------------------------------------------------------
@@ -770,6 +809,44 @@ aiRouter.post(
     insight: await getDietaryInsights(b.currentWeight, b.targetWeight, b.recentNutrition, b.goals),
   }))
 );
+
+// Streaming insights endpoint. Streams plain-text chunks as they are generated.
+// If streaming fails before any text is sent, falls back to the buffered
+// getDietaryInsights (which has its own safe fallback) and sends that instead.
+aiRouter.post('/insights-stream', async (req: Request, res: Response) => {
+  const b = req.body ?? {};
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('X-Accel-Buffering', 'no');
+
+  let sentAny = false;
+  try {
+    await getDietaryInsightsStream(
+      b.currentWeight,
+      b.targetWeight,
+      b.recentNutrition,
+      b.goals,
+      (text) => {
+        sentAny = true;
+        res.write(text);
+      }
+    );
+  } catch (error: unknown) {
+    console.error('Streaming insights failed:', error);
+    // Only fall back if we haven't already streamed a partial answer.
+    if (!sentAny) {
+      const fallback = await getDietaryInsights(
+        b.currentWeight,
+        b.targetWeight,
+        b.recentNutrition,
+        b.goals
+      );
+      res.write(fallback);
+    }
+  } finally {
+    res.end();
+  }
+});
 aiRouter.post(
   '/suggest-meal',
   handle((b) =>

@@ -8,7 +8,7 @@ import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
 import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage, formatDayLabel } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie } from 'recharts';
 import { Flame, Drumstick, Wheat, Droplet, AlertCircle, Sparkles, TrendingUp, Lightbulb, X, UtensilsCrossed } from 'lucide-react';
-import { suggestMeal, suggestFoodForNutrient, MealSuggestion, NutrientSuggestion } from '../services/openai';
+import { suggestMeal, suggestFoodForNutrient, getDietaryInsightsStream, MealSuggestion, NutrientSuggestion } from '../services/openai';
 import { Spinner, LoadingBlock } from './Spinner';
 
 // Subtle staggered entrance for the overview stat cards.
@@ -42,6 +42,8 @@ export const Dashboard = () => {
   const [suggestingMeal, setSuggestingMeal] = useState(false);
   const [nutrientSuggestion, setNutrientSuggestion] = useState<NutrientSuggestion | null>(null);
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
+  const [insight, setInsight] = useState<string>('');
+  const [loadingInsight, setLoadingInsight] = useState(false);
   const nutrientSuggestionRef = useRef<HTMLDivElement>(null);
   const [dietPreference, setDietPreference] = useState<DietPreference>(
     user?.profile.dietPreference || DietPreference.Vegetarian
@@ -259,6 +261,38 @@ export const Dashboard = () => {
       console.error('Error getting nutrient suggestion:', error);
     } finally {
       setSuggestingNutrient(false);
+    }
+  };
+
+  const handleGetInsights = async () => {
+    if (!user || !todayStats) return;
+
+    setLoadingInsight(true);
+    setInsight('');
+
+    const profileGoals = user.profile.goals;
+    const currentWeight = recentWeight?.weight ?? profileGoals.targetWeight;
+    const recentNutrition: NutrientInfo = {
+      calories: Math.round(todayStats.totalCalories),
+      protein: Math.round(todayStats.totalProtein),
+      carbs: Math.round(todayStats.totalCarbs),
+      fats: Math.round(todayStats.totalFats),
+      fiber: Math.round(getTotalMicronutrients().fiber || 0),
+    };
+    const goalsSummary = `Target ${profileGoals.targetCalories} kcal, ${profileGoals.targetProtein}g protein, ${profileGoals.targetCarbs}g carbs, ${profileGoals.targetFats}g fats, ${profileGoals.targetFiber}g fiber per day.`;
+
+    try {
+      await getDietaryInsightsStream(
+        currentWeight,
+        profileGoals.targetWeight,
+        recentNutrition,
+        goalsSummary,
+        (chunk) => setInsight((prev) => prev + chunk)
+      );
+    } catch (error) {
+      console.error('Error getting insights:', error);
+    } finally {
+      setLoadingInsight(false);
     }
   };
 
@@ -527,6 +561,50 @@ export const Dashboard = () => {
         ) : (
           <p className="text-gray-600">
             Click the button to get an AI-powered meal suggestion based on your remaining daily goals!
+          </p>
+        )}
+      </div>
+
+      {/* AI Dietary Insights */}
+      <div className="card bg-gradient-to-br from-amber-50 to-amber-100/60">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-6 h-6 text-amber-600" />
+            <h2 className="text-xl font-semibold">AI Dietary Insights</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            {insight && !loadingInsight && (
+              <button
+                onClick={() => setInsight('')}
+                className="text-gray-400 hover:text-gray-700"
+                aria-label="Dismiss insights"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={handleGetInsights}
+              disabled={loadingInsight || !todayStats}
+              className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              {loadingInsight && <Spinner className="w-4 h-4" />}
+              {loadingInsight ? 'Thinking…' : insight ? 'Refresh' : 'Get Insights'}
+            </button>
+          </div>
+        </div>
+        {insight ? (
+          <div className="bg-white p-4 rounded-lg text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+            {insight}
+            {loadingInsight && <span className="inline-block w-2 h-4 ml-0.5 align-middle bg-amber-400 animate-pulse" />}
+          </div>
+        ) : loadingInsight ? (
+          <div className="bg-white p-4 rounded-lg">
+            <LoadingBlock label="Analyzing your recent nutrition…" />
+          </div>
+        ) : (
+          <p className="text-gray-600">
+            Get personalized, AI-powered tips for reaching your goals through Indian cuisine, based on
+            your recent nutrition.
           </p>
         )}
       </div>

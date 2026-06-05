@@ -66,6 +66,46 @@ export async function getDietaryInsights(
   }
 }
 
+// Streaming variant: calls `onChunk` with each text delta as insights generate,
+// and resolves with the full text. Falls back to the buffered endpoint if the
+// stream is unavailable.
+export async function getDietaryInsightsStream(
+  currentWeight: number,
+  targetWeight: number,
+  recentNutrition: NutrientInfo,
+  goals: string,
+  onChunk: (text: string) => void
+): Promise<string> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ai/insights-stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentWeight, targetWeight, recentNutrition, goals }),
+    });
+
+    if (!response.ok || !response.body) {
+      return getDietaryInsights(currentWeight, targetWeight, recentNutrition, goals);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let full = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      if (chunk) {
+        full += chunk;
+        onChunk(chunk);
+      }
+    }
+    return full.trim();
+  } catch (error) {
+    console.error('Error streaming insights:', error);
+    return getDietaryInsights(currentWeight, targetWeight, recentNutrition, goals);
+  }
+}
+
 export interface MealSuggestion {
   name: string;
   description: string;
@@ -202,8 +242,20 @@ export async function chatLogMealStream(
     body: JSON.stringify({ history, loggedMeals }),
   });
 
+  if (response.status === 429) {
+    // Rate limited — don't waste another request on the fallback.
+    let message = 'Too many AI requests. Please wait a moment and try again.';
+    try {
+      const data = await response.json();
+      if (data?.error) message = data.error;
+    } catch {
+      // no JSON body — keep the default message
+    }
+    throw new Error(message);
+  }
+
   if (!response.ok || !response.body) {
-    // Streaming endpoint failed outright — fall back to the buffered call.
+    // Streaming endpoint failed otherwise — fall back to the buffered call.
     return chatLogMeal(history, loggedMeals);
   }
 
