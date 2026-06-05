@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserProfile } from '../types';
-import { authLogin, authRegister, authLogout, authMe, authResetPassword } from '../utils/db';
+import { authLogin, authRegister, authLogout, authMe } from '../utils/db';
 import { calculateDailyCalories, calculateMacros, calculateAge } from '../utils/helpers';
 
-// Distinguish a normal failed login from a legacy (pre-bcrypt) account that
-// must set a new password once before it can sign in.
-export type LoginResult = 'ok' | 'invalid' | 'legacy';
+// Distinguish a successful login from a failed one.
+export type LoginResult = 'ok' | 'invalid';
 
 // Registration either succeeds with the created user, or fails with the
 // server-provided reason (e.g. duplicate email, weak password) so the UI can
@@ -20,7 +19,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<LoginResult>;
   register: (name: string, email: string, password: string, profile: UserProfile) => Promise<RegisterResult>;
-  resetPassword: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   setUser: (user: User) => void;
 }
@@ -63,9 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(result.user);
       return 'ok';
     }
-    if (result.status === 409 && result.code === 'legacy_password') {
-      return 'legacy';
-    }
     return 'invalid';
   };
 
@@ -105,15 +100,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return { ok: false, error: result.error || 'Registration failed. Please try again.' };
   };
 
-  const resetPassword = async (email: string, password: string): Promise<boolean> => {
-    const result = await authResetPassword(email, password);
-    if (result.ok && result.user) {
-      setUser(result.user);
-      return true;
-    }
-    return false;
-  };
-
   const logout = async () => {
     await authLogout();
     setUser(null);
@@ -126,7 +112,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading,
         login,
         register,
-        resetPassword,
         logout,
         setUser,
       }}

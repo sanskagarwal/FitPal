@@ -51,13 +51,6 @@ export const LoginSchema = z
   })
   .loose();
 
-export const ResetPasswordSchema = z
-  .object({
-    email: z.string().email(),
-    password: z.string().min(8, 'password must be at least 8 characters'),
-  })
-  .loose();
-
 // --- User upsert ----------------------------------------------------------
 
 // Profile/goal updates from the client. The controller merges this into the

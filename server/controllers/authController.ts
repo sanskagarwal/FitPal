@@ -25,11 +25,4 @@ export const authController = {
   async me(req: Request, res: Response): Promise<void> {
     res.json(authService.getMe(req.userId!));
   },
-
-  async resetPassword(req: Request, res: Response): Promise<void> {
-    const { email, password } = req.body;
-    const { user, userId } = await authService.resetPassword(email, password);
-    setAuthCookie(res, userId);
-    res.json({ success: true, user });
-  },
 };

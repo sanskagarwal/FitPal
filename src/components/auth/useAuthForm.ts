@@ -27,18 +27,15 @@ const INITIAL_FORM: AuthFormData = {
   activityLevel: ActivityLevel.Moderate,
 };
 
-// Owns the auth form state plus login / register / legacy-reset flows. Wraps the
-// existing AuthContext + db calls only.
+// Owns the auth form state plus the login / register flows. Wraps the existing
+// AuthContext + db calls only.
 export const useAuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState<AuthFormData>(INITIAL_FORM);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // Set when an existing (legacy SHA-256) account must choose a new password
-  // once before it can sign in.
-  const [needsReset, setNeedsReset] = useState(false);
 
-  const { login, register, resetPassword } = useAuth();
+  const { login, register } = useAuth();
 
   const updateField = <K extends keyof AuthFormData>(field: K, value: AuthFormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -46,7 +43,6 @@ export const useAuthForm = () => {
 
   const switchMode = (login: boolean) => {
     setIsLogin(login);
-    setNeedsReset(false);
     setError('');
   };
 
@@ -56,25 +52,6 @@ export const useAuthForm = () => {
     setLoading(true);
 
     try {
-      if (needsReset) {
-        if (!isValidEmail(formData.email) || !formData.password) {
-          setError('Enter your email and a new password');
-          setLoading(false);
-          return;
-        }
-        if (formData.password.length < 8) {
-          setError('Password must be at least 8 characters');
-          setLoading(false);
-          return;
-        }
-        const ok = await resetPassword(formData.email, formData.password);
-        if (!ok) {
-          setError('Could not reset password. Please try again.');
-        }
-        setLoading(false);
-        return;
-      }
-
       if (isLogin) {
         if (!isValidEmail(formData.email)) {
           setError('Please enter a valid email address');
@@ -82,10 +59,7 @@ export const useAuthForm = () => {
           return;
         }
         const result = await login(formData.email, formData.password);
-        if (result === 'legacy') {
-          setNeedsReset(true);
-          setError('Your account needs a new password. Set one below to continue.');
-        } else if (result !== 'ok') {
+        if (result !== 'ok') {
           setError('Invalid email or password');
         }
       } else {
@@ -169,7 +143,6 @@ export const useAuthForm = () => {
     updateField,
     error,
     loading,
-    needsReset,
     switchMode,
     handleSubmit,
   };

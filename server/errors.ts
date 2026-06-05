@@ -10,7 +10,7 @@
 
 export class AppError extends Error {
   readonly status: number;
-  // Optional machine-readable code the client can branch on (e.g. legacy_password).
+  // Optional machine-readable code the client can branch on.
   readonly code?: string;
 
   constructor(message: string, status = 500, code?: string) {

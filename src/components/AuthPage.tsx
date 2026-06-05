@@ -3,7 +3,7 @@ import { useAuthForm } from './auth/useAuthForm';
 import { RegisterFields } from './auth/RegisterFields';
 
 export const AuthPage = () => {
-  const { isLogin, formData, updateField, error, loading, needsReset, switchMode, handleSubmit } = useAuthForm();
+  const { isLogin, formData, updateField, error, loading, switchMode, handleSubmit } = useAuthForm();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-start justify-center p-4 py-10 sm:py-16">
@@ -92,7 +92,7 @@ export const AuthPage = () => {
             disabled={loading}
             className="btn-primary w-full"
           >
-            {loading ? 'Processing...' : needsReset ? 'Set New Password' : isLogin ? 'Login' : 'Create Account'}
+            {loading ? 'Processing...' : isLogin ? 'Login' : 'Create Account'}
           </button>
         </form>
       </div>

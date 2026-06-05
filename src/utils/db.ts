@@ -101,9 +101,6 @@ export const authRegister = (payload: {
 export const authLogin = (email: string, password: string): Promise<AuthResult> =>
   authRequest('login', { email, password });
 
-export const authResetPassword = (email: string, password: string): Promise<AuthResult> =>
-  authRequest('reset-password', { email, password });
-
 export const authLogout = async (): Promise<void> => {
   try {
     await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });

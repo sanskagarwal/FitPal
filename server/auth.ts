@@ -21,15 +21,9 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  // bcrypt hashes start with $2; anything else (e.g. legacy unsalted SHA-256)
-  // can never verify and must go through the one-time reset flow.
+  // bcrypt hashes start with $2; anything else can never verify.
   if (!hash || !hash.startsWith('$2')) return false;
   return bcrypt.compare(password, hash);
-}
-
-// True for the legacy client-side SHA-256 hashes (64 hex chars, no bcrypt prefix).
-export function isLegacyHash(hash: string | undefined): boolean {
-  return Boolean(hash) && !hash!.startsWith('$2');
 }
 
 export function signToken(userId: string): string {
