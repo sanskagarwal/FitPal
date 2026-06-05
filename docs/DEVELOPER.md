@@ -26,13 +26,14 @@ A guide to setting up, running, and extending FitPal.
 FitPal has three parts:
 
 1. **Frontend SPA** (`src/`) — React 19 + TypeScript + Vite. All UI, state, and navigation live here. Navigation is **state-based** (a `currentPage` string with a `switch` in `App.tsx`), not React Router.
-2. **AI service** (`src/services/openai.ts`) — calls **Azure OpenAI directly from the browser** using the `openai` SDK's `AzureOpenAI` client with **structured outputs** validated by `zod`. (Because the call is client-side, the API key is exposed in the build — use a scoped/proxied key for real deployments.)
-3. **Storage server** (`server/`) — a small **Express 5** app that persists data as **JSON files** under `server/data/`. The frontend talks to it via a REST client in `src/utils/db.ts`.
+2. **AI service** (`src/services/openai.ts`) — a thin client that calls the backend `/api/ai/*` routes. The actual **Azure OpenAI** calls run **server-side** (`server/ai.ts`) using the `openai` SDK's `AzureOpenAI` client with **structured outputs** validated by `zod`, so the API key never reaches the browser.
+3. **Storage server** (`server/`) — a small **Express 5** app that persists data in a **SQLite** database (`better-sqlite3`) at `server/data/fitpal.db`, serves the built frontend, and proxies AI calls. The frontend talks to it via a REST client in `src/utils/db.ts`. On first run it imports any legacy `server/data/*.json` files from the old file-based store.
 
 ```
-Browser (React SPA) ──HTTP──> Express storage server ──> server/data/*.json
-        │
-        └──HTTPS──> Azure OpenAI (GPT-4o, structured outputs)
+Browser (React SPA) ──HTTP──> Express server ──> server/data/fitpal.db (SQLite)
+        │                          │
+        │                          └──HTTPS──> Azure OpenAI (GPT-4o, structured outputs)
+        └──(served by the same Express process)
 ```
 
 ---
@@ -166,8 +167,10 @@ FitPal/
 │   ├── main.tsx                # Entry point
 │   └── index.css               # Tailwind + global styles
 ├── server/
-│   ├── index.ts                # Express REST API
-│   ├── data/                   # Per-user JSON files
+│   ├── index.ts                # Express REST API + static hosting
+│   ├── ai.ts                   # Azure OpenAI integration (server-side)
+│   ├── storage.ts              # SQLite storage layer + JSON importer
+│   ├── data/                   # SQLite database (fitpal.db)
 │   ├── package.json
 │   └── tsconfig.json
 ├── public/                     # PWA icons & static assets
@@ -266,7 +269,7 @@ Errors return `404` (not found) or `500` (operation failed) with an `{ "error": 
 
 ## Data Models
 
-These mirror `src/types/index.ts`. Files are stored per user under `server/data/` (e.g. `user-<id>.json`, `meals-<id>.json`, `weights-<id>.json`, `streak-<id>.json`).
+These mirror `src/types/index.ts`. Records are stored in a SQLite database at `server/data/fitpal.db` (tables: `users`, `meals`, `weights`, `notifications`, `streaks`), each row holding the object as a JSON blob. Legacy `server/data/*.json` files from the old file-based store are imported automatically on first run.
 
 ```ts
 interface User {
@@ -443,7 +446,7 @@ npm install
 - Ensure the storage server is running and `VITE_API_URL` points to it.
 
 **Data not persisting**
-- Confirm `server/data/` exists and is writable.
+- Confirm `server/data/` exists and is writable (the SQLite DB lives there).
 - Check the server logs and that `userId` is consistent.
 
 ---

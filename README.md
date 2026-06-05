@@ -20,7 +20,7 @@ FitPal is a Progressive Web App (PWA) that helps you log Indian meals in plain l
 - 👨‍🍳 **Recipe suggestions** — healthy Indian recipes tailored to your diet preference and goals.
 - 💡 **Nutrient suggestions** — one-click AI food ideas to close the gap on any remaining nutrient.
 - 📱 **Installable PWA** — works offline, responsive across phone/tablet/desktop.
-- 🔒 **Privacy first** — file-based local storage, no third-party cloud beyond your own Azure OpenAI resource.
+- 🔒 **Privacy first** — local SQLite storage, no third-party cloud beyond your own Azure OpenAI resource.
 
 See **[FEATURES.md](docs/FEATURES.md)** for the full feature breakdown.
 
@@ -153,7 +153,7 @@ node dist/index.js            # serves API + the built frontend on one port
 
 **Server**
 - Express 5 + TypeScript (tsx for dev)
-- File-based JSON storage under `server/data/`
+- SQLite storage (`better-sqlite3`) at `server/data/fitpal.db`
 - Serves the built frontend and proxies all AI calls (single process in production)
 
 **AI**
@@ -174,7 +174,7 @@ FitPal/
 ├── server/               # Express storage + AI server
 │   ├── index.ts          # REST API + static frontend hosting
 │   ├── ai.ts             # Azure OpenAI integration (server-side)
-│   └── data/             # JSON files (per user)
+│   └── data/             # SQLite database (fitpal.db)
 ├── public/               # PWA icons & static assets
 ├── Dockerfile            # Multi-stage build (single-process image)
 ├── docker-compose.yml    # Self-host deployment

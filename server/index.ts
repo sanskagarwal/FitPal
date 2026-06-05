@@ -1,10 +1,27 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { aiRouter } from './ai.js';
+import {
+  initStorage,
+  saveUser,
+  getUser,
+  getUserByEmail,
+  addMeal,
+  getMeals,
+  updateMeal,
+  deleteMeal,
+  addWeight,
+  getWeights,
+  updateWeight,
+  deleteWeight,
+  saveNotifications,
+  getNotifications,
+  saveStreak,
+  getStreak,
+} from './storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,40 +40,15 @@ app.use(express.json({ limit: '5mb' }));
 // AI proxy routes — Azure OpenAI calls run here so the key stays server-side.
 app.use('/api/ai', aiRouter);
 
-// Ensure data directory exists
-async function ensureDataDir() {
-  try {
-    await fs.access(DATA_DIR);
-  } catch {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  }
-}
-
-// Helper function to read JSON file
-async function readJSONFile(filename: string) {
-  try {
-    const filePath = path.join(DATA_DIR, filename);
-    const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return null;
-    }
-    throw error;
-  }
-}
-
-// Helper function to write JSON file
-async function writeJSONFile(filename: string, data: unknown) {
-  const filePath = path.join(DATA_DIR, filename);
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
-}
+// Initialise the SQLite store (creates the DB/schema and imports any legacy
+// JSON files from the old file-based store on first run).
+initStorage(DATA_DIR);
 
 // User routes
 app.post('/api/users', async (req: Request, res: Response) => {
   try {
     const user = req.body;
-    await writeJSONFile(`user-${user.id}.json`, user);
+    saveUser(user);
     res.json({ success: true, user });
   } catch (error) {
     console.error('Failed to save user:', error);
@@ -66,7 +58,7 @@ app.post('/api/users', async (req: Request, res: Response) => {
 
 app.get('/api/users/:id', async (req: Request, res: Response) => {
   try {
-    const user = await readJSONFile(`user-${req.params.id}.json`);
+    const user = getUser(String(req.params.id));
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -79,17 +71,11 @@ app.get('/api/users/:id', async (req: Request, res: Response) => {
 
 app.get('/api/users/email/:email', async (req: Request, res: Response) => {
   try {
-    const files = await fs.readdir(DATA_DIR);
-    const userFiles = files.filter((f: string) => f.startsWith('user-') && f.endsWith('.json'));
-    
-    for (const file of userFiles) {
-      const user = await readJSONFile(file);
-      if (user && user.email === req.params.email) {
-        return res.json(user);
-      }
+    const user = getUserByEmail(String(req.params.email));
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-    
-    res.status(404).json({ error: 'User not found' });
+    res.json(user);
   } catch (error) {
     console.error('Failed to find user by email:', error);
     res.status(500).json({ error: 'Failed to find user' });
@@ -99,7 +85,7 @@ app.get('/api/users/email/:email', async (req: Request, res: Response) => {
 app.put('/api/users/:id', async (req: Request, res: Response) => {
   try {
     const user = req.body;
-    await writeJSONFile(`user-${req.params.id}.json`, user);
+    saveUser({ ...user, id: req.params.id });
     res.json({ success: true, user });
   } catch (error) {
     console.error('Failed to update user:', error);
@@ -111,10 +97,7 @@ app.put('/api/users/:id', async (req: Request, res: Response) => {
 app.post('/api/meals', async (req: Request, res: Response) => {
   try {
     const meal = req.body;
-    const mealsFile = `meals-${meal.userId}.json`;
-    const meals = await readJSONFile(mealsFile) || [];
-    meals.push(meal);
-    await writeJSONFile(mealsFile, meals);
+    addMeal(meal);
     res.json({ success: true, meal });
   } catch (error) {
     console.error('Failed to save meal:', error);
@@ -124,7 +107,7 @@ app.post('/api/meals', async (req: Request, res: Response) => {
 
 app.get('/api/meals/:userId', async (req: Request, res: Response) => {
   try {
-    const meals = await readJSONFile(`meals-${req.params.userId}.json`) || [];
+    const meals = getMeals(String(req.params.userId));
     res.json(meals);
   } catch (error) {
     console.error('Failed to get meals:', error);
@@ -135,16 +118,10 @@ app.get('/api/meals/:userId', async (req: Request, res: Response) => {
 app.put('/api/meals/:id', async (req: Request, res: Response) => {
   try {
     const updatedMeal = req.body;
-    const mealsFile = `meals-${updatedMeal.userId}.json`;
-    const meals = await readJSONFile(mealsFile) || [];
-    const index = meals.findIndex((m: { id: string }) => m.id === req.params.id);
-    
-    if (index === -1) {
+    const found = updateMeal(String(req.params.id), updatedMeal);
+    if (!found) {
       return res.status(404).json({ error: 'Meal not found' });
     }
-    
-    meals[index] = updatedMeal;
-    await writeJSONFile(mealsFile, meals);
     res.json({ success: true, meal: updatedMeal });
   } catch (error) {
     console.error('Failed to update meal:', error);
@@ -154,11 +131,7 @@ app.put('/api/meals/:id', async (req: Request, res: Response) => {
 
 app.delete('/api/meals/:userId/:id', async (req: Request, res: Response) => {
   try {
-    const { userId, id } = req.params;
-    const mealsFile = `meals-${userId}.json`;
-    let meals = await readJSONFile(mealsFile) || [];
-    meals = meals.filter((m: { id: string }) => m.id !== id);
-    await writeJSONFile(mealsFile, meals);
+    deleteMeal(String(req.params.id));
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to delete meal:', error);
@@ -170,10 +143,7 @@ app.delete('/api/meals/:userId/:id', async (req: Request, res: Response) => {
 app.post('/api/weights', async (req: Request, res: Response) => {
   try {
     const weight = req.body;
-    const weightsFile = `weights-${weight.userId}.json`;
-    const weights = await readJSONFile(weightsFile) || [];
-    weights.push(weight);
-    await writeJSONFile(weightsFile, weights);
+    addWeight(weight);
     res.json({ success: true, weight });
   } catch (error) {
     console.error('Failed to save weight:', error);
@@ -183,7 +153,7 @@ app.post('/api/weights', async (req: Request, res: Response) => {
 
 app.get('/api/weights/:userId', async (req: Request, res: Response) => {
   try {
-    const weights = await readJSONFile(`weights-${req.params.userId}.json`) || [];
+    const weights = getWeights(String(req.params.userId));
     res.json(weights);
   } catch (error) {
     console.error('Failed to get weights:', error);
@@ -194,16 +164,10 @@ app.get('/api/weights/:userId', async (req: Request, res: Response) => {
 app.put('/api/weights/:id', async (req: Request, res: Response) => {
   try {
     const updatedWeight = req.body;
-    const weightsFile = `weights-${updatedWeight.userId}.json`;
-    const weights = await readJSONFile(weightsFile) || [];
-    const index = weights.findIndex((w: { id: string }) => w.id === req.params.id);
-    
-    if (index === -1) {
+    const found = updateWeight(String(req.params.id), updatedWeight);
+    if (!found) {
       return res.status(404).json({ error: 'Weight not found' });
     }
-    
-    weights[index] = updatedWeight;
-    await writeJSONFile(weightsFile, weights);
     res.json({ success: true, weight: updatedWeight });
   } catch (error) {
     console.error('Failed to update weight:', error);
@@ -213,11 +177,7 @@ app.put('/api/weights/:id', async (req: Request, res: Response) => {
 
 app.delete('/api/weights/:userId/:id', async (req: Request, res: Response) => {
   try {
-    const { userId, id } = req.params;
-    const weightsFile = `weights-${userId}.json`;
-    let weights = await readJSONFile(weightsFile) || [];
-    weights = weights.filter((w: { id: string }) => w.id !== id);
-    await writeJSONFile(weightsFile, weights);
+    deleteWeight(String(req.params.id));
     res.json({ success: true });
   } catch (error) {
     console.error('Failed to delete weight:', error);
@@ -229,7 +189,7 @@ app.delete('/api/weights/:userId/:id', async (req: Request, res: Response) => {
 app.post('/api/notifications', async (req: Request, res: Response) => {
   try {
     const settings = req.body;
-    await writeJSONFile(`notifications-${settings.userId}.json`, settings);
+    saveNotifications(settings);
     res.json({ success: true, settings });
   } catch (error) {
     console.error('Failed to save notification settings:', error);
@@ -239,7 +199,7 @@ app.post('/api/notifications', async (req: Request, res: Response) => {
 
 app.get('/api/notifications/:userId', async (req: Request, res: Response) => {
   try {
-    const settings = await readJSONFile(`notifications-${req.params.userId}.json`);
+    const settings = getNotifications(String(req.params.userId));
     res.json(settings || null);
   } catch (error) {
     console.error('Failed to get notification settings:', error);
@@ -251,7 +211,7 @@ app.get('/api/notifications/:userId', async (req: Request, res: Response) => {
 app.post('/api/streaks', async (req: Request, res: Response) => {
   try {
     const streak = req.body;
-    await writeJSONFile(`streak-${streak.userId}.json`, streak);
+    saveStreak(streak);
     res.json({ success: true, streak });
   } catch (error) {
     console.error('Failed to save streak:', error);
@@ -261,7 +221,7 @@ app.post('/api/streaks', async (req: Request, res: Response) => {
 
 app.get('/api/streaks/:userId', async (req: Request, res: Response) => {
   try {
-    const streak = await readJSONFile(`streak-${req.params.userId}.json`);
+    const streak = getStreak(String(req.params.userId));
     res.json(streak || null);
   } catch (error) {
     console.error('Failed to get streak:', error);
@@ -285,8 +245,6 @@ if (fsSync.existsSync(STATIC_DIR)) {
 }
 
 // Start server
-ensureDataDir().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 FitPal server running on http://localhost:${PORT}`);
-  });
+app.listen(PORT, () => {
+  console.log(`🚀 FitPal server running on http://localhost:${PORT}`);
 });
