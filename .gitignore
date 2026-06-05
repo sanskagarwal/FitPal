@@ -30,3 +30,9 @@ dist-ssr
 # Server data storage
 server/data/
 server/dist/
+
+# Test output
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
