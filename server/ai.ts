@@ -518,7 +518,9 @@ Goal direction: ${
           : 'weight maintenance (no deficit or surplus)'
       }
 
-First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-St Jeor or Harris-Benedict) times an activity factor. Then adjust the calorie target toward the target weight: apply a safe deficit of about 300-500 kcal/day for weight loss, or a surplus of about 250-500 kcal/day for weight gain, and no adjustment for maintenance. Never recommend fewer than 1200 kcal/day for women or 1500 kcal/day for men. Keep protein high enough to preserve muscle during a deficit, and use macronutrient ratios appropriate for an Indian diet. In the explanation, state the maintenance calories, the deficit/surplus applied, and why.`,
+First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-St Jeor or Harris-Benedict) times an activity factor. Then adjust the calorie target toward the target weight: apply a safe deficit of about 300-500 kcal/day for weight loss, or a surplus of about 250-500 kcal/day for weight gain, and no adjustment for maintenance. Never recommend fewer than 1200 kcal/day for women or 1500 kcal/day for men. Keep protein high enough to preserve muscle during a deficit, and use macronutrient ratios appropriate for an Indian diet.
+
+For the "explanation" field, write a short, friendly summary a non-expert can skim in a few seconds. Use 3-4 concise bullet points, each on its own line starting with "- ". Cover: (1) maintenance calories (TDEE) as a round number, (2) the daily deficit or surplus applied and the resulting target calories, (3) the macro split in grams (protein/carbs/fats) and why protein is set where it is. Do NOT show the BMR formula, plug in numbers, or include any step-by-step arithmetic — just the conclusions. Keep the whole explanation under 60 words.`,
     },
   ];
 
@@ -566,7 +568,7 @@ First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-
       carbs,
       fats,
       fiber,
-      explanation: `Maintenance is about ${maintenanceCalories} kcal/day (BMR × activity). Applied ${adjustmentNote} to move toward your target weight of ${targetWeight}kg.`,
+      explanation: `- Maintenance (TDEE): ~${maintenanceCalories} kcal/day\n- Target: ${calories} kcal/day — ${adjustmentNote}\n- Macros: ${protein}g protein, ${carbs}g carbs, ${fats}g fats`,
     };
   }
 }

@@ -115,7 +115,14 @@ export const Dashboard = () => {
 
   useEffect(() => {
     if (suggestingNutrient || nutrientSuggestion) {
-      nutrientSuggestionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Defer to the next frame so the newly-mounted suggestion card is laid
+      // out before we scroll to it. Without this the scroll can fire before
+      // layout is committed (notably in the optimized production build) and
+      // end up doing nothing.
+      const id = requestAnimationFrame(() => {
+        nutrientSuggestionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      return () => cancelAnimationFrame(id);
     }
   }, [suggestingNutrient, nutrientSuggestion]);
 

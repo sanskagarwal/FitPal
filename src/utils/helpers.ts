@@ -19,6 +19,11 @@ export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+// Basic email format validation (something@something.tld)
+export const isValidEmail = (email: string): boolean => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+};
+
 // Calculate age in whole years from a date of birth (YYYY-MM-DD)
 export const calculateAge = (dateOfBirth: string): number => {
   if (!dateOfBirth) return 0;

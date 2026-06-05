@@ -1,0 +1,23 @@
+# Local production test — builds the image from the Dockerfile and runs it
+# exactly like the published image would, so you can verify the prod build
+# works before pushing. Nothing here gets published.
+#
+#   docker compose -f docker-compose.local.yml up --build
+#
+# Then open http://localhost:3001
+services:
+  fitpal:
+    container_name: fitpal-local
+    # Build locally instead of pulling the published image.
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    volumes:
+      # Keep the local test data separate from any prod volume.
+      - fitpal-local-data:/app/data
+
+volumes:
+  fitpal-local-data:

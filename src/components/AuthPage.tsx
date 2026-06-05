@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus } from 'lucide-react';
 import { saveWeight } from '../utils/db';
-import { generateId, calculateBMI, calculateAge } from '../utils/helpers';
+import { generateId, calculateBMI, calculateAge, isValidEmail } from '../utils/helpers';
 import { WeightEntry, Gender, ActivityLevel } from '../types';
 
 export const AuthPage = () => {
@@ -29,6 +29,11 @@ export const AuthPage = () => {
 
     try {
       if (isLogin) {
+        if (!isValidEmail(formData.email)) {
+          setError('Please enter a valid email address');
+          setLoading(false);
+          return;
+        }
         const success = await login(formData.email, formData.password);
         if (!success) {
           setError('Invalid email or password');
@@ -36,6 +41,12 @@ export const AuthPage = () => {
       } else {
         if (!formData.name || !formData.email || !formData.password || !formData.dateOfBirth || !formData.height || !formData.currentWeight) {
           setError('Please fill in all required fields');
+          setLoading(false);
+          return;
+        }
+
+        if (!isValidEmail(formData.email)) {
+          setError('Please enter a valid email address');
           setLoading(false);
           return;
         }

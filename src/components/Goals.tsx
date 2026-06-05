@@ -87,8 +87,18 @@ export const Goals = () => {
       return;
     }
 
-    const weeklyDeficit = formData.weightLossRate * 7700;
-    const dailyDeficit = weeklyDeficit / 7;
+    // Direction of the goal: lose, gain, or maintain weight.
+    const direction =
+      formData.targetWeight < currentWeight
+        ? 'loss'
+        : formData.targetWeight > currentWeight
+        ? 'gain'
+        : 'maintain';
+
+    // ~7700 kcal per kg of body weight. For maintenance there is no daily
+    // adjustment; otherwise it's a deficit (loss) or surplus (gain).
+    const dailyAdjustment =
+      direction === 'maintain' ? 0 : (formData.weightLossRate * 7700) / 7;
 
     const profile = user.profile;
     const age = calculateAge(profile.dateOfBirth);
@@ -105,8 +115,16 @@ export const Goals = () => {
     }[profile.activityLevel] || 1.5;
 
     const maintenanceCalories = bmr * activityMultiplier;
-    const targetCalories = Math.round(maintenanceCalories - dailyDeficit);
+    const rawTarget =
+      direction === 'gain'
+        ? maintenanceCalories + dailyAdjustment
+        : maintenanceCalories - dailyAdjustment;
 
+    // Don't drop below a safe floor when losing weight.
+    const minCalories = profile.gender === 'male' ? 1500 : 1200;
+    const targetCalories = Math.round(Math.max(minCalories, rawTarget));
+
+    // Higher protein helps preserve muscle in a deficit and build it in a surplus.
     const protein = Math.round(currentWeight * 1.8);
     const fats = Math.round((targetCalories * 0.25) / 9);
     const carbs = Math.round((targetCalories - (protein * 4) - (fats * 9)) / 4);
@@ -119,7 +137,13 @@ export const Goals = () => {
       targetFats: fats,
     });
 
-    setMessage(`Goals calculated for ${formData.weightLossRate}kg/week weight loss!`);
+    const label =
+      direction === 'loss'
+        ? `${formData.weightLossRate}kg/week weight loss`
+        : direction === 'gain'
+        ? `${formData.weightLossRate}kg/week weight gain`
+        : 'weight maintenance';
+    setMessage(`Goals calculated for ${label}!`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,6 +160,28 @@ export const Goals = () => {
       setLoading(false);
     }
   };
+
+  // Which way the user is headed, based on target vs. current weight. Drives
+  // the labels and whether we apply a deficit or a surplus.
+  const goalDirection: 'loss' | 'gain' | 'maintain' =
+    currentWeight !== null && formData.targetWeight > 0
+      ? formData.targetWeight < currentWeight
+        ? 'loss'
+        : formData.targetWeight > currentWeight
+        ? 'gain'
+        : 'maintain'
+      : 'loss';
+
+  // The weekly rate only makes sense when actually losing or gaining weight,
+  // and once we know the current weight to compare against the target.
+  const showRateSelector =
+    currentWeight !== null && formData.targetWeight > 0 && goalDirection !== 'maintain';
+
+  // Rough estimate of how long the goal will take, in weeks, at the chosen rate.
+  const weeksToGoal =
+    showRateSelector && formData.weightLossRate > 0
+      ? Math.ceil(Math.abs(currentWeight! - formData.targetWeight) / formData.weightLossRate)
+      : null;
 
   return (
     <div className="space-y-6">
@@ -168,32 +214,65 @@ export const Goals = () => {
                 className="input-field"
                 required
               />
-              <p className="text-xs text-gray-600 mt-1">Your desired weight goal</p>
+              <p className="text-xs text-gray-600 mt-1">
+                {currentWeight !== null && formData.targetWeight > 0
+                  ? goalDirection === 'loss'
+                    ? `Lose ${(currentWeight - formData.targetWeight).toFixed(1)} kg to reach your goal`
+                    : goalDirection === 'gain'
+                    ? `Gain ${(formData.targetWeight - currentWeight).toFixed(1)} kg to reach your goal`
+                    : 'Maintain your current weight'
+                  : 'Your desired weight goal'}
+              </p>
             </div>
 
-            <div className="p-4 bg-amber-50 rounded-lg">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Weight Loss Rate (kg/week)
-              </label>
-              <select
-                value={formData.weightLossRate}
-                onChange={(e) => setFormData({ ...formData, weightLossRate: parseFloat(e.target.value) })}
-                className="input-field"
-                aria-label="Weight loss rate per week"
-              >
-                <option value="0.25">0.25 kg/week (Slow & Steady)</option>
-                <option value="0.5">0.5 kg/week (Moderate)</option>
-                <option value="0.75">0.75 kg/week (Aggressive)</option>
-                <option value="1">1 kg/week (Very Aggressive)</option>
-              </select>
-              <button
-                type="button"
-                onClick={calculateCaloriesFromWeightLoss}
-                className="mt-2 text-sm btn-primary w-full"
-              >
-                Calculate Goals from Weight Loss Rate
-              </button>
-            </div>
+            {/* Rate selector only applies when actually losing or gaining weight. */}
+            {showRateSelector && (
+              <div className="p-4 bg-amber-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {goalDirection === 'gain' ? 'Weight Gain Rate (kg/week)' : 'Weight Loss Rate (kg/week)'}
+                </label>
+                <select
+                  value={formData.weightLossRate}
+                  onChange={(e) => setFormData({ ...formData, weightLossRate: parseFloat(e.target.value) })}
+                  className="input-field"
+                  aria-label="Weekly rate of weight change"
+                >
+                  {goalDirection === 'gain' ? (
+                    <>
+                      <option value="0.25">0.25 kg/week (Lean & Steady)</option>
+                      <option value="0.5">0.5 kg/week (Moderate)</option>
+                      <option value="0.75">0.75 kg/week (Fast)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="0.25">0.25 kg/week (Slow & Steady)</option>
+                      <option value="0.5">0.5 kg/week (Moderate)</option>
+                      <option value="0.75">0.75 kg/week (Aggressive)</option>
+                      <option value="1">1 kg/week (Very Aggressive)</option>
+                    </>
+                  )}
+                </select>
+                <button
+                  type="button"
+                  onClick={calculateCaloriesFromWeightLoss}
+                  className="mt-2 text-sm btn-primary w-full"
+                >
+                  {goalDirection === 'gain'
+                    ? 'Calculate Goals from Weight Gain Rate'
+                    : 'Calculate Goals from Weight Loss Rate'}
+                </button>
+                {weeksToGoal !== null && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    At this rate, you'll reach your goal in about{' '}
+                    <span className="font-semibold">
+                      {weeksToGoal} {weeksToGoal === 1 ? 'week' : 'weeks'}
+                    </span>
+                    {weeksToGoal >= 4 && ` (~${Math.round(weeksToGoal / 4.345)} ${Math.round(weeksToGoal / 4.345) === 1 ? 'month' : 'months'})`}
+                    .
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* AI Suggestion Button */}
@@ -218,7 +297,7 @@ export const Goals = () => {
                 <LoadingBlock label="Crunching your profile and target to recommend goals…" />
               </div>
             ) : aiExplanation ? (
-              <div className="bg-white p-3 rounded text-sm text-gray-700">
+              <div className="bg-white p-3 rounded text-sm text-gray-700 whitespace-pre-line leading-relaxed">
                 {aiExplanation}
               </div>
             ) : (

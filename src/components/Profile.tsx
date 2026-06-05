@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Ruler, Calendar, Activity, Users, Salad } from 'lucide-react';
-import { calculateAge } from '../utils/helpers';
+import { User, Mail, Ruler, Calendar, Activity, Users, Salad, Scale } from 'lucide-react';
+import { calculateAge, calculateBMI } from '../utils/helpers';
+import { getWeightsByUser } from '../utils/db';
 import { DietPreference, Gender, ActivityLevel } from '../types';
 
 export const Profile = () => {
@@ -17,6 +18,16 @@ export const Profile = () => {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [currentWeight, setCurrentWeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getWeightsByUser(user.id).then((weights) => {
+      if (weights.length > 0) {
+        setCurrentWeight(weights[0].weight);
+      }
+    });
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,6 +154,26 @@ export const Profile = () => {
                 step="1"
               />
             </div>
+          </div>
+
+          {/* Current Weight (read-only — managed in the Weight Tracker) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Scale className="w-4 h-4" />
+              Current Weight (kg)
+            </label>
+            <input
+              type="text"
+              value={currentWeight !== null ? `${currentWeight} kg` : 'No weight logged yet'}
+              disabled
+              className="input-field bg-gray-100"
+              title="Update your weight in the Weight Tracker"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {currentWeight !== null && formData.height > 0
+                ? `BMI: ${calculateBMI(currentWeight, formData.height)} — update weight in the Weight Tracker`
+                : 'Log your weight in the Weight Tracker'}
+            </p>
           </div>
 
           {/* Activity Level */}
