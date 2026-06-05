@@ -51,8 +51,7 @@ Browser (React SPA) --HTTP--> Express server --> server/data/fitpal.db (SQLite)
 ```
 
 Authentication uses a signed JWT stored in an httpOnly cookie. Data routes
-require a valid session and enforce per-user ownership; AI routes are
-additionally rate-limited.
+require a valid session and enforce per-user ownership.
 
 ---
 
@@ -106,10 +105,6 @@ AI_MODEL=gpt-4o-mini
 # Optional: port the storage/API server listens on (default 3001).
 # PORT=3001
 
-# Optional: AI rate limiting (defaults shown).
-# AI_RATE_LIMIT=30
-# AI_RATE_WINDOW_MS=60000
-
 # Optional: base URL the frontend uses to reach the API. Defaults to the
 # relative "/api" path. Only set this for split deployments where the frontend
 # and server live on different origins.
@@ -128,8 +123,6 @@ AI_MODEL=gpt-4o-mini
 | `AI_MODEL` | Yes | Server | None | Model id, or the deployment name when `AI_PROVIDER=azure`. |
 | `AI_PROVIDER` | No | Server | `openai-compatible` | Set to `azure` to use the Azure OpenAI SDK. |
 | `AI_API_VERSION` | If Azure | Server | None | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
-| `AI_RATE_LIMIT` | No | Server | `30` | Max AI requests per user per window. |
-| `AI_RATE_WINDOW_MS` | No | Server | `60000` | AI rate-limit window in milliseconds. |
 | `PORT` | No | Server | `3001` | Port the storage/API server listens on. |
 | `DATA_DIR` | No | Server | `server/data` | Directory holding the SQLite database. |
 | `STATIC_DIR` | No | Server | `../../dist` | Directory of the built frontend to serve. |
@@ -227,7 +220,6 @@ FitPal/
 │   ├── auth.ts                 # JWT signing/verification, password hashing
 │   ├── domain.ts               # Server-side domain types + zod schemas
 │   ├── validation.ts           # Request body schemas
-│   ├── rateLimit.ts            # AI rate limiter
 │   ├── routes/                 # Route definitions per resource
 │   ├── controllers/            # Request parsing + response shaping
 │   ├── services/               # Business logic (incl. aiService.ts)
@@ -366,7 +358,7 @@ limiter.
 
 ### AI
 
-All `/ai/*` routes are `POST`, require auth, and are rate-limited:
+All `/ai/*` routes are `POST` and require auth:
 `analyze-food`, `reestimate-unit`, `recipes`, `insights`, `suggest-meal`,
 `suggest-nutrient`, `suggest-goals`, `chat-meal`, and `chat-meal-stream`.
 
@@ -378,7 +370,7 @@ All `/ai/*` routes are `POST`, require auth, and are rate-limited:
 
 Errors return a JSON body of the form `{ "error": "..." }` with an appropriate
 status code (for example `401` unauthorized, `403` forbidden, `404` not found,
-`429` rate-limited, `500` server error).
+`500` server error).
 
 ---
 
@@ -582,8 +574,6 @@ npm install
   `AI_MODEL` is a valid model id for that provider.
 - For Azure, ensure `AI_PROVIDER=azure`, `AI_API_VERSION` is set, `AI_BASE_URL`
   is the resource endpoint, and `AI_MODEL` is the deployment name.
-- If requests start failing with `429`, you are hitting the AI rate limit; tune
-  `AI_RATE_LIMIT` and `AI_RATE_WINDOW_MS`.
 
 **CORS or network errors**
 

@@ -60,7 +60,6 @@ weight. It has three parts:
   auth and enforce per-user ownership.
 - Validate and sanitize all inputs crossing the client/server boundary
   (`server/validation.ts`).
-- Be mindful of the rate limiting in `server/rateLimit.ts` when touching routes.
 
 ## What agents should do
 

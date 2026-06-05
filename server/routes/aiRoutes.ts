@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { aiController } from '../controllers/aiController.js';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 
-// AI proxy routes. Mounted behind auth + rate limiting (see routes/index.ts).
+// AI proxy routes. Mounted behind auth (see routes/index.ts).
 // Azure/OpenAI calls run here so the provider key never reaches the browser.
 export const aiRoutes = Router();
 

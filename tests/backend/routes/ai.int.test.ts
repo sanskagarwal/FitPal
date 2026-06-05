@@ -41,31 +41,4 @@ describe('POST /api/ai/analyze-food', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual([{ id: 'f1', name: 'Idli', isIndian: true }]);
   });
-
-  it('sets rate-limit headers', async () => {
-    const res = await alice.agent.post('/api/ai/recipes').send({ preferences: {}, goals: {} });
-    expect(res.status).toBe(200);
-    expect(res.headers['x-ratelimit-limit']).toBeDefined();
-    expect(res.headers['x-ratelimit-remaining']).toBeDefined();
-  });
-});
-
-describe('AI rate limiting', () => {
-  const original = process.env.AI_RATE_LIMIT;
-
-  beforeAll(() => {
-    process.env.AI_RATE_LIMIT = '5';
-  });
-  afterAll(() => {
-    process.env.AI_RATE_LIMIT = original;
-  });
-
-  it('returns 429 with Retry-After once the window limit is exceeded', async () => {
-    let last = await alice.agent.post('/api/ai/analyze-food').send({ foodQuery: 'idli' });
-    for (let i = 0; i < 12; i++) {
-      last = await alice.agent.post('/api/ai/analyze-food').send({ foodQuery: 'idli' });
-    }
-    expect(last.status).toBe(429);
-    expect(last.headers['retry-after']).toBeDefined();
-  });
 });

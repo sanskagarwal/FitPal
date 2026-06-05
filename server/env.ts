@@ -45,10 +45,6 @@ const EnvSchema = z.object({
   AI_BASE_URL: z.string().optional(),
   AI_MODEL: z.string().optional(),
   AI_API_VERSION: z.string().optional(),
-
-  // AI rate limiting.
-  AI_RATE_LIMIT: z.coerce.number().int().nonnegative().default(30),
-  AI_RATE_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
 });
 
 export type AppConfig = z.infer<typeof EnvSchema>;

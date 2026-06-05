@@ -8,6 +8,3 @@ process.env.AI_PROVIDER ??= 'openai-compatible';
 process.env.AI_API_KEY ??= 'test-ai-key';
 process.env.AI_BASE_URL ??= 'http://localhost/ai';
 process.env.AI_MODEL ??= 'test-model';
-// Keep rate limiting effectively out of the way for non-rate-limit tests.
-process.env.AI_RATE_LIMIT ??= '1000';
-process.env.AI_RATE_WINDOW_MS ??= '60000';

@@ -138,8 +138,6 @@ Works with any OpenAI-compatible API. For **Azure OpenAI**, set
 | `AI_MODEL` | Yes | None | Model id, or the Azure deployment name when `AI_PROVIDER=azure`. |
 | `AI_PROVIDER` | No | `openai-compatible` | Set to `azure` to use the Azure OpenAI SDK. |
 | `AI_API_VERSION` | If Azure | None | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
-| `AI_RATE_LIMIT` | No | `30` | Max AI requests per user per window. |
-| `AI_RATE_WINDOW_MS` | No | `60000` | AI rate-limit window in milliseconds. |
 | `PORT` | No | `3001` | Port the storage/API server listens on. |
 | `DATA_DIR` | No | `server/data` | Directory for the SQLite database. |
 | `VITE_API_URL` | No | `/api` | Base URL the frontend calls (inlined at build time). Only set for split deployments where the frontend and server are on different origins. |
