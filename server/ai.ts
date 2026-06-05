@@ -131,24 +131,6 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
   throw lastError;
 }
 
-// Free-form text completion (for non-JSON responses).
-async function completeText(
-  messages: ChatMessage[],
-  temperature = 0.7,
-  system = SYSTEM_PROMPT
-): Promise<string> {
-  const { text } = await withRetry(() =>
-    generateText({
-      model: getModel(),
-      system,
-      messages,
-      temperature,
-      maxOutputTokens: 2000,
-    })
-  );
-  return text.trim();
-}
-
 // Structured completion. The AI SDK picks the right strategy (native JSON
 // schema, JSON mode or tool calling) for the configured model and validates the
 // result against the zod schema.
@@ -305,12 +287,58 @@ Recent foods: ${recentFoods.join(', ')}${dietLine}`,
 // ---------------------------------------------------------------------------
 // Dietary insights
 // ---------------------------------------------------------------------------
+const INSIGHT_CATEGORIES = [
+  'calories',
+  'protein',
+  'carbs',
+  'fats',
+  'fiber',
+  'hydration',
+  'general',
+] as const;
+
+const DietaryInsightSchema = z.object({
+  summary: z.string(),
+  recommendations: z
+    .array(
+      z.object({
+        title: z.string(),
+        detail: z.string(),
+        category: z.enum(INSIGHT_CATEGORIES),
+      })
+    )
+    .min(1),
+});
+
+type DietaryInsight = z.infer<typeof DietaryInsightSchema>;
+
+const INSIGHTS_FALLBACK: DietaryInsight = {
+  summary: 'A few simple habits will help you move toward your goal.',
+  recommendations: [
+    {
+      title: 'Prioritise protein at every meal',
+      detail: 'Include dal, paneer, curd or eggs so you stay full and preserve muscle.',
+      category: 'protein',
+    },
+    {
+      title: 'Watch portion sizes',
+      detail: 'Use a standard katori and limit fried snacks and refined carbs.',
+      category: 'calories',
+    },
+    {
+      title: 'Stay hydrated and consistent',
+      detail: 'Drink water through the day and keep regular meal times.',
+      category: 'hydration',
+    },
+  ],
+};
+
 async function getDietaryInsights(
   currentWeight: number,
   targetWeight: number,
   recentNutrition: NutrientInfo,
   goals: string
-): Promise<string> {
+): Promise<DietaryInsight> {
   const messages: ChatMessage[] = [
     {
       role: 'user',
@@ -320,55 +348,16 @@ Target weight: ${targetWeight}kg
 Recent daily average nutrition: ${JSON.stringify(recentNutrition)}
 Goals: ${goals}
 
-Give 3-5 specific, actionable recommendations for achieving their goals through Indian cuisine.`,
+Give 3-5 specific, actionable recommendations for achieving their goals through Indian cuisine. For each recommendation set a short "title" (a few words), a "detail" of one or two sentences with concrete Indian foods or habits, and a "category" from: calories, protein, carbs, fats, fiber, hydration, general. Also give a one-line "summary" of the overall focus.`,
     },
   ];
 
   try {
-    return await completeText(messages);
+    return await completeStructured(messages, DietaryInsightSchema, 'dietary_insights', 0.6);
   } catch (error) {
     console.error('Error getting insights:', error);
-    return 'Focus on portion control and include more protein-rich foods like dal, paneer, and yogurt. Stay hydrated and maintain regular meal times.';
+    return INSIGHTS_FALLBACK;
   }
-}
-
-// Streaming variant of dietary insights: emits text chunks via `onChunk` as the
-// model generates them. Returns the full text. Throws on failure so the caller
-// can fall back to the buffered (fallback-bearing) getDietaryInsights.
-async function getDietaryInsightsStream(
-  currentWeight: number,
-  targetWeight: number,
-  recentNutrition: NutrientInfo,
-  goals: string,
-  onChunk: (text: string) => void
-): Promise<string> {
-  const messages: ChatMessage[] = [
-    {
-      role: 'user',
-      content: `Provide dietary insights for an Indian diet:
-Current weight: ${currentWeight}kg
-Target weight: ${targetWeight}kg
-Recent daily average nutrition: ${JSON.stringify(recentNutrition)}
-Goals: ${goals}
-
-Give 3-5 specific, actionable recommendations for achieving their goals through Indian cuisine.`,
-    },
-  ];
-
-  const result = streamText({
-    model: getModel(),
-    system: SYSTEM_PROMPT,
-    messages,
-    temperature: 0.7,
-    maxOutputTokens: 2000,
-  });
-
-  let full = '';
-  for await (const delta of result.textStream) {
-    full += delta;
-    onChunk(delta);
-  }
-  return full.trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -920,48 +909,8 @@ aiRouter.post('/reestimate-unit', handle((b) => reestimateNutrientsForUnit(b.foo
 aiRouter.post('/recipes', handle((b) => getRecipeSuggestions(b.preferences, b.goals, b.recentFoods ?? [], b.dietPreference)));
 aiRouter.post(
   '/insights',
-  handle(async (b) => ({
-    insight: await getDietaryInsights(b.currentWeight, b.targetWeight, b.recentNutrition, b.goals),
-  }))
+  handle((b) => getDietaryInsights(b.currentWeight, b.targetWeight, b.recentNutrition, b.goals))
 );
-
-// Streaming insights endpoint. Streams plain-text chunks as they are generated.
-// If streaming fails before any text is sent, falls back to the buffered
-// getDietaryInsights (which has its own safe fallback) and sends that instead.
-aiRouter.post('/insights-stream', async (req: Request, res: Response) => {
-  const b = req.body ?? {};
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache, no-transform');
-  res.setHeader('X-Accel-Buffering', 'no');
-
-  let sentAny = false;
-  try {
-    await getDietaryInsightsStream(
-      b.currentWeight,
-      b.targetWeight,
-      b.recentNutrition,
-      b.goals,
-      (text) => {
-        sentAny = true;
-        res.write(text);
-      }
-    );
-  } catch (error: unknown) {
-    console.error('Streaming insights failed:', error);
-    // Only fall back if we haven't already streamed a partial answer.
-    if (!sentAny) {
-      const fallback = await getDietaryInsights(
-        b.currentWeight,
-        b.targetWeight,
-        b.recentNutrition,
-        b.goals
-      );
-      res.write(fallback);
-    }
-  } finally {
-    res.end();
-  }
-});
 aiRouter.post(
   '/suggest-meal',
   handle((b) =>

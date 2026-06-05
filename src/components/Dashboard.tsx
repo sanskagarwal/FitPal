@@ -7,8 +7,8 @@ import { MealEntry, DailyStats, WeightEntry, NutrientInfo, DietPreference, MealT
 import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
 import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage, formatDayLabel } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie } from 'recharts';
-import { Flame, Drumstick, Wheat, Droplet, AlertCircle, Sparkles, TrendingUp, Lightbulb, X, UtensilsCrossed } from 'lucide-react';
-import { suggestMeal, suggestFoodForNutrient, getDietaryInsightsStream, MealSuggestion, NutrientSuggestion } from '../services/openai';
+import { Flame, Drumstick, Wheat, Droplet, AlertCircle, Sparkles, TrendingUp, Lightbulb, X, UtensilsCrossed, type LucideIcon } from 'lucide-react';
+import { suggestMeal, suggestFoodForNutrient, getDietaryInsights, MealSuggestion, NutrientSuggestion, DietaryInsight, InsightCategory } from '../services/openai';
 import { Spinner, LoadingBlock } from './Spinner';
 
 // Subtle staggered entrance for the overview stat cards.
@@ -19,6 +19,18 @@ const statsContainer = {
 const statCardItem = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' as const } },
+};
+
+// Icon + colour per dietary-insight category, used to give each recommendation
+// a recognisable visual like the meal-suggestion card.
+const INSIGHT_VISUALS: Record<InsightCategory, { Icon: LucideIcon; color: string; bg: string }> = {
+  calories: { Icon: Flame, color: 'text-orange-600', bg: 'bg-orange-100' },
+  protein: { Icon: Drumstick, color: 'text-red-600', bg: 'bg-red-100' },
+  carbs: { Icon: Wheat, color: 'text-blue-600', bg: 'bg-blue-100' },
+  fats: { Icon: Droplet, color: 'text-amber-600', bg: 'bg-amber-100' },
+  fiber: { Icon: Wheat, color: 'text-green-600', bg: 'bg-green-100' },
+  hydration: { Icon: Droplet, color: 'text-cyan-600', bg: 'bg-cyan-100' },
+  general: { Icon: Lightbulb, color: 'text-amber-600', bg: 'bg-amber-100' },
 };
 
 interface MealTypeStats {
@@ -42,7 +54,7 @@ export const Dashboard = () => {
   const [suggestingMeal, setSuggestingMeal] = useState(false);
   const [nutrientSuggestion, setNutrientSuggestion] = useState<NutrientSuggestion | null>(null);
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
-  const [insight, setInsight] = useState<string>('');
+  const [insight, setInsight] = useState<DietaryInsight | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
   const nutrientSuggestionRef = useRef<HTMLDivElement>(null);
   const [dietPreference, setDietPreference] = useState<DietPreference>(
@@ -268,7 +280,7 @@ export const Dashboard = () => {
     if (!user || !todayStats) return;
 
     setLoadingInsight(true);
-    setInsight('');
+    setInsight(null);
 
     const profileGoals = user.profile.goals;
     const currentWeight = recentWeight?.weight ?? profileGoals.targetWeight;
@@ -282,13 +294,13 @@ export const Dashboard = () => {
     const goalsSummary = `Target ${profileGoals.targetCalories} kcal, ${profileGoals.targetProtein}g protein, ${profileGoals.targetCarbs}g carbs, ${profileGoals.targetFats}g fats, ${profileGoals.targetFiber}g fiber per day.`;
 
     try {
-      await getDietaryInsightsStream(
+      const result = await getDietaryInsights(
         currentWeight,
         profileGoals.targetWeight,
         recentNutrition,
-        goalsSummary,
-        (chunk) => setInsight((prev) => prev + chunk)
+        goalsSummary
       );
+      setInsight(result);
     } catch (error) {
       console.error('Error getting insights:', error);
     } finally {
@@ -575,7 +587,7 @@ export const Dashboard = () => {
           <div className="flex items-center gap-2">
             {insight && !loadingInsight && (
               <button
-                onClick={() => setInsight('')}
+                onClick={() => setInsight(null)}
                 className="text-gray-400 hover:text-gray-700"
                 aria-label="Dismiss insights"
               >
@@ -592,14 +604,42 @@ export const Dashboard = () => {
             </button>
           </div>
         </div>
-        {insight ? (
-          <div className="bg-white p-4 rounded-lg text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-            {insight}
-            {loadingInsight && <span className="inline-block w-2 h-4 ml-0.5 align-middle bg-amber-400 animate-pulse" />}
-          </div>
-        ) : loadingInsight ? (
+        {loadingInsight ? (
           <div className="bg-white p-4 rounded-lg">
             <LoadingBlock label="Analyzing your recent nutrition…" />
+          </div>
+        ) : insight ? (
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+            {insight.summary && (
+              <div className="flex items-start gap-3 p-4 border-b border-gray-100">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <Lightbulb className="w-5 h-5 text-amber-600" />
+                </div>
+                <p className="text-sm text-gray-700 leading-snug self-center">{insight.summary}</p>
+              </div>
+            )}
+            <ul className="divide-y divide-gray-100">
+              {insight.recommendations.map((rec, i) => {
+                const visual = INSIGHT_VISUALS[rec.category] ?? INSIGHT_VISUALS.general;
+                const Icon = visual.Icon;
+                return (
+                  <li key={i} className="flex items-start gap-3 p-4">
+                    <div className={`flex-shrink-0 w-9 h-9 rounded-lg ${visual.bg} flex items-center justify-center`}>
+                      <Icon className={`w-4 h-4 ${visual.color}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-gray-900">{rec.title}</h3>
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400 capitalize">
+                          {rec.category}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-0.5">{rec.detail}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         ) : (
           <p className="text-gray-600">

@@ -46,63 +46,63 @@ export async function getRecipeSuggestions(
   return aiCall<Recipe[]>('recipes', { preferences, goals, recentFoods, dietPreference });
 }
 
+export type InsightCategory =
+  | 'calories'
+  | 'protein'
+  | 'carbs'
+  | 'fats'
+  | 'fiber'
+  | 'hydration'
+  | 'general';
+
+export interface InsightRecommendation {
+  title: string;
+  detail: string;
+  category: InsightCategory;
+}
+
+export interface DietaryInsight {
+  summary: string;
+  recommendations: InsightRecommendation[];
+}
+
+const INSIGHTS_FALLBACK: DietaryInsight = {
+  summary: 'A few simple habits will help you move toward your goal.',
+  recommendations: [
+    {
+      title: 'Prioritise protein at every meal',
+      detail: 'Include dal, paneer, curd or eggs so you stay full and preserve muscle.',
+      category: 'protein',
+    },
+    {
+      title: 'Watch portion sizes',
+      detail: 'Use a standard katori and limit fried snacks and refined carbs.',
+      category: 'calories',
+    },
+    {
+      title: 'Stay hydrated and consistent',
+      detail: 'Drink water through the day and keep regular meal times.',
+      category: 'hydration',
+    },
+  ],
+};
+
 export async function getDietaryInsights(
   currentWeight: number,
   targetWeight: number,
   recentNutrition: NutrientInfo,
   goals: string
-): Promise<string> {
+): Promise<DietaryInsight> {
   try {
-    const { insight } = await aiCall<{ insight: string }>('insights', {
+    return await aiCall<DietaryInsight>('insights', {
       currentWeight,
       targetWeight,
       recentNutrition,
       goals,
     });
-    return insight;
   } catch (error) {
     console.error('Error getting insights:', error);
-    return 'Focus on portion control and include more protein-rich foods like dal, paneer, and yogurt. Stay hydrated and maintain regular meal times.';
-  }
-}
-
-// Streaming variant: calls `onChunk` with each text delta as insights generate,
-// and resolves with the full text. Falls back to the buffered endpoint if the
-// stream is unavailable.
-export async function getDietaryInsightsStream(
-  currentWeight: number,
-  targetWeight: number,
-  recentNutrition: NutrientInfo,
-  goals: string,
-  onChunk: (text: string) => void
-): Promise<string> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/ai/insights-stream`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentWeight, targetWeight, recentNutrition, goals }),
-    });
-
-    if (!response.ok || !response.body) {
-      return getDietaryInsights(currentWeight, targetWeight, recentNutrition, goals);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let full = '';
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      if (chunk) {
-        full += chunk;
-        onChunk(chunk);
-      }
-    }
-    return full.trim();
-  } catch (error) {
-    console.error('Error streaming insights:', error);
-    return getDietaryInsights(currentWeight, targetWeight, recentNutrition, goals);
+    return INSIGHTS_FALLBACK;
   }
 }
 

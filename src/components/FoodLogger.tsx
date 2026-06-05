@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
@@ -111,11 +111,7 @@ export const FoodLogger = () => {
     if (el) el.scrollTop = el.scrollHeight;
   }, [chatMessages, chatLoading]);
 
-  useEffect(() => {
-    loadTodayMeals();
-  }, [user, selectedDate]);
-
-  const loadTodayMeals = async () => {
+  const loadTodayMeals = useCallback(async () => {
     if (!user) return [];
     const startOfToday = getStartOfDay(selectedDate);
     const endOfToday = getEndOfDay(selectedDate);
@@ -127,7 +123,12 @@ export const FoodLogger = () => {
     });
     setTodayMeals(todaysMeals);
     return todaysMeals;
-  };
+  }, [user, selectedDate]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadTodayMeals();
+  }, [loadTodayMeals]);
 
   // ---- Agentic AI meal logging --------------------------------------------
 
