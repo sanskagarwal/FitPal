@@ -80,16 +80,17 @@ export const FoodLogger = () => {
   }, [user, selectedDate]);
 
   const loadTodayMeals = async () => {
-    if (!user) return;
+    if (!user) return [];
     const startOfToday = getStartOfDay(selectedDate);
     const endOfToday = getEndOfDay(selectedDate);
-    
+
     const meals = await getMealsByUser(user.id);
     const todaysMeals = meals.filter(meal => {
       const mealDate = new Date(meal.date);
       return mealDate >= startOfToday && mealDate <= endOfToday;
     });
     setTodayMeals(todaysMeals);
+    return todaysMeals;
   };
 
   // ---- Agentic AI meal logging --------------------------------------------
@@ -167,7 +168,11 @@ export const FoodLogger = () => {
     setProposedMeal(null);
 
     try {
-      const loggedMeals: LoggedMealSummary[] = todayMeals.map((m) => ({
+      // Reload today's meals so the assistant matches update/delete requests
+      // against the current state, not a stale snapshot (e.g. if a meal was
+      // logged via the form mid-conversation).
+      const freshMeals = await loadTodayMeals();
+      const loggedMeals: LoggedMealSummary[] = freshMeals.map((m) => ({
         id: m.id,
         mealType: m.mealType,
         time: toHHmm(new Date(m.date)),
