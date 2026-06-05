@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { generateText, Output, type LanguageModel, type ModelMessage } from 'ai';
+import { generateText, streamText, Output, type LanguageModel, type ModelMessage } from 'ai';
 import { createAzure } from '@ai-sdk/azure';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { z } from 'zod';
@@ -651,6 +651,46 @@ async function chatLogMeal(
   history: { role: 'user' | 'assistant'; content: string }[],
   loggedMeals: LoggedMealSummary[] = []
 ) {
+  const { system, messages } = buildChatPrompt(history, loggedMeals);
+  const parsed = await completeStructured(messages, MealChatSchema, 'meal_chat', 0.2, system);
+  return groundChatResult(parsed);
+}
+
+// Streaming variant: emits the assistant's `message` text via `onMessage` as it
+// is generated (the message is an early field in the schema, so it arrives
+// before the larger `foods` array), then returns the fully-grounded result.
+async function chatLogMealStream(
+  history: { role: 'user' | 'assistant'; content: string }[],
+  loggedMeals: LoggedMealSummary[],
+  onMessage: (text: string) => void
+): Promise<ReturnType<typeof groundChatResult>> {
+  const { system, messages } = buildChatPrompt(history, loggedMeals);
+  const result = streamText({
+    model: getModel(),
+    system,
+    messages,
+    temperature: 0.2,
+    output: Output.object({ schema: MealChatSchema, name: 'meal_chat' }),
+  });
+
+  let lastMessage = '';
+  for await (const partial of result.partialOutputStream) {
+    if (typeof partial?.message === 'string' && partial.message !== lastMessage) {
+      lastMessage = partial.message;
+      onMessage(lastMessage);
+    }
+  }
+
+  const parsed = await result.output;
+  return groundChatResult(parsed);
+}
+
+// Build the system prompt (with current time + already-logged meals context)
+// and message list shared by the streaming and non-streaming chat paths.
+function buildChatPrompt(
+  history: { role: 'user' | 'assistant'; content: string }[],
+  loggedMeals: LoggedMealSummary[]
+): { system: string; messages: ChatMessage[] } {
   const now = new Date();
   const mealsContext =
     loggedMeals.length > 0
@@ -661,10 +701,13 @@ async function chatLogMeal(
 Current local time is ${now.toLocaleString()}. Use this to infer meal type/time when the user does not specify it.
 
 ${mealsContext}`;
-  const messages: ChatMessage[] = [...history];
+  return { system, messages: [...history] };
+}
 
-  const parsed = await completeStructured(messages, MealChatSchema, 'meal_chat', 0.2, system);
-
+// Ground a parsed meal result against the nutrition cache. A cache hit overrides
+// macros (cached values win) but keeps the model's micronutrient estimates; a
+// confident miss is learned for next time so the same food logs consistently.
+function groundChatResult(parsed: z.infer<typeof MealChatSchema>) {
   return {
     status: parsed.status,
     action: parsed.action,
@@ -673,10 +716,6 @@ ${mealsContext}`;
     mealType: parsed.mealType ?? undefined,
     time: parsed.time ?? null,
     foods: parsed.foods.map((f) => {
-      // Ground the per-unit macros against the nutrition cache so the same food
-      // logs consistently. A cache hit overrides macros (cached values win) but
-      // keeps the model's micronutrient estimates; a confident miss is learned
-      // for next time.
       const cached = getCachedNutrition(f.name, f.unit);
       let nutrients = f.nutrients as NutrientInfo;
       let servingSize = f.servingSize;
@@ -751,3 +790,37 @@ aiRouter.post(
   handle((b) => suggestGoals(b.height, b.currentWeight, b.age, b.gender, b.activityLevel, b.targetWeight))
 );
 aiRouter.post('/chat-meal', handle((b) => chatLogMeal(b.history ?? [], b.loggedMeals ?? [])));
+
+// Streaming chat endpoint. Responds with newline-delimited JSON (NDJSON):
+//   {"t":"msg","v":"<assistant message so far>"}  — emitted as the reply streams
+//   {"t":"done","v":<MealChatResult>}             — final, nutrition-grounded result
+//   {"t":"error","v":"<reason>"}                  — only if both streaming and fallback fail
+// If streaming fails mid-flight, we fall back to the non-streaming path (which
+// carries retry/backoff) so the client still gets a usable result.
+aiRouter.post('/chat-meal-stream', async (req: Request, res: Response) => {
+  const history = req.body?.history ?? [];
+  const loggedMeals = req.body?.loggedMeals ?? [];
+
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering for live streaming
+  const write = (obj: unknown) => res.write(`${JSON.stringify(obj)}\n`);
+
+  try {
+    const final = await chatLogMealStream(history, loggedMeals, (text) =>
+      write({ t: 'msg', v: text })
+    );
+    write({ t: 'done', v: final });
+  } catch (error: unknown) {
+    console.error('Streaming chat failed, falling back to non-streaming:', error);
+    try {
+      const final = await chatLogMeal(history, loggedMeals);
+      write({ t: 'done', v: final });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'AI request failed';
+      write({ t: 'error', v: message });
+    }
+  } finally {
+    res.end();
+  }
+});

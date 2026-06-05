@@ -187,3 +187,63 @@ export async function chatLogMeal(
 ): Promise<MealChatResult> {
   return aiCall<MealChatResult>('chat-meal', { history, loggedMeals });
 }
+
+// Streaming variant. Calls `onMessage` with the assistant's reply text as it is
+// generated, then resolves with the final, nutrition-grounded result. Falls
+// back to the non-streaming endpoint if streaming is unavailable.
+export async function chatLogMealStream(
+  history: { role: 'user' | 'assistant'; content: string }[],
+  loggedMeals: LoggedMealSummary[],
+  onMessage: (text: string) => void
+): Promise<MealChatResult> {
+  const response = await fetch(`${API_BASE_URL}/ai/chat-meal-stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ history, loggedMeals }),
+  });
+
+  if (!response.ok || !response.body) {
+    // Streaming endpoint failed outright — fall back to the buffered call.
+    return chatLogMeal(history, loggedMeals);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let final: MealChatResult | null = null;
+
+  // The server emits newline-delimited JSON: {"t":"msg"|"done"|"error","v":...}
+  const handleLine = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    let event: { t: string; v: unknown };
+    try {
+      event = JSON.parse(trimmed);
+    } catch {
+      return; // ignore partial/garbled lines
+    }
+    if (event.t === 'msg' && typeof event.v === 'string') {
+      onMessage(event.v);
+    } else if (event.t === 'done') {
+      final = event.v as MealChatResult;
+    } else if (event.t === 'error') {
+      throw new Error(typeof event.v === 'string' ? event.v : 'AI request failed');
+    }
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let newlineIndex: number;
+    while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, newlineIndex);
+      buffer = buffer.slice(newlineIndex + 1);
+      handleLine(line);
+    }
+  }
+  if (buffer.trim()) handleLine(buffer);
+
+  if (!final) throw new Error('AI request did not return a result');
+  return final;
+}

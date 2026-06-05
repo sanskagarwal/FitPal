@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
 import { Food, MealEntry, FoodEntry, NutrientInfo, MealType, MealUnit } from '../types';
-import { analyzeFoodWithAI, chatLogMeal, reestimateNutrientsForUnit, ParsedMealFood, MealChatResult, LoggedMealSummary } from '../services/openai';
+import { analyzeFoodWithAI, chatLogMealStream, reestimateNutrientsForUnit, ParsedMealFood, MealChatResult, LoggedMealSummary } from '../services/openai';
 import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
 import { generateId, getStartOfDay, getEndOfDay, combineDateWithCurrentTime, formatDayLabel } from '../utils/helpers';
 import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check } from 'lucide-react';
@@ -177,7 +177,13 @@ export const FoodLogger = () => {
           unit: fe.unit,
         })),
       }));
-      const result = await chatLogMeal(newHistory, loggedMeals);
+      // Add an empty assistant bubble that fills in as the reply streams.
+      setChatMessages([...newHistory, { role: 'assistant', content: '' }]);
+      const updateAssistant = (text: string) =>
+        setChatMessages([...newHistory, { role: 'assistant', content: text }]);
+
+      const result = await chatLogMealStream(newHistory, loggedMeals, updateAssistant);
+      // Ensure the final message is shown even if no stream chunks arrived.
       setChatMessages([...newHistory, { role: 'assistant', content: result.message }]);
       const isActionable =
         result.status === 'ready' &&
@@ -496,26 +502,30 @@ export const FoodLogger = () => {
 
         {chatMessages.length > 0 && (
           <div ref={chatScrollRef} className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
-            {chatMessages.map((msg, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
-                    msg.role === 'user'
-                      ? 'bg-primary-600 text-white rounded-br-sm'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-                  }`}
+            {chatMessages.map((msg, i) =>
+              // Skip the empty assistant placeholder shown before the first
+              // streamed token (the "Thinking…" indicator covers that gap).
+              msg.role === 'assistant' && msg.content === '' ? null : (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.content}
-                </div>
-              </motion.div>
-            ))}
-            {chatLoading && (
+                  <div
+                    className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
+                      msg.role === 'user'
+                        ? 'bg-primary-600 text-white rounded-br-sm'
+                        : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                </motion.div>
+              )
+            )}
+            {chatLoading && chatMessages[chatMessages.length - 1]?.content === '' && (
               <div className="flex justify-start">
                 <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
                   <Spinner className="w-4 h-4" />
