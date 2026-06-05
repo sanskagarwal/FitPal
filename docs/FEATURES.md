@@ -1,100 +1,130 @@
-# FitPal Features 🌟
+# FitPal Features
 
-Everything FitPal can do — your AI-powered Indian nutrition tracker.
+Everything FitPal can do, your AI-powered Indian nutrition tracker.
 
-## 🔐 Accounts & Profile
+## Accounts and profile
 
-- **Local authentication** — register with name, email, and password (hashed before storage).
-- **Profile** — date of birth, gender, height, activity level, and diet preference (vegetarian / eggetarian / non-vegetarian).
-- **Smart onboarding** — starting goals are estimated from your profile using the Mifflin–St Jeor BMR formula and your activity level.
-- **Starting weight** — captured at registration so progress tracking begins immediately.
-- **Profile in the navbar** — your name doubles as the profile entry point, right beside Logout.
+- **Local authentication.** Register with name, email, and password (hashed
+  before storage). The session is a signed JWT stored in an httpOnly cookie.
+- **Profile.** Date of birth, gender, height, activity level, and diet
+  preference (vegetarian, eggetarian, or non-vegetarian).
+- **Smart onboarding.** Starting goals are estimated from your profile using the
+  Mifflin-St Jeor BMR formula and your activity level.
+- **Starting weight** is captured at registration so progress tracking begins
+  immediately.
+- **Profile in the navbar.** Your name doubles as the profile entry point, right
+  beside Logout.
 
-## 🤖 Agentic AI Meal Logging
+## Agentic AI meal logging
 
-- **Natural language** — type things like *"2 rotis and a katori of dal for lunch at 1pm"* and FitPal builds the meal for you.
-- **Log, update, or delete** — the assistant understands follow-ups like *"add a glass of milk to breakfast"* or *"delete my lunch"* and acts on today's meals.
-- **Conversational preview** — proposed actions appear as a confirmable card before anything is saved.
-- **Auto-scrolling chat** — the conversation keeps the latest message in view.
-- **Confidence aware** — low/medium-confidence estimates are flagged so you know when to double-check.
+- **Natural language.** Type things like *"2 rotis and a katori of dal for lunch
+  at 1pm"* and FitPal builds the meal for you.
+- **Log, update, or delete.** The assistant understands follow-ups like *"add a
+  glass of milk to breakfast"* or *"delete my lunch"* and acts on today's meals.
+- **Conversational preview.** Proposed actions appear as a confirmable card
+  before anything is saved.
+- **Auto-scrolling chat.** The conversation keeps the latest message in view.
+- **Confidence aware.** Low and medium-confidence estimates are flagged so you
+  know when to double-check.
 
-## 🍛 Food Search & Manual Logging
+## Food search and manual logging
 
-- **AI food analysis** — search any Indian dish and get macro + micronutrient estimates, even with misspellings or regional names.
-- **Confidence badges** — an "~estimated" tag appears when the AI is less certain.
-- **Editable calories** — override the per-unit calories if an estimate looks off; doing so marks it as high confidence.
-- **Flexible units** — log in serving, katori, bowl, plate, cup, glass, tbsp, tsp, piece, slice, gram, ml, or oz.
-- **Unit re-estimation** — switching units re-estimates the nutrition for the new unit automatically.
-- **Multi-food meals** — combine several items into one meal with a running nutrition total.
-- **Meal types** — breakfast, morning snack, lunch, evening snack, dinner.
-- **Notes** — add context to any meal.
-- **Edit & delete** — change or remove logged meals anytime (delete asks for confirmation).
+- **AI food analysis.** Search any Indian dish and get macro and micronutrient
+  estimates, even with misspellings or regional names.
+- **Confidence badges.** An "~estimated" tag appears when the AI is less
+  certain.
+- **Editable calories.** Override the per-unit calories if an estimate looks
+  off; doing so marks it as high confidence.
+- **Flexible units.** Log in serving, katori, bowl, plate, cup, glass, tbsp,
+  tsp, piece, slice, gram, ml, or oz.
+- **Unit re-estimation.** Switching units re-estimates the nutrition for the new
+  unit automatically.
+- **Multi-food meals.** Combine several items into one meal with a running
+  nutrition total.
+- **Meal types.** Breakfast, morning snack, lunch, evening snack, dinner.
+- **Notes.** Add context to any meal.
+- **Edit and delete.** Change or remove logged meals anytime (delete asks for
+  confirmation).
 
-## 📅 Date Navigation
+## Date navigation
 
-- **Any-day logging & review** — a date picker on the Dashboard and Log Food pages lets you move to any past day.
-- **Quick navigation** — previous/next-day arrows, a calendar picker, and a one-tap **Today** shortcut.
-- **Everything follows the date** — stats, meal breakdowns, micronutrients, the weekly view, and the meal list all reflect the selected day.
-- **Safe by default** — future dates are disabled, and a banner reminds you when you're logging for a day other than today.
+- **Any-day logging and review.** A date picker on the Dashboard and Log Food
+  pages lets you move to any past day.
+- **Quick navigation.** Previous and next-day arrows, a calendar picker, and a
+  one-tap **Today** shortcut.
+- **Everything follows the date.** Stats, meal breakdowns, micronutrients, the
+  weekly view, and the meal list all reflect the selected day.
+- **Safe by default.** Future dates are disabled, and a banner reminds you when
+  you are logging for a day other than today.
 
-## 📊 Dashboard
+## Dashboard
 
-- **Daily overview** — animated stat cards for calories, protein, carbs, and fats vs. targets, for the selected day.
-- **Macro distribution** — pie chart of protein/carbs/fats.
-- **Weekly trends** — line charts of recent nutrition.
-- **Progress bars** — at-a-glance goal progress per nutrient.
-- **AI meal suggestion** — a structured "what to eat next" card based on your day.
-- **Nutrient suggestions** — one-click AI food ideas to close the gap on any tracked nutrient.
+- **Daily overview.** Animated stat cards for calories, protein, carbs, and fats
+  vs. targets, for the selected day.
+- **Macro distribution.** Pie chart of protein, carbs, and fats.
+- **Weekly trends.** Line charts of recent nutrition.
+- **Progress bars.** At-a-glance goal progress per nutrient.
+- **AI meal suggestion.** A structured "what to eat next" card based on your day.
+- **Nutrient suggestions.** One-click AI food ideas to close the gap on any
+  tracked nutrient.
 
 **Tracked nutrients**
-- **Macros:** calories, protein, carbohydrates, fats
-- **Micros:** fiber, vitamin A, vitamin C, vitamin D, calcium, iron, magnesium, potassium (with room for more)
 
-## ⚖️ Weight Tracking
+- **Macros:** calories, protein, carbohydrates, fats.
+- **Micros:** fiber, vitamin A, vitamin C, vitamin D, calcium, iron, magnesium,
+  potassium (with room for more).
 
-- **Log weight** in kg, with optional body-fat %.
+## Weight tracking
+
+- **Log weight** in kg, with optional body-fat percentage.
 - **Automatic BMI** based on your height.
-- **Goal progress** — visual progress from start weight toward your target.
-- **Change since last** — quick delta vs. your previous weigh-in.
-- **Streaks** — current and longest streak to encourage consistency.
-- **History table** — recent entries with inline edit (Enter to save, Esc to cancel) and delete.
-- **Progress chart** — weight timeline with a target reference line.
+- **Goal progress.** Visual progress from start weight toward your target.
+- **Change since last.** Quick delta vs. your previous weigh-in.
+- **Streaks.** Current and longest streak to encourage consistency.
+- **History table.** Recent entries with inline edit (Enter to save, Esc to
+  cancel) and delete.
+- **Progress chart.** Weight timeline with a target reference line.
 
-## 🎯 Goals
+## Goals
 
 - **Auto-calculated targets** from your profile, fully editable.
-- **Weight goal** with selectable weekly loss rate (0.25–1 kg/week).
-- **Calorie & macro targets** with sensible input bounds.
+- **Weight goal** with selectable weekly loss rate (0.25 to 1 kg/week).
+- **Calorie and macro targets** with sensible input bounds.
 - **Micronutrient targets** for fiber, vitamins, and minerals.
-- **AI goal suggestions** — let the assistant recommend goals with an explanation.
-- **Calculate from weight-loss rate** — derive calorie/macro targets from your chosen pace.
+- **AI goal suggestions.** Let the assistant recommend goals with an
+  explanation.
+- **Calculate from weight-loss rate.** Derive calorie and macro targets from
+  your chosen pace.
 
-## 👨‍🍳 Recipe Suggestions
+## Recipe suggestions
 
 - **AI-generated Indian recipes** tailored to your diet preference and goals.
-- **Full detail** — ingredients, step-by-step instructions, prep time, servings.
+- **Full detail.** Ingredients, step-by-step instructions, prep time, servings.
 - **Per-serving nutrition** for each recipe.
 - **Empty-state guidance** when a search returns nothing.
 
-## 💾 Data & Privacy
+## Data and privacy
 
-- **Local-first storage** — data lives in a local SQLite database managed by a small Express server on your machine.
-- **Export / import** — back up and restore your data.
+- **Local-first storage.** Data lives in a local SQLite database managed by a
+  small Express server on your machine.
+- **Export and import.** Back up and restore your data.
 - **No third-party cloud** beyond the AI provider you choose.
 - **Hashed passwords** and no analytics or tracking.
 
-## 📱 Progressive Web App
+## Progressive Web App
 
 - **Installable** on phone, tablet, and desktop (custom icons, maskable-safe).
 - **Offline support** via service worker precaching.
 - **Responsive** layouts tuned for small screens and touch targets.
 
-## 🎨 Interface & Polish
+## Interface and polish
 
-- **Subtle motion** — page cross-fades, staggered cards, animated chat/lists, and toast slide-ins (Framer Motion).
-- **Keyboard-friendly & accessible** — Enter/Escape on forms and inline edits, aria-labels, focus styles, and autofocus on key inputs.
+- **Subtle motion.** Page cross-fades, staggered cards, animated chat and lists,
+  and toast slide-ins (Motion).
+- **Keyboard-friendly and accessible.** Enter and Escape on forms and inline
+  edits, aria-labels, focus styles, and autofocus on key inputs.
 - **Helpful empty states** and clear loading indicators throughout.
 
 ---
 
-**FitPal** — complete nutrition tracking for Indian cuisine 🥗💪
+FitPal: complete nutrition tracking for Indian cuisine.
