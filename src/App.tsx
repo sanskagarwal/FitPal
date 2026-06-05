@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PreferencesProvider } from './context/PreferencesContext';
 import { DateProvider } from './context/DateContext';
 import { AuthPage } from './components/AuthPage';
 import { Layout } from './components/Layout';
@@ -66,9 +67,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <DateProvider>
-        <AppContent />
-      </DateProvider>
+      <PreferencesProvider>
+        <DateProvider>
+          <AppContent />
+        </DateProvider>
+      </PreferencesProvider>
     </AuthProvider>
   );
 }

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserProfile, UserGoals } from '../types';
-import { saveUser, authLogin, authRegister, authLogout, authMe, authResetPassword } from '../utils/db';
+import { User, UserProfile } from '../types';
+import { authLogin, authRegister, authLogout, authMe, authResetPassword } from '../utils/db';
 import { calculateDailyCalories, calculateMacros, calculateAge } from '../utils/helpers';
 
 // Distinguish a normal failed login from a legacy (pre-bcrypt) account that
@@ -12,6 +12,9 @@ export type LoginResult = 'ok' | 'invalid' | 'legacy';
 // show what actually went wrong instead of a generic message.
 export type RegisterResult = { ok: true; user: User } | { ok: false; error: string };
 
+// Auth-only concerns: who is signed in and how to change that. User
+// preferences (profile/goals) live in PreferencesContext, which updates the
+// cached user via `setUser`.
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -19,8 +22,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string, profile: UserProfile) => Promise<RegisterResult>;
   resetPassword: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
-  updateGoals: (goals: Partial<UserGoals>) => Promise<void>;
+  setUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -117,39 +119,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
-  const updateProfile = async (profileUpdate: Partial<UserProfile>) => {
-    if (!user) return;
-
-    const updatedUser: User = {
-      ...user,
-      profile: {
-        ...user.profile,
-        ...profileUpdate,
-      },
-    };
-
-    await saveUser(updatedUser);
-    setUser(updatedUser);
-  };
-
-  const updateGoals = async (goalsUpdate: Partial<UserGoals>) => {
-    if (!user) return;
-
-    const updatedUser: User = {
-      ...user,
-      profile: {
-        ...user.profile,
-        goals: {
-          ...user.profile.goals,
-          ...goalsUpdate,
-        },
-      },
-    };
-
-    await saveUser(updatedUser);
-    setUser(updatedUser);
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -159,8 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         register,
         resetPassword,
         logout,
-        updateProfile,
-        updateGoals,
+        setUser,
       }}
     >
       {children}

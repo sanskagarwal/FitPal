@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { usePreferences } from '../../context/PreferencesContext';
 import { getWeightsByUser } from '../../utils/db';
 import { DietPreference, Gender, ActivityLevel } from '../../types';
 
@@ -16,7 +17,8 @@ export type ProfileFormData = {
 // Owns the Profile form state and the profile update flow. Wraps the existing
 // AuthContext + db calls only.
 export const useProfileForm = () => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
+  const { updateProfile } = usePreferences();
   const [formData, setFormData] = useState<ProfileFormData>({
     name: user?.name || '',
     email: user?.email || '',

@@ -1,4 +1,5 @@
 import { useAuth } from '../context/AuthContext';
+import { usePreferences } from '../context/PreferencesContext';
 import { Target } from 'lucide-react';
 import { useGoalsForm } from './goals/useGoalsForm';
 import { WeightGoalSection } from './goals/WeightGoalSection';
@@ -8,7 +9,8 @@ import { MicronutrientTargets } from './goals/MicronutrientTargets';
 import { GoalsTips } from './goals/GoalsTips';
 
 export const Goals = () => {
-  const { user, updateGoals } = useAuth();
+  const { user } = useAuth();
+  const { updateGoals } = usePreferences();
   const {
     formData,
     updateField,
