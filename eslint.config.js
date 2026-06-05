@@ -27,4 +27,12 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Playwright e2e specs use a `use` fixture callback that the React Hooks
+    // rule mistakes for a hook. These files contain no React components.
+    files: ['tests/e2e/**/*.{ts,tsx}', 'playwright.config.ts'],
+    rules: {
+      'react-hooks/rules-of-hooks': 'off',
+    },
+  },
 )

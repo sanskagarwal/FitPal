@@ -34,3 +34,12 @@ export function getDb(): Database.Database {
   }
   return db;
 }
+
+// Close the connection and clear the singleton. Used by tests to tear down an
+// isolated database between runs; a no-op when nothing is open.
+export function closeDatabase(): void {
+  if (db) {
+    db.close();
+    db = null;
+  }
+}
