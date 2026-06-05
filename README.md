@@ -26,48 +26,33 @@ See **[FEATURES.md](docs/FEATURES.md)** for the full feature breakdown.
 
 ---
 
-## 🚧 In Progress
-
-Some features are actively being worked on — see **[TODO.md](docs/TODO.md)** for details.
-
----
-
 ## 🤖 AI Providers
 
-FitPal talks to AI models through the [Vercel AI SDK](https://sdk.vercel.ai), so it works with **any OpenAI-compatible Chat Completions API** — you just set `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL`. The key is read **server-side only** and never shipped to the browser.
+FitPal uses the [Vercel AI SDK](https://sdk.vercel.ai), so it works with **any OpenAI-compatible Chat Completions API** — just set `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL` (read server-side only, never shipped to the browser). Every request uses **structured outputs**: the model returns JSON matching a `zod` schema that the SDK enforces and validates, keeping AI features reliable.
 
-All AI features rely on **structured outputs**: every request asks the model for JSON matching a `zod` schema, which the SDK enforces (via native JSON-schema, JSON mode, or tool calling, whichever the model supports) and validates before use. This keeps food analysis, meal logging, and suggestions reliable instead of parsing free-form text. Models with stronger structured-output support generally give better results.
+**Supported**
+- [x] **OpenAI**
+- [x] **Azure OpenAI** — set `AI_PROVIDER=azure`
+- [x] **OpenAI-compatible gateways** — [LiteLLM](https://github.com/BerriAI/litellm), [OpenRouter](https://openrouter.ai/)
+- [x] **Local / self-hosted** — [Ollama](https://ollama.com/), vLLM
 
-### Supported
-
-- [x] **OpenAI** (`gpt-4o`, `gpt-4o-mini`, …)
-- [x] **Azure OpenAI** — set `AI_PROVIDER=azure` (uses the dedicated Azure SDK)
-- [x] **OpenAI-compatible gateways** — [LiteLLM](https://github.com/BerriAI/litellm), [OpenRouter](https://openrouter.ai/) (reach Anthropic, Google, etc. through them)
-- [x] **Local / self-hosted** — [Ollama](https://ollama.com/), vLLM, and other OpenAI-compatible servers
-
-### Planned
-
-- [ ] **Native Anthropic** provider (`@ai-sdk/anthropic`) — target the Claude API directly, no gateway
-- [ ] **Native Google** provider (`@ai-sdk/google`) — target the Gemini API directly, no gateway
-
-See **[TODO.md](docs/TODO.md)** for the roadmap.
+**Planned**
+- [ ] **Native Anthropic** (`@ai-sdk/anthropic`)
+- [ ] **Native Google** (`@ai-sdk/google`)
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- An **AI provider** with an OpenAI-compatible Chat Completions API — required for AI features. This can be OpenAI, a [LiteLLM](https://github.com/BerriAI/litellm) proxy, OpenRouter, a local [Ollama](https://ollama.com/) or vLLM server, Azure OpenAI, etc.
-- **Docker** (for the recommended self-host path) **or Node.js 24+** (to run from source).
-
-The AI key is read **server-side only** — it is never shipped to the browser.
+- An **AI provider** — see [AI Providers](#-ai-providers) above.
+- **Docker** (recommended) or **Node.js 24+** (to run from source).
 
 ---
 
 ## 🐳 Self-Hosting with Docker (recommended)
 
-The whole app (frontend + API) runs as a single container. Your data is stored
-as JSON on a mounted volume, so it survives upgrades.
+The whole app (frontend + API) runs as a single container. Your data lives in a SQLite database on a mounted volume, so it survives upgrades.
 
 ```bash
 # 1. Grab the compose file and the env template
@@ -85,9 +70,7 @@ docker compose up -d
 
 Open <http://localhost:3001>. Update later with `docker compose pull && docker compose up -d`.
 
-> The image is published as `ghcr.io/sanskagarwal/fitpal`. To build locally
-> instead, comment out `image:` in
-> `docker-compose.yml`, uncomment `build: .`, and run `docker compose up -d --build`.
+> Image: `ghcr.io/sanskagarwal/fitpal`. To build locally, swap `image:` for `build: .` in `docker-compose.yml` and run `docker compose up -d --build`.
 
 ### Run the container directly (without compose)
 
@@ -104,54 +87,15 @@ docker run -d --name fitpal -p 3001:3001 \
 
 ## 🧑‍💻 Run from source (development)
 
-### 1. Install
-
 ```bash
 git clone <repository-url>
 cd FitPal
-npm install
-cd server && npm install && cd ..
+npm install && (cd server && npm install)
+cp .env.example .env   # then set AI_API_KEY, AI_BASE_URL, AI_MODEL
+npm run dev:all        # frontend → :5173, server → :3001
 ```
 
-### 2. Configure
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your AI provider details:
-
-```env
-AI_API_KEY=your-key-here
-AI_BASE_URL=https://api.openai.com/v1
-AI_MODEL=gpt-4o-mini
-```
-
-> Works with any OpenAI-compatible API. To use **Azure OpenAI**, set `AI_PROVIDER=azure` (with `AI_BASE_URL` as the resource endpoint, `AI_MODEL` as the deployment name, and `AI_API_VERSION`). See [.env.example](.env.example) for all options.
-
-### 3. Run
-
-```bash
-npm run dev:all
-```
-
-- Frontend → http://localhost:5173 (proxies `/api` to the server)
-- Storage + AI server → http://localhost:3001
-
-Or run them in separate terminals:
-
-```bash
-npm run dev      # frontend
-npm run server   # storage + AI server
-```
-
-### Production build from source
-
-```bash
-npm run build                 # build the frontend
-cd server && npm run build    # build the server
-node dist/index.js            # serves API + the built frontend on one port
-```
+Works with any OpenAI-compatible API; for **Azure OpenAI** set `AI_PROVIDER=azure`. See [.env.example](.env.example) for all options and **[DEVELOPER.md](docs/DEVELOPER.md)** for production builds and details.
 
 ---
 
@@ -168,56 +112,9 @@ node dist/index.js            # serves API + the built frontend on one port
 
 ## 🛠️ Tech Stack
 
-**Frontend**
-- React 19 + TypeScript
-- Vite 8 (build/dev)
-- Tailwind CSS v4
-- Recharts (charts) · Motion / Framer Motion (animations) · Lucide (icons) · react-markdown
-- vite-plugin-pwa (offline + installable)
-
-**Server**
-- Express 5 + TypeScript (tsx for dev)
-- SQLite storage (`better-sqlite3`) at `server/data/fitpal.db`
-- Serves the built frontend and proxies all AI calls (single process in production)
-
-**AI**
-- Any OpenAI-compatible Chat Completions API via the **Vercel AI SDK** (`ai` + `@ai-sdk/openai-compatible`, plus `@ai-sdk/azure` for Azure), with structured outputs validated by `zod`, called **server-side** so the key stays private
-
----
-
-## 📁 Project Structure
-
-```
-FitPal/
-├── src/                  # Frontend SPA
-│   ├── components/       # UI (Dashboard, FoodLogger, WeightTracker, …)
-│   ├── context/          # AuthContext
-│   ├── services/         # openai.ts (calls the backend /api/ai routes)
-│   ├── utils/            # db.ts (API client), helpers, export/import
-│   └── types/            # Shared TypeScript types
-├── server/               # Express storage + AI server
-│   ├── index.ts          # REST API + static frontend hosting
-│   ├── ai.ts             # AI integration via the Vercel AI SDK (server-side)
-│   └── data/             # SQLite database (fitpal.db)
-├── public/               # PWA icons & static assets
-├── Dockerfile            # Multi-stage build (single-process image)
-├── docker-compose.yml    # Self-host deployment
-├── vite.config.ts        # Vite + PWA config
-└── package.json
-```
-
----
-
-## 📦 Scripts
-
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Vite dev server |
-| `npm run server` | Start the local storage server |
-| `npm run dev:all` | Run frontend + server together |
-| `npm run build` | Type-check and build for production |
-| `npm run preview` | Preview the production build |
-| `npm run lint` | Run ESLint |
+- **Frontend** — React 19 + TypeScript, Vite 8, Tailwind CSS v4, Recharts, Framer Motion, vite-plugin-pwa (offline + installable)
+- **Server** — Express 5 + TypeScript, SQLite (`better-sqlite3`); serves the frontend and proxies all AI calls in one process
+- **AI** — any OpenAI-compatible API via the **Vercel AI SDK** (`ai` + `@ai-sdk/openai-compatible`, `@ai-sdk/azure`), structured outputs validated by `zod`, called server-side
 
 ---
 
@@ -225,6 +122,7 @@ FitPal/
 
 - **[FEATURES.md](docs/FEATURES.md)** — complete feature list
 - **[DEVELOPER.md](docs/DEVELOPER.md)** — architecture, API reference, data models, and contribution guide
+- **[TODO.md](docs/TODO.md)** — roadmap
 
 ## 📄 License
 

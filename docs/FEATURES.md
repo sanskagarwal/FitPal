@@ -78,9 +78,9 @@ Everything FitPal can do — your AI-powered Indian nutrition tracker.
 
 ## 💾 Data & Privacy
 
-- **Local-first storage** — data is saved as JSON files by a small Express server on your machine.
+- **Local-first storage** — data lives in a local SQLite database managed by a small Express server on your machine.
 - **Export / import** — back up and restore your data.
-- **No third-party cloud** beyond the AI provider you choose for AI features.
+- **No third-party cloud** beyond the AI provider you choose.
 - **Hashed passwords** and no analytics or tracking.
 
 ## 📱 Progressive Web App
@@ -91,16 +91,9 @@ Everything FitPal can do — your AI-powered Indian nutrition tracker.
 
 ## 🎨 Interface & Polish
 
-- **Subtle motion** — page cross-fades, staggered dashboard cards, animated chat messages and lists, toast slide-ins, mobile-menu transitions, and button tap feedback (Framer Motion).
-- **Keyboard-friendly** — Enter submits search/log/recipe forms; inline edits support Enter/Escape.
-- **Accessible** — aria-labels on icon buttons and selects, focus styles, and autofocus on key inputs.
+- **Subtle motion** — page cross-fades, staggered cards, animated chat/lists, and toast slide-ins (Framer Motion).
+- **Keyboard-friendly & accessible** — Enter/Escape on forms and inline edits, aria-labels, focus styles, and autofocus on key inputs.
 - **Helpful empty states** and clear loading indicators throughout.
-
-## ⚡ Performance
-
-- **Fast SPA** built with Vite, with PWA caching for instant repeat loads.
-- **Structured AI outputs** (zod-validated) for reliable parsing.
-- **Lightweight storage** — plain JSON files, easy to inspect and back up.
 
 ---
 

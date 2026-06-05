@@ -387,15 +387,15 @@ interface Recipe {
 
 ### Add a storage endpoint
 
-1. Add a route in `server/index.ts` using the `readJSONFile` / `writeJSONFile` helpers.
+1. Add a route in `server/index.ts` backed by the storage layer in `server/storage.ts` (SQLite).
 2. Add a matching call in `src/utils/db.ts` (use the `apiCall` helper).
 3. Add/extend types in `src/types/index.ts`.
 
 ### Add an AI feature
 
 1. Define a `zod` schema for the output (use `.nullable()` for optional fields).
-2. Build the chat messages and call `completeStructured(...)` in `src/services/openai.ts`.
-3. Consume it from a component.
+2. Build the messages and call `completeStructured(...)` in `server/ai.ts`, then expose it via `aiRouter`.
+3. Add a client call in `src/services/openai.ts` and consume it from a component.
 
 ---
 
