@@ -61,19 +61,31 @@ P1 backend layering, P2 frontend decomposition, P3 polish — tracked in the pro
 - **Merged into local `main`:** merge commit `3c8db1d` (resolved conflicts in
   aiService.ts, AuthPage.tsx, db.ts; kept refactor + main's lint fixes).
   Validated: server `tsc` ✅, frontend build ✅, `npm run lint` ✅ (exit 0).
+- **P2 (Frontend structure):** DONE — landed component-by-component:
+  - 13. FoodLogger → `src/components/foodLogger/*` (FoodSearch, MealChat,
+    MealProposal, SelectedFoodsList, TodayMealsHistory, FoodQuantityInput,
+    ConfidenceBadge + hooks useTodayMeals/useFoodSearch/useMealEditor/useMealChat
+    + foodLoggerUtils) — commit `853e872`.
+  - 14. Dashboard → `src/components/dashboard/*` (StatCard, OverviewStats,
+    MicronutrientCard, MicronutrientsPanel, MealSuggestionPanel, InsightPanel,
+    MealBreakdownTable, NutrientSuggestionPanel, WeightProgress, ChartSection,
+    MotivationalBanner + useDashboardData) — commit `9a6804c`.
+  - 15. Goals/WeightTracker/AuthPage/Profile decomposed into `goals/`, `weight/`,
+    `auth/`, `profile/` subfolders; calc helpers extracted to `src/utils/goals.ts`
+    and `src/utils/weight.ts` — commit `0d02004`.
+  - 16. `db.ts` `ApiError` + parsed server messages; NDJSON stream helper
+    `src/services/ndjsonStream.ts`; AI types moved to `src/types/index.ts`
+    — commit `ba98064`.
+  - 17. Split AuthContext → `PreferencesContext` (updateProfile/updateGoals)
+    — commit `2bf6223`.
+  - Also fixed a register bug: real server errors now surface (no more blanket
+    "Email already exists") + 8-char password validated client-side — commit `1a7c3c2`.
+  - Each step validated with `npm run lint` ✅ and `npm run build` ✅.
 - Local `main` not yet pushed to origin (push needs user approval).
 
-## Next session — P2 (Frontend structure), to land as multiple PRs
-13. Break up FoodLogger.tsx (~1200 lines) → FoodSearch, MealChat, MealProposal,
-    SelectedFoodsList, TodayMealsHistory, FoodQuantityInput + hooks
-    (useFoodSearch, useMealChat, useMealEditor) wrapping EXISTING fetch logic only.
-14. Break up Dashboard.tsx (~930) → StatCard, MicronutrientCard (replaces 8 dup
-    blocks), MealSuggestionPanel, InsightPanel, MealBreakdownTable, ChartSection
-    + useDashboardData.
-15. Decompose Goals.tsx, WeightTracker.tsx, AuthPage.tsx, Profile.tsx; move calc
-    helpers into utils.
-16. Standardize error handling in src/utils/db.ts; extract streaming helper from
-    src/services/openai.ts; move shared AI types into src/types/index.ts.
-17. (Optional) split AuthContext into auth vs. user-preferences concerns.
-Constraints: only wrap existing fetch calls (no data-layer changes); preserve
-state-based routing; component-by-component across several PRs.
+## Remaining — P3 (Polish & maintainability), not yet started
+18. Structured request/error logging (request id) on the server.
+19. Versioned schema migrations replacing run-on-startup schema.
+20. Share enums/types between `server/domain.ts` and `src/types/index.ts`.
+21. Per-user + per-endpoint rate limiting in `server/rateLimit.ts`.
+22. Accessibility pass on extracted components; expand `server/nutritionSeed.ts`.
