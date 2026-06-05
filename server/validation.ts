@@ -2,13 +2,12 @@ import { z } from 'zod';
 import { MealType, MealUnit, NutrientsSchema } from './domain.js';
 
 // ---------------------------------------------------------------------------
-// Meal payload validation.
+// Request validation schemas (zod) for every write route.
 //
-// The client computes nutrient totals and posts the full meal object, which the
-// storage layer trusts and persists verbatim. This guards that boundary against
-// malformed data (NaN/Infinity, negatives, absurd magnitudes, missing fields)
-// before it reaches the database. Schemas use `.passthrough()` and we store the
-// ORIGINAL object so the persisted shape stays byte-for-byte unchanged.
+// Used via the `validateBody` middleware. Schemas use `.loose()` so unknown
+// fields pass through and the persisted shape stays byte-for-byte unchanged,
+// while still guarding the boundary against malformed data (NaN/Infinity,
+// negatives, absurd magnitudes, missing fields).
 // ---------------------------------------------------------------------------
 
 // A non-negative quantity with a generous upper bound. z.number() already
@@ -21,6 +20,58 @@ const BoundedNutrients = NutrientsSchema.refine(
   (n) => Object.values(n).every((v) => Number.isFinite(v) && v >= 0 && v <= 1_000_000),
   { message: 'nutrient values must be finite, non-negative and within range' }
 );
+
+// --- Auth -----------------------------------------------------------------
+
+// Profile is a rich nested object; validate the load-bearing fields and let the
+// rest pass through so the client can evolve it without breaking the contract.
+const ProfileSchema = z
+  .object({
+    dateOfBirth: z.string().min(1),
+    gender: z.string().min(1),
+    height: z.number().positive(),
+    activityLevel: z.string().min(1),
+    goals: z.object({}).loose(),
+  })
+  .loose();
+
+export const RegisterSchema = z
+  .object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    password: z.string().min(8, 'password must be at least 8 characters'),
+    profile: ProfileSchema,
+  })
+  .loose();
+
+export const LoginSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(1),
+  })
+  .loose();
+
+export const ResetPasswordSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(8, 'password must be at least 8 characters'),
+  })
+  .loose();
+
+// --- User upsert ----------------------------------------------------------
+
+// Profile/goal updates from the client. The controller merges this into the
+// stored record (preserving id/email/password server-side), so we only require
+// the fields to be well-formed when present.
+export const UserUpsertSchema = z
+  .object({
+    id: z.string().min(1).optional(),
+    name: z.string().min(1).optional(),
+    profile: ProfileSchema.optional(),
+  })
+  .loose();
+
+// --- Meals ----------------------------------------------------------------
 
 const FoodSchema = z
   .object({
@@ -56,14 +107,29 @@ export const MealSchema = z
   })
   .loose();
 
-// Validate a meal payload. Returns { ok: true } or { ok: false, error } with a
-// short human-readable reason for a 400 response.
-export function validateMeal(
-  payload: unknown
-): { ok: true } | { ok: false; error: string } {
-  const result = MealSchema.safeParse(payload);
-  if (result.success) return { ok: true };
-  const issue = result.error.issues[0];
-  const path = issue?.path.join('.') || 'meal';
-  return { ok: false, error: `Invalid meal: ${path} — ${issue?.message ?? 'invalid'}` };
-}
+// --- Weights --------------------------------------------------------------
+
+export const WeightSchema = z
+  .object({
+    id: z.string().min(1),
+    userId: z.string().min(1),
+    date: z.union([z.string().min(1), z.date()]),
+    weight: amount(1000),
+    bmi: z.number().nonnegative().optional(),
+    notes: z.string().optional(),
+  })
+  .loose();
+
+// --- Notifications & streaks (one row per user) ---------------------------
+
+export const NotificationSchema = z
+  .object({
+    userId: z.string().min(1),
+  })
+  .loose();
+
+export const StreakSchema = z
+  .object({
+    userId: z.string().min(1),
+  })
+  .loose();

@@ -1,0 +1,119 @@
+import { Request, Response } from 'express';
+import {
+  analyzeFoodWithAI,
+  reestimateNutrientsForUnit,
+  getRecipeSuggestions,
+  getDietaryInsights,
+  suggestMeal,
+  suggestFoodForNutrient,
+  suggestGoals,
+  chatLogMeal,
+  chatLogMealStream,
+} from '../services/aiService.js';
+import { AIError } from '../errors.js';
+
+// Run an AI service call and reply with JSON, mapping any failure to a typed
+// AIError (502) so the central error handler renders it consistently.
+async function run(res: Response, fn: () => Promise<unknown>): Promise<void> {
+  try {
+    res.json(await fn());
+  } catch (error) {
+    console.error('AI request failed:', error);
+    throw new AIError(error instanceof Error ? error.message : 'AI request failed');
+  }
+}
+
+export const aiController = {
+  analyzeFood: (req: Request, res: Response) =>
+    run(res, () => analyzeFoodWithAI(req.body.foodQuery)),
+
+  reestimateUnit: (req: Request, res: Response) =>
+    run(res, () => reestimateNutrientsForUnit(req.body.foodName, req.body.unit)),
+
+  recipes: (req: Request, res: Response) =>
+    run(res, () =>
+      getRecipeSuggestions(
+        req.body.preferences,
+        req.body.goals,
+        req.body.recentFoods ?? [],
+        req.body.dietPreference
+      )
+    ),
+
+  insights: (req: Request, res: Response) =>
+    run(res, () =>
+      getDietaryInsights(
+        req.body.currentWeight,
+        req.body.targetWeight,
+        req.body.recentNutrition,
+        req.body.goals
+      )
+    ),
+
+  suggestMeal: (req: Request, res: Response) =>
+    run(res, () =>
+      suggestMeal(
+        req.body.remainingCalories,
+        req.body.remainingProtein,
+        req.body.remainingCarbs,
+        req.body.remainingFats,
+        req.body.remainingFiber,
+        req.body.mealType,
+        req.body.dietPreference
+      )
+    ),
+
+  suggestNutrient: (req: Request, res: Response) =>
+    run(res, () =>
+      suggestFoodForNutrient(req.body.nutrientName, req.body.currentAmount, req.body.targetAmount)
+    ),
+
+  suggestGoals: (req: Request, res: Response) =>
+    run(res, () =>
+      suggestGoals(
+        req.body.height,
+        req.body.currentWeight,
+        req.body.age,
+        req.body.gender,
+        req.body.activityLevel,
+        req.body.targetWeight
+      )
+    ),
+
+  chatMeal: (req: Request, res: Response) =>
+    run(res, () => chatLogMeal(req.body.history ?? [], req.body.loggedMeals ?? [])),
+
+  // Streaming chat endpoint. Responds with newline-delimited JSON (NDJSON):
+  //   {"t":"msg","v":"<assistant message so far>"}  — emitted as the reply streams
+  //   {"t":"done","v":<MealChatResult>}             — final, nutrition-grounded result
+  //   {"t":"error","v":"<reason>"}                  — only if both streaming and fallback fail
+  // If streaming fails mid-flight, fall back to the non-streaming path (which
+  // carries retry/backoff) so the client still gets a usable result.
+  async chatMealStream(req: Request, res: Response): Promise<void> {
+    const history = req.body?.history ?? [];
+    const loggedMeals = req.body?.loggedMeals ?? [];
+
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering for live streaming
+    const write = (obj: unknown) => res.write(`${JSON.stringify(obj)}\n`);
+
+    try {
+      const final = await chatLogMealStream(history, loggedMeals, (text) =>
+        write({ t: 'msg', v: text })
+      );
+      write({ t: 'done', v: final });
+    } catch (error: unknown) {
+      console.error('Streaming chat failed, falling back to non-streaming:', error);
+      try {
+        const final = await chatLogMeal(history, loggedMeals);
+        write({ t: 'done', v: final });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'AI request failed';
+        write({ t: 'error', v: message });
+      }
+    } finally {
+      res.end();
+    }
+  },
+};
