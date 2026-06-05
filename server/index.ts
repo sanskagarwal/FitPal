@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import { initStorage } from './storage.js';
 import { apiRouter } from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { requestLogger } from './middleware/requestLogger.js';
+import { logger } from './logger.js';
 
 // ---------------------------------------------------------------------------
 // Application entry point — wiring only.
@@ -30,6 +32,9 @@ const STATIC_DIR = config.STATIC_DIR || path.join(__dirname, '..', '..', 'dist')
 // Middleware. `credentials: true` lets the browser send the auth cookie on
 // cross-origin (split-deployment) requests; same-origin works regardless.
 app.use(cors({ origin: true, credentials: true }));
+// Correlation id + structured request logging — first so every downstream
+// handler and the error handler share the request id.
+app.use(requestLogger);
 app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
@@ -54,5 +59,5 @@ if (fsSync.existsSync(STATIC_DIR)) {
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`🚀 FitPal server running on http://localhost:${PORT}`);
+  logger.info('FitPal server started', { port: PORT, url: `http://localhost:${PORT}` });
 });

@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
+import { runMigrations } from './migrations.js';
 
 // ---------------------------------------------------------------------------
 // SQLite connection + schema.
@@ -9,6 +10,7 @@ import path from 'path';
 // as a JSON blob in a `data` column so API response shapes stay byte-for-byte
 // identical to the original file-based store, while gaining transactions,
 // atomic writes and crash safety from SQLite. Repositories import `getDb()`.
+// The schema is evolved through versioned migrations (see db/migrations.ts).
 // ---------------------------------------------------------------------------
 
 let db: Database.Database | null = null;
@@ -21,44 +23,7 @@ export function initDatabase(dataDir: string): Database.Database {
   db.pragma('journal_mode = WAL'); // better concurrency + durability
   db.pragma('foreign_keys = ON');
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id    TEXT PRIMARY KEY,
-      email TEXT,
-      data  TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-
-    CREATE TABLE IF NOT EXISTS meals (
-      id      TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      data    TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_meals_user ON meals(user_id);
-
-    CREATE TABLE IF NOT EXISTS weights (
-      id      TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      data    TEXT NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS idx_weights_user ON weights(user_id);
-
-    CREATE TABLE IF NOT EXISTS notifications (
-      user_id TEXT PRIMARY KEY,
-      data    TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS streaks (
-      user_id TEXT PRIMARY KEY,
-      data    TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS nutrition_cache (
-      key     TEXT PRIMARY KEY,
-      data    TEXT NOT NULL,
-      source  TEXT NOT NULL
-    );
-  `);
+  runMigrations(db);
 
   return db;
 }

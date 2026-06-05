@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../errors.js';
+import { logger } from '../logger.js';
 
 // ---------------------------------------------------------------------------
 // Central error-handling middleware.
@@ -43,6 +44,10 @@ export function errorHandler(
     return;
   }
 
-  console.error('Unhandled error:', err);
+  logger.error('Unhandled error', {
+    name: err instanceof Error ? err.name : typeof err,
+    error: err instanceof Error ? err.message : String(err),
+    stack: err instanceof Error ? err.stack : undefined,
+  });
   res.status(500).json({ error: 'Internal server error' });
 }

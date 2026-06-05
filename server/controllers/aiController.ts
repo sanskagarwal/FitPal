@@ -11,6 +11,7 @@ import {
   chatLogMealStream,
 } from '../services/aiService.js';
 import { AIError } from '../errors.js';
+import { logger } from '../logger.js';
 
 // Run an AI service call and reply with JSON, mapping any failure to a typed
 // AIError (502) so the central error handler renders it consistently.
@@ -18,7 +19,7 @@ async function run(res: Response, fn: () => Promise<unknown>): Promise<void> {
   try {
     res.json(await fn());
   } catch (error) {
-    console.error('AI request failed:', error);
+    logger.error('AI request failed', { error: error instanceof Error ? error.message : String(error) });
     throw new AIError(error instanceof Error ? error.message : 'AI request failed');
   }
 }
@@ -104,7 +105,9 @@ export const aiController = {
       );
       write({ t: 'done', v: final });
     } catch (error: unknown) {
-      console.error('Streaming chat failed, falling back to non-streaming:', error);
+      logger.error('Streaming chat failed, falling back to non-streaming', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       try {
         const final = await chatLogMeal(history, loggedMeals);
         write({ t: 'done', v: final });

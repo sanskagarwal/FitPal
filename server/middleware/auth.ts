@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AUTH_COOKIE_NAME, verifyAuthToken } from '../auth.js';
 import { AuthError, ForbiddenError } from '../errors.js';
+import { setContext } from '../logger.js';
 
 // ---------------------------------------------------------------------------
 // Request-time auth guards.
@@ -28,6 +29,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     throw new AuthError();
   }
   req.userId = userId;
+  setContext({ userId });
   next();
 }
 

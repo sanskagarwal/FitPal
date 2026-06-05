@@ -25,6 +25,7 @@ import {
   nutritionFillPrompt,
   mealChatSystemPrompt,
 } from '../prompts/index.js';
+import { logger } from '../logger.js';
 
 export interface Food {
   id: string;
@@ -122,10 +123,12 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
       lastError = error;
       if (attempt === attempts || !isRetryableError(error)) break;
       const delayMs = 300 * 2 ** (attempt - 1) + Math.floor(Math.random() * 200);
-      console.warn(
-        `AI call failed (attempt ${attempt}/${attempts}), retrying in ${delayMs}ms:`,
-        (error as { message?: string })?.message || error
-      );
+      logger.warn('AI call failed, retrying', {
+        attempt,
+        attempts,
+        delayMs,
+        error: (error as { message?: string })?.message || String(error),
+      });
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
@@ -191,7 +194,7 @@ export async function analyzeFoodWithAI(foodQuery: string): Promise<Food[]> {
   } catch (error) {
     // No reliable result — return an empty list so the UI shows "no matches"
     // rather than surfacing a 500. The user can refine the query and retry.
-    console.error('Error analyzing food:', error);
+    logger.error('Error analyzing food', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -226,7 +229,7 @@ export async function reestimateNutrientsForUnit(
   } catch (error) {
     // Fallback: a safe zero-nutrition, low-confidence estimate so callers always
     // get a usable shape (the UI flags low confidence for the user to adjust).
-    console.error('Error re-estimating unit nutrition:', error);
+    logger.error('Error re-estimating unit nutrition', { error: error instanceof Error ? error.message : String(error) });
     return { servingSize: `1 ${unit}`, confidence: 'low', nutrients: { ...ZERO_NUTRIENTS } };
   }
 }
@@ -276,7 +279,7 @@ export async function getRecipeSuggestions(
     }));
   } catch (error) {
     // No suggestions available — return an empty list rather than a 500.
-    console.error('Error getting recipe suggestions:', error);
+    logger.error('Error getting recipe suggestions', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
@@ -343,7 +346,7 @@ export async function getDietaryInsights(
   try {
     return await completeStructured(messages, DietaryInsightSchema, 'dietary_insights', 0.6);
   } catch (error) {
-    console.error('Error getting insights:', error);
+    logger.error('Error getting insights', { error: error instanceof Error ? error.message : String(error) });
     return INSIGHTS_FALLBACK;
   }
 }
@@ -408,7 +411,7 @@ export async function suggestMeal(
       reason: parsed.reason || '',
     };
   } catch (error) {
-    console.error('Error getting meal suggestion:', error);
+    logger.error('Error getting meal suggestion', { error: error instanceof Error ? error.message : String(error) });
     return {
       name: 'Balanced Indian plate',
       description: 'A simple, balanced meal using everyday Indian foods.',
@@ -458,7 +461,7 @@ export async function suggestFoodForNutrient(
       tips: parsed.tips.map((t) => String(t)).filter(Boolean),
     };
   } catch (error) {
-    console.error('Error getting food suggestion:', error);
+    logger.error('Error getting food suggestion', { error: error instanceof Error ? error.message : String(error) });
     return {
       nutrient: nutrientName,
       foods: [],
@@ -499,7 +502,7 @@ export async function suggestGoals(
   try {
     return await completeStructured(messages, GoalsSchema, 'nutrition_goals', 0.3);
   } catch (error) {
-    console.error('Error getting goal suggestions:', error);
+    logger.error('Error getting goal suggestions', { error: error instanceof Error ? error.message : String(error) });
     const bmr =
       gender === Gender.Male
         ? 10 * currentWeight + 6.25 * height - 5 * age + 5
@@ -623,7 +626,7 @@ async function fillNutrition(foods: ExtractedFood[]): Promise<FilledNutrition[]>
   try {
     batched = await batchFillNutrition(foods);
   } catch (error) {
-    console.warn('Batched nutrition fill failed, filling individually:', error);
+    logger.warn('Batched nutrition fill failed, filling individually', { error: error instanceof Error ? error.message : String(error) });
   }
   if (batched.length === foods.length) return batched;
   const out: FilledNutrition[] = [];
