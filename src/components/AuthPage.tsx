@@ -64,14 +64,20 @@ export const AuthPage = () => {
             required
           />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={(e) => updateField('password', e.target.value)}
-            className="input-field"
-            required
-          />
+          <div>
+            <input
+              type="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={(e) => updateField('password', e.target.value)}
+              className="input-field"
+              required
+              minLength={isLogin ? undefined : 8}
+            />
+            {!isLogin && (
+              <p className="text-xs text-gray-500 mt-1">At least 8 characters</p>
+            )}
+          </div>
 
           {!isLogin && <RegisterFields formData={formData} updateField={updateField} />}
 

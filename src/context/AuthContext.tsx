@@ -7,11 +7,16 @@ import { calculateDailyCalories, calculateMacros, calculateAge } from '../utils/
 // must set a new password once before it can sign in.
 export type LoginResult = 'ok' | 'invalid' | 'legacy';
 
+// Registration either succeeds with the created user, or fails with the
+// server-provided reason (e.g. duplicate email, weak password) so the UI can
+// show what actually went wrong instead of a generic message.
+export type RegisterResult = { ok: true; user: User } | { ok: false; error: string };
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<LoginResult>;
-  register: (name: string, email: string, password: string, profile: UserProfile) => Promise<User | null>;
+  register: (name: string, email: string, password: string, profile: UserProfile) => Promise<RegisterResult>;
   resetPassword: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
@@ -67,7 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email: string,
     password: string,
     profile: UserProfile
-  ): Promise<User | null> => {
+  ): Promise<RegisterResult> => {
     // Fill in any goals the caller left unset using the standard estimates.
     const dailyCalories = calculateDailyCalories(
       profile.goals.targetWeight,
@@ -93,9 +98,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const result = await authRegister({ name, email, password, profile: finalProfile });
     if (result.ok && result.user) {
       setUser(result.user);
-      return result.user;
+      return { ok: true, user: result.user };
     }
-    return null;
+    return { ok: false, error: result.error || 'Registration failed. Please try again.' };
   };
 
   const resetPassword = async (email: string, password: string): Promise<boolean> => {

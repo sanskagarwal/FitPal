@@ -62,6 +62,11 @@ export const useAuthForm = () => {
           setLoading(false);
           return;
         }
+        if (formData.password.length < 8) {
+          setError('Password must be at least 8 characters');
+          setLoading(false);
+          return;
+        }
         const ok = await resetPassword(formData.email, formData.password);
         if (!ok) {
           setError('Could not reset password. Please try again.');
@@ -96,6 +101,12 @@ export const useAuthForm = () => {
           return;
         }
 
+        if (formData.password.length < 8) {
+          setError('Password must be at least 8 characters');
+          setLoading(false);
+          return;
+        }
+
         // Calculate default maintenance calories based on BMR and activity level
         const age = calculateAge(formData.dateOfBirth);
         const height = parseInt(formData.height);
@@ -109,7 +120,7 @@ export const useAuthForm = () => {
           formData.activityLevel
         );
 
-        const success = await register(formData.name, formData.email, formData.password, {
+        const result = await register(formData.name, formData.email, formData.password, {
           dateOfBirth: formData.dateOfBirth,
           gender: formData.gender,
           height: parseInt(formData.height),
@@ -126,11 +137,11 @@ export const useAuthForm = () => {
 
         // If registration succeeded, log the user's initial weight using the
         // id returned from the server (no localStorage round-trip needed).
-        if (success) {
+        if (result.ok) {
           try {
             const initialWeight: WeightEntry = {
               id: generateId(),
-              userId: success.id,
+              userId: result.user.id,
               date: new Date(),
               weight: weight,
               bmi: calculateBMI(weight, height),
@@ -141,7 +152,7 @@ export const useAuthForm = () => {
             console.error('Error logging initial weight:', error);
           }
         } else {
-          setError('Email already exists');
+          setError(result.error);
         }
       }
     } catch (err) {
