@@ -1,3 +1,4 @@
+import './env.js';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import fsSync from 'fs';

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
@@ -42,15 +42,24 @@ export const Dashboard = () => {
   const [suggestingMeal, setSuggestingMeal] = useState(false);
   const [nutrientSuggestion, setNutrientSuggestion] = useState<NutrientSuggestion | null>(null);
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
+  const nutrientSuggestionRef = useRef<HTMLDivElement>(null);
   const [dietPreference, setDietPreference] = useState<'vegetarian' | 'eggetarian' | 'non-vegetarian'>(
     user?.profile.dietPreference || 'vegetarian'
   );
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [user, selectedDate]);
+  const calculateTotals = useCallback((meals: MealEntry[]) => {
+    return meals.reduce(
+      (acc, meal) => ({
+        totalCalories: acc.totalCalories + meal.totalNutrients.calories,
+        totalProtein: acc.totalProtein + meal.totalNutrients.protein,
+        totalCarbs: acc.totalCarbs + meal.totalNutrients.carbs,
+        totalFats: acc.totalFats + meal.totalNutrients.fats,
+      }),
+      { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0 }
+    );
+  }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
@@ -97,19 +106,18 @@ export const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, selectedDate, calculateTotals]);
 
-  const calculateTotals = (meals: MealEntry[]) => {
-    return meals.reduce(
-      (acc, meal) => ({
-        totalCalories: acc.totalCalories + meal.totalNutrients.calories,
-        totalProtein: acc.totalProtein + meal.totalNutrients.protein,
-        totalCarbs: acc.totalCarbs + meal.totalNutrients.carbs,
-        totalFats: acc.totalFats + meal.totalNutrients.fats,
-      }),
-      { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFats: 0 }
-    );
-  };
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  useEffect(() => {
+    if (suggestingNutrient || nutrientSuggestion) {
+      nutrientSuggestionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [suggestingNutrient, nutrientSuggestion]);
 
   const getMealTypeStats = (): MealTypeStats[] => {
     const mealTypes = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'];
@@ -414,7 +422,7 @@ export const Dashboard = () => {
           <div className="flex items-center gap-2">
             <select
               value={dietPreference}
-              onChange={(e) => setDietPreference(e.target.value as any)}
+              onChange={(e) => setDietPreference(e.target.value as 'vegetarian' | 'eggetarian' | 'non-vegetarian')}
               disabled={suggestingMeal}
               className="flex-1 sm:flex-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
               aria-label="Dietary preference"
@@ -665,7 +673,7 @@ export const Dashboard = () => {
 
       {/* Nutrient Suggestion Display */}
       {suggestingNutrient && !nutrientSuggestion && (
-        <div className="card bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div ref={nutrientSuggestionRef} className="card bg-gradient-to-br from-blue-50 to-indigo-100 scroll-mt-24">
           <div className="flex items-center gap-2 mb-3">
             <Lightbulb className="w-6 h-6 text-blue-600" />
             <h3 className="text-lg font-semibold">Finding food suggestions…</h3>
@@ -677,7 +685,7 @@ export const Dashboard = () => {
       )}
 
       {nutrientSuggestion && (
-        <div className="card bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div ref={nutrientSuggestionRef} className="card bg-gradient-to-br from-blue-50 to-indigo-100 scroll-mt-24">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 min-w-0">
               <Lightbulb className="w-6 h-6 text-blue-600 flex-shrink-0" />

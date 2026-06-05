@@ -81,9 +81,14 @@ function requireEnv(name: string): string {
 }
 
 // Free-form text completion (for non-JSON responses).
-async function completeText(messages: ChatMessage[], temperature = 0.7): Promise<string> {
+async function completeText(
+  messages: ChatMessage[],
+  temperature = 0.7,
+  system = SYSTEM_PROMPT
+): Promise<string> {
   const { text } = await generateText({
     model: getModel(),
+    system,
     messages,
     temperature,
     maxOutputTokens: 2000,
@@ -98,10 +103,12 @@ async function completeStructured<T>(
   messages: ChatMessage[],
   schema: z.ZodType<T>,
   schemaName: string,
-  temperature = 0.7
+  temperature = 0.7,
+  system = SYSTEM_PROMPT
 ): Promise<T> {
   const { output } = await generateText({
     model: getModel(),
+    system,
     messages,
     temperature,
     output: Output.object({ schema, name: schemaName }),
@@ -145,7 +152,6 @@ const FoodAnalysisSchema = z.object({
 
 async function analyzeFoodWithAI(foodQuery: string): Promise<Food[]> {
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
       content: `Analyze this Indian food query: "${foodQuery}" and return up to 3 likely matching foods.
@@ -183,7 +189,6 @@ const ReestimateSchema = z.object({
 
 async function reestimateNutrientsForUnit(foodName: string, unit: string) {
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
       content: `For the Indian food "${foodName}", estimate the nutrition for exactly ONE "${unit}" of it.
@@ -238,7 +243,6 @@ async function getRecipeSuggestions(
       }`
     : '';
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
       content: `Suggest 3 healthy Indian recipes based on:
@@ -271,7 +275,6 @@ async function getDietaryInsights(
   goals: string
 ): Promise<string> {
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
       content: `Provide dietary insights for an Indian diet:
@@ -328,7 +331,6 @@ async function suggestMeal(
       }`
     : '';
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
       content: `Suggest a single Indian ${mealType} meal to help meet these remaining daily targets:
@@ -399,7 +401,6 @@ async function suggestFoodForNutrient(
 ) {
   const deficit = targetAmount - currentAmount;
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
       content: `Suggest Indian foods rich in ${nutrientName}.
@@ -454,7 +455,6 @@ async function suggestGoals(
   targetWeight: number
 ) {
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
       content: `Calculate recommended daily nutrition goals for:
@@ -622,17 +622,14 @@ async function chatLogMeal(
     loggedMeals.length > 0
       ? `Meals already logged today (you may update or delete these by their id):\n${JSON.stringify(loggedMeals)}`
       : 'No meals are logged yet today. The user can only "log" new meals right now.';
-  const messages: ChatMessage[] = [
-    { role: 'system', content: MEAL_CHAT_SYSTEM_PROMPT },
-    {
-      role: 'system',
-      content: `Current local time is ${now.toLocaleString()}. Use this to infer meal type/time when the user does not specify it.`,
-    },
-    { role: 'system', content: mealsContext },
-    ...history,
-  ];
+  const system = `${MEAL_CHAT_SYSTEM_PROMPT}
 
-  const parsed = await completeStructured(messages, MealChatSchema, 'meal_chat', 0.2);
+Current local time is ${now.toLocaleString()}. Use this to infer meal type/time when the user does not specify it.
+
+${mealsContext}`;
+  const messages: ChatMessage[] = [...history];
+
+  const parsed = await completeStructured(messages, MealChatSchema, 'meal_chat', 0.2, system);
 
   return {
     status: parsed.status,
