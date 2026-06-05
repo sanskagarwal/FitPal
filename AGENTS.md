@@ -66,6 +66,14 @@ weight. It has three parts:
 - Read relevant files before editing and understand existing patterns first.
 - Run `npm run lint` and `npm run build` after non-trivial changes.
 - Prefer editing existing files over creating new ones.
+- After making changes, keep documentation and tests in sync unless the user
+  explicitly says not to:
+  - Update affected docs (`README.md`, `docs/`, `.env.example`, and inline
+    comments) so they reflect the new behavior.
+  - When a planned task is finished, update or remove its entry in
+    `docs/TODO.md` and any "planned" or roadmap sections.
+  - Add or update tests (`npm test`, `npm run test:e2e`) to cover new or
+    changed behavior, and run them to confirm they pass.
 - Keep the privacy-first intent: no telemetry, and no sending user data to third
   parties beyond the configured AI provider.
 

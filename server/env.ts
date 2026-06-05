@@ -40,7 +40,9 @@ const EnvSchema = z.object({
   STATIC_DIR: z.string().optional(),
 
   // AI provider config — optional at boot, validated lazily by the AI service.
-  AI_PROVIDER: z.enum(['openai-compatible', 'azure']).default('openai-compatible'),
+  AI_PROVIDER: z
+    .enum(['openai-compatible', 'azure', 'anthropic', 'google'])
+    .default('openai-compatible'),
   AI_API_KEY: z.string().optional(),
   AI_BASE_URL: z.string().optional(),
   AI_MODEL: z.string().optional(),

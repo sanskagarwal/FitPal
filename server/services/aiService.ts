@@ -1,6 +1,8 @@
 import { generateText, streamText, Output, type LanguageModel, type ModelMessage } from 'ai';
 import { createAzure } from '@ai-sdk/azure';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { nutritionRepository } from '../repositories/nutritionRepository.js';
 import {
@@ -50,35 +52,41 @@ export interface Recipe {
 type ChatMessage = ModelMessage;
 
 // Lazily-created language model, configured entirely from generic env vars via
-// the Vercel AI SDK. Required: AI_API_KEY, AI_BASE_URL, AI_MODEL. AI_PROVIDER
-// selects the SDK: 'openai-compatible' (default) treats the endpoint as an
-// OpenAI-compatible API (OpenAI, LiteLLM, OpenRouter, Ollama, vLLM, …); 'azure'
-// uses the Azure OpenAI SDK, where AI_BASE_URL is the resource endpoint and
-// AI_MODEL is the deployment name. Nothing is inferred — missing config throws.
+// the Vercel AI SDK.
 let aiModel: LanguageModel | null = null;
-function getModel(): LanguageModel {
+export function getModel(): LanguageModel {
   if (aiModel) return aiModel;
 
   const apiKey = requireEnv('AI_API_KEY');
-  const baseURL = requireEnv('AI_BASE_URL');
   const model = requireEnv('AI_MODEL');
+  const baseURL = process.env.AI_BASE_URL;
   const provider = (process.env.AI_PROVIDER || 'openai-compatible').toLowerCase();
 
   switch (provider) {
     case 'openai-compatible':
-      aiModel = createOpenAICompatible({ name: 'fitpal-ai', baseURL, apiKey })(model);
+      aiModel = createOpenAICompatible({
+        name: 'fitpal-ai',
+        baseURL: requireEnv('AI_BASE_URL'),
+        apiKey,
+      })(model);
       break;
     case 'azure':
       aiModel = createAzure({
-        baseURL: `${baseURL.replace(/\/+$/, '')}/openai`,
+        baseURL: `${requireEnv('AI_BASE_URL').replace(/\/+$/, '')}/openai`,
         apiKey,
         apiVersion: requireEnv('AI_API_VERSION'),
         useDeploymentBasedUrls: true,
       }).chat(model);
       break;
+    case 'anthropic':
+      aiModel = createAnthropic({ apiKey, ...(baseURL ? { baseURL } : {}) })(model);
+      break;
+    case 'google':
+      aiModel = createGoogleGenerativeAI({ apiKey, ...(baseURL ? { baseURL } : {}) })(model);
+      break;
     default:
       throw new Error(
-        `Unsupported AI_PROVIDER "${provider}". Use "openai-compatible" (default) or "azure".`
+        `Unsupported AI_PROVIDER "${provider}". Use "openai-compatible" (default), "azure", "anthropic", or "google".`
       );
   }
   return aiModel;

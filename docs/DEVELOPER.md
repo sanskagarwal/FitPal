@@ -32,8 +32,9 @@ FitPal has three parts:
    backend `/api/ai/*` routes. The actual AI calls run **server-side**
    (`server/services/aiService.ts`) via the **Vercel AI SDK**, which talks to
    any OpenAI-compatible Chat Completions API (OpenAI, LiteLLM, OpenRouter,
-   Ollama, vLLM, Azure OpenAI) with **structured outputs** validated by `zod`,
-   so the API key never reaches the browser.
+   Ollama, vLLM, Azure OpenAI) or the native Anthropic and Google APIs, with
+   **structured outputs** validated by `zod`, so the API key never reaches the
+   browser.
 3. **Storage server** (`server/`): a layered **Express 5** app that persists
    data in a **SQLite** database (`better-sqlite3`) at `server/data/fitpal.db`,
    serves the built frontend, and proxies AI calls. The frontend talks to it via
@@ -61,7 +62,8 @@ require a valid session and enforce per-user ownership.
 - **npm** (bundled with Node)
 - **Git**
 - An **AI provider** with an OpenAI-compatible Chat Completions API (OpenAI,
-  LiteLLM, OpenRouter, Ollama, vLLM, Azure OpenAI). Required for AI features.
+  LiteLLM, OpenRouter, Ollama, vLLM, Azure OpenAI), or a native Anthropic or
+  Google API key. Required for AI features.
 
 ---
 
@@ -101,6 +103,10 @@ AI_MODEL=gpt-4o-mini
 # resource endpoint, AI_MODEL as the deployment name, and AI_API_VERSION set.
 # AI_PROVIDER=azure
 # AI_API_VERSION=2024-08-01-preview
+# To target Anthropic or Google natively, set AI_PROVIDER=anthropic or
+# AI_PROVIDER=google with AI_API_KEY and AI_MODEL. AI_BASE_URL is optional.
+# AI_PROVIDER=anthropic
+# AI_MODEL=claude-3-5-sonnet-latest
 
 # Optional: port the storage/API server listens on (default 3001).
 # PORT=3001
@@ -119,9 +125,9 @@ AI_MODEL=gpt-4o-mini
 | --- | --- | --- | --- | --- |
 | `JWT_SECRET` | Yes | Server | None | Secret used to sign the auth session cookie (at least 16 characters). |
 | `AI_API_KEY` | Yes | Server | None | API key for the AI provider (any non-empty value for local Ollama). |
-| `AI_BASE_URL` | Yes | Server | None | Base URL of the OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. |
+| `AI_BASE_URL` | If OpenAI-compatible/Azure | Server | None | Base URL of the OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. Optional for `anthropic` and `google` (defaults to the official endpoint). |
 | `AI_MODEL` | Yes | Server | None | Model id, or the deployment name when `AI_PROVIDER=azure`. |
-| `AI_PROVIDER` | No | Server | `openai-compatible` | Set to `azure` to use the Azure OpenAI SDK. |
+| `AI_PROVIDER` | No | Server | `openai-compatible` | AI SDK to use: `openai-compatible`, `azure`, `anthropic`, or `google`. |
 | `AI_API_VERSION` | If Azure | Server | None | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
 | `PORT` | No | Server | `3001` | Port the storage/API server listens on. |
 | `DATA_DIR` | No | Server | `server/data` | Directory holding the SQLite database. |
@@ -261,7 +267,8 @@ FitPal/
 **AI**
 
 - Any OpenAI-compatible Chat Completions API via the **Vercel AI SDK** (`ai`,
-  `@ai-sdk/openai-compatible`, and `@ai-sdk/azure` for Azure)
+  `@ai-sdk/openai-compatible`, `@ai-sdk/azure` for Azure, `@ai-sdk/anthropic`
+  for Anthropic, and `@ai-sdk/google` for Google)
 - `zod` schemas with `generateText` + `Output.object` for structured outputs
 
 **Testing**

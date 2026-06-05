@@ -43,25 +43,22 @@ See [FEATURES.md](docs/FEATURES.md) for the full feature breakdown.
 
 ## AI providers
 
+> Note: Use a model that supports structured output (JSON/schema-constrained responses). FitPal validates AI responses against `zod` schemas, and models without reliable structured output may fail requests.
+
 FitPal uses the [Vercel AI SDK](https://sdk.vercel.ai), so it works with **any
 OpenAI-compatible Chat Completions API**. Set `AI_API_KEY`, `AI_BASE_URL`, and
-`AI_MODEL` (read server-side only, never shipped to the browser). Every request
-uses **structured outputs**: the model returns JSON matching a `zod` schema that
-the SDK enforces and validates, keeping AI features reliable.
+`AI_MODEL` (read server-side only, never shipped to the browser).
 
 **Supported**
 
 - [x] **OpenAI**
 - [x] **Azure OpenAI** (set `AI_PROVIDER=azure`)
+- [x] **Anthropic** (set `AI_PROVIDER=anthropic`)
+- [x] **Google Gemini** (set `AI_PROVIDER=google`)
 - [x] **OpenAI-compatible gateways** such as
   [LiteLLM](https://github.com/BerriAI/litellm) and
   [OpenRouter](https://openrouter.ai/)
 - [x] **Local or self-hosted** such as [Ollama](https://ollama.com/) and vLLM
-
-**Planned**
-
-- [ ] **Native Anthropic** (`@ai-sdk/anthropic`)
-- [ ] **Native Google** (`@ai-sdk/google`)
 
 ---
 
@@ -125,7 +122,9 @@ npm run dev:all        # frontend on :5173, server on :3001
 ```
 
 Works with any OpenAI-compatible API. For **Azure OpenAI**, set
-`AI_PROVIDER=azure`. See [.env.example](.env.example) for all options and
+`AI_PROVIDER=azure`. For native **Anthropic** or **Google** access, set
+`AI_PROVIDER=anthropic` or `AI_PROVIDER=google`. See
+[.env.example](.env.example) for all options and
 [DEVELOPER.md](docs/DEVELOPER.md) for production builds and details.
 
 ### Environment variables
@@ -134,9 +133,9 @@ Works with any OpenAI-compatible API. For **Azure OpenAI**, set
 | --- | --- | --- | --- |
 | `JWT_SECRET` | Yes | None | Secret used to sign the auth session cookie (at least 16 characters). |
 | `AI_API_KEY` | Yes | None | API key for your AI provider (any non-empty value for local Ollama). |
-| `AI_BASE_URL` | Yes | None | OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. |
+| `AI_BASE_URL` | If OpenAI-compatible/Azure | None | OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. Optional for `anthropic` and `google`. |
 | `AI_MODEL` | Yes | None | Model id, or the Azure deployment name when `AI_PROVIDER=azure`. |
-| `AI_PROVIDER` | No | `openai-compatible` | Set to `azure` to use the Azure OpenAI SDK. |
+| `AI_PROVIDER` | No | `openai-compatible` | AI SDK to use: `openai-compatible`, `azure`, `anthropic`, or `google`. |
 | `AI_API_VERSION` | If Azure | None | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
 | `PORT` | No | `3001` | Port the storage/API server listens on. |
 | `DATA_DIR` | No | `server/data` | Directory for the SQLite database. |
