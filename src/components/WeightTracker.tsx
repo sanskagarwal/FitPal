@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { WeightEntry, Streak } from '../types';
 import { saveWeight, getWeightsByUser, saveStreak, getStreak, updateWeight, deleteWeight } from '../utils/db';
@@ -19,11 +19,7 @@ export const WeightTracker = () => {
   const [editBodyFat, setEditBodyFat] = useState('');
   const [editNotes, setEditNotes] = useState('');
 
-  useEffect(() => {
-    loadWeightData();
-  }, [user]);
-
-  const loadWeightData = async () => {
+  const loadWeightData = useCallback(async () => {
     if (!user) return;
 
     const weightData = await getWeightsByUser(user.id);
@@ -42,7 +38,12 @@ export const WeightTracker = () => {
       await saveStreak(initialStreak);
       setStreakData(initialStreak);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadWeightData();
+  }, [loadWeightData]);
 
   const logWeight = async () => {
     if (!user || !newWeight) return;

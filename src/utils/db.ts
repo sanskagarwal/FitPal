@@ -3,7 +3,7 @@ import { User, MealEntry, WeightEntry, NotificationSettings, Streak } from '../t
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper function for API calls
-async function apiCall(endpoint: string, method: string = 'GET', body?: any) {
+async function apiCall(endpoint: string, method: string = 'GET', body?: unknown) {
   const options: RequestInit = {
     method,
     headers: {
@@ -33,6 +33,7 @@ export const getUser = async (id: string): Promise<User | undefined> => {
   try {
     return await apiCall(`/users/${id}`);
   } catch (error) {
+    console.error(`Failed to get user ${id}:`, error);
     return undefined;
   }
 };
@@ -41,6 +42,7 @@ export const getUserByEmail = async (email: string): Promise<User | undefined> =
   try {
     return await apiCall(`/users/email/${encodeURIComponent(email)}`);
   } catch (error) {
+    console.error(`Failed to get user by email ${email}:`, error);
     return undefined;
   }
 };
@@ -59,6 +61,7 @@ export const getMeal = async (id: string, userId: string): Promise<MealEntry | u
     const meals = await getMealsByUser(userId);
     return meals.find(m => m.id === id);
   } catch (error) {
+    console.error(`Failed to get meal ${id} for user ${userId}:`, error);
     return undefined;
   }
 };
@@ -67,6 +70,7 @@ export const getMealsByUser = async (userId: string): Promise<MealEntry[]> => {
   try {
     return await apiCall(`/meals/${userId}`);
   } catch (error) {
+    console.error(`Failed to get meals for user ${userId}:`, error);
     return [];
   }
 };
@@ -103,6 +107,7 @@ export const getWeightsByUser = async (userId: string): Promise<WeightEntry[]> =
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   } catch (error) {
+    console.error(`Failed to get weights for user ${userId}:`, error);
     return [];
   }
 };
@@ -124,6 +129,7 @@ export const getNotificationSettings = async (userId: string): Promise<Notificat
   try {
     return await apiCall(`/notifications/${userId}`);
   } catch (error) {
+    console.error(`Failed to get notification settings for user ${userId}:`, error);
     return undefined;
   }
 };
@@ -137,12 +143,13 @@ export const getStreak = async (userId: string): Promise<Streak | undefined> => 
   try {
     return await apiCall(`/streaks/${userId}`);
   } catch (error) {
+    console.error(`Failed to get streak for user ${userId}:`, error);
     return undefined;
   }
 };
 
 // Legacy compatibility - keep these functions but they now do nothing
-export const initDB = async (): Promise<any> => {
+export const initDB = async (): Promise<unknown> => {
   // No-op for server-based storage
   return null;
 };

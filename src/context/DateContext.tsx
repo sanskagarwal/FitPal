@@ -17,6 +17,7 @@ interface DateContextType {
 
 const DateContext = createContext<DateContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSelectedDate = () => {
   const context = useContext(DateContext);
   if (!context) {

@@ -45,6 +45,7 @@ export const Profile = () => {
       });
       setMessage('Profile updated successfully!');
     } catch (error) {
+      console.error('Error updating profile:', error);
       setMessage('Error updating profile. Please try again.');
     } finally {
       setLoading(false);

@@ -94,7 +94,7 @@ export const AuthPage = () => {
         if (success) {
           try {
             // Need to get the newly created user ID
-            const newUser = await new Promise<any>((resolve) => {
+            const newUser = await new Promise<{ id: string | null }>((resolve) => {
               setTimeout(() => {
                 // This is a workaround - the user state should be available after successful registration
                 const storedUserId = localStorage.getItem('fitpal-user-id');
@@ -123,6 +123,7 @@ export const AuthPage = () => {
         }
       }
     } catch (err) {
+      console.error('Authentication error:', err);
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);

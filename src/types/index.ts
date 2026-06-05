@@ -172,7 +172,7 @@ export interface OpenAIRequest {
 
 export interface OpenAIResponse {
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 // Recipe Type

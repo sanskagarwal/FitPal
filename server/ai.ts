@@ -892,14 +892,43 @@ ${mealsContext}`;
 // ---------------------------------------------------------------------------
 export const aiRouter = Router();
 
-function handle(fn: (body: any) => Promise<unknown>) {
+interface AIRequestBody {
+  foodQuery: string;
+  foodName: string;
+  unit: MealUnit;
+  preferences: string;
+  goals: string;
+  recentFoods: string[];
+  dietPreference?: DietPreference;
+  currentWeight: number;
+  targetWeight: number;
+  recentNutrition: NutrientInfo;
+  remainingCalories: number;
+  remainingProtein: number;
+  remainingCarbs: number;
+  remainingFats: number;
+  remainingFiber: number;
+  mealType: string;
+  nutrientName: string;
+  currentAmount: number;
+  targetAmount: number;
+  height: number;
+  age: number;
+  gender: Gender;
+  activityLevel: ActivityLevel;
+  history: { role: 'user' | 'assistant'; content: string }[];
+  loggedMeals: LoggedMealSummary[];
+}
+
+function handle(fn: (body: AIRequestBody) => Promise<unknown>) {
   return async (req: Request, res: Response) => {
     try {
       const result = await fn(req.body ?? {});
       res.json(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AI request failed:', error);
-      res.status(500).json({ error: error?.message || 'AI request failed' });
+      const message = error instanceof Error ? error.message : 'AI request failed';
+      res.status(500).json({ error: message });
     }
   };
 }

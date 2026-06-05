@@ -155,6 +155,7 @@ export const Goals = () => {
       await updateGoals(formData);
       setMessage('Goals updated successfully!');
     } catch (error) {
+      console.error('Error updating goals:', error);
       setMessage('Error updating goals. Please try again.');
     } finally {
       setLoading(false);
