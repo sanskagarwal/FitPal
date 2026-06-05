@@ -1,250 +1,44 @@
-import './env.js';
+import { config } from './env.js';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { aiRouter } from './ai.js';
-import {
-  initStorage,
-  saveUser,
-  getUser,
-  getUserByEmail,
-  addMeal,
-  getMeals,
-  updateMeal,
-  deleteMeal,
-  addWeight,
-  getWeights,
-  updateWeight,
-  deleteWeight,
-  saveNotifications,
-  getNotifications,
-  saveStreak,
-  getStreak,
-} from './storage.js';
-import { validateMeal } from './validation.js';
-import { aiRateLimit } from './rateLimit.js';
+import { initStorage } from './storage.js';
+import { apiRouter } from './routes/index.js';
+import { errorHandler } from './middleware/errorHandler.js';
+
+// ---------------------------------------------------------------------------
+// Application entry point — wiring only.
+//
+// Route handlers live in routes/ → controllers/ → services/ → repositories/.
+// This file just configures middleware, mounts the API router, serves the
+// built SPA, and registers the central error handler last.
+// ---------------------------------------------------------------------------
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.PORT;
 // Storage and static asset locations are configurable so the same build can run
 // from a container (with a mounted volume) or directly from source.
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-const STATIC_DIR = process.env.STATIC_DIR || path.join(__dirname, '..', '..', 'dist');
+const DATA_DIR = config.DATA_DIR || path.join(__dirname, 'data');
+const STATIC_DIR = config.STATIC_DIR || path.join(__dirname, '..', '..', 'dist');
 
-// Middleware
-app.use(cors());
+// Middleware. `credentials: true` lets the browser send the auth cookie on
+// cross-origin (split-deployment) requests; same-origin works regardless.
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '5mb' }));
+app.use(cookieParser());
 
-// AI proxy routes — Azure OpenAI calls run here so the key stays server-side.
-// Rate-limited because these are the only externally-billed endpoints.
-app.use('/api/ai', aiRateLimit, aiRouter);
-
-// Initialise the SQLite store (creates the DB/schema and imports any legacy
-// JSON files from the old file-based store on first run).
+// Initialise the SQLite store (creates the DB/schema and seeds the nutrition
+// cache) before any request can hit a repository.
 initStorage(DATA_DIR);
 
-// User routes
-app.post('/api/users', async (req: Request, res: Response) => {
-  try {
-    const user = req.body;
-    saveUser(user);
-    res.json({ success: true, user });
-  } catch (error) {
-    console.error('Failed to save user:', error);
-    res.status(500).json({ error: 'Failed to save user' });
-  }
-});
-
-app.get('/api/users/:id', async (req: Request, res: Response) => {
-  try {
-    const user = getUser(String(req.params.id));
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json(user);
-  } catch (error) {
-    console.error('Failed to get user:', error);
-    res.status(500).json({ error: 'Failed to get user' });
-  }
-});
-
-app.get('/api/users/email/:email', async (req: Request, res: Response) => {
-  try {
-    const user = getUserByEmail(String(req.params.email));
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json(user);
-  } catch (error) {
-    console.error('Failed to find user by email:', error);
-    res.status(500).json({ error: 'Failed to find user' });
-  }
-});
-
-app.put('/api/users/:id', async (req: Request, res: Response) => {
-  try {
-    const user = req.body;
-    saveUser({ ...user, id: req.params.id });
-    res.json({ success: true, user });
-  } catch (error) {
-    console.error('Failed to update user:', error);
-    res.status(500).json({ error: 'Failed to update user' });
-  }
-});
-
-// Meal routes
-app.post('/api/meals', async (req: Request, res: Response) => {
-  try {
-    const meal = req.body;
-    const check = validateMeal(meal);
-    if (!check.ok) {
-      return res.status(400).json({ error: check.error });
-    }
-    addMeal(meal);
-    res.json({ success: true, meal });
-  } catch (error) {
-    console.error('Failed to save meal:', error);
-    res.status(500).json({ error: 'Failed to save meal' });
-  }
-});
-
-app.get('/api/meals/:userId', async (req: Request, res: Response) => {
-  try {
-    const meals = getMeals(String(req.params.userId));
-    res.json(meals);
-  } catch (error) {
-    console.error('Failed to get meals:', error);
-    res.status(500).json({ error: 'Failed to get meals' });
-  }
-});
-
-app.put('/api/meals/:id', async (req: Request, res: Response) => {
-  try {
-    const updatedMeal = req.body;
-    const check = validateMeal(updatedMeal);
-    if (!check.ok) {
-      return res.status(400).json({ error: check.error });
-    }
-    const found = updateMeal(String(req.params.id), updatedMeal);
-    if (!found) {
-      return res.status(404).json({ error: 'Meal not found' });
-    }
-    res.json({ success: true, meal: updatedMeal });
-  } catch (error) {
-    console.error('Failed to update meal:', error);
-    res.status(500).json({ error: 'Failed to update meal' });
-  }
-});
-
-app.delete('/api/meals/:userId/:id', async (req: Request, res: Response) => {
-  try {
-    deleteMeal(String(req.params.id));
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Failed to delete meal:', error);
-    res.status(500).json({ error: 'Failed to delete meal' });
-  }
-});
-
-// Weight routes
-app.post('/api/weights', async (req: Request, res: Response) => {
-  try {
-    const weight = req.body;
-    addWeight(weight);
-    res.json({ success: true, weight });
-  } catch (error) {
-    console.error('Failed to save weight:', error);
-    res.status(500).json({ error: 'Failed to save weight' });
-  }
-});
-
-app.get('/api/weights/:userId', async (req: Request, res: Response) => {
-  try {
-    const weights = getWeights(String(req.params.userId));
-    res.json(weights);
-  } catch (error) {
-    console.error('Failed to get weights:', error);
-    res.status(500).json({ error: 'Failed to get weights' });
-  }
-});
-
-app.put('/api/weights/:id', async (req: Request, res: Response) => {
-  try {
-    const updatedWeight = req.body;
-    const found = updateWeight(String(req.params.id), updatedWeight);
-    if (!found) {
-      return res.status(404).json({ error: 'Weight not found' });
-    }
-    res.json({ success: true, weight: updatedWeight });
-  } catch (error) {
-    console.error('Failed to update weight:', error);
-    res.status(500).json({ error: 'Failed to update weight' });
-  }
-});
-
-app.delete('/api/weights/:userId/:id', async (req: Request, res: Response) => {
-  try {
-    deleteWeight(String(req.params.id));
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Failed to delete weight:', error);
-    res.status(500).json({ error: 'Failed to delete weight' });
-  }
-});
-
-// Notification settings routes
-app.post('/api/notifications', async (req: Request, res: Response) => {
-  try {
-    const settings = req.body;
-    saveNotifications(settings);
-    res.json({ success: true, settings });
-  } catch (error) {
-    console.error('Failed to save notification settings:', error);
-    res.status(500).json({ error: 'Failed to save notification settings' });
-  }
-});
-
-app.get('/api/notifications/:userId', async (req: Request, res: Response) => {
-  try {
-    const settings = getNotifications(String(req.params.userId));
-    res.json(settings || null);
-  } catch (error) {
-    console.error('Failed to get notification settings:', error);
-    res.status(500).json({ error: 'Failed to get notification settings' });
-  }
-});
-
-// Streak routes
-app.post('/api/streaks', async (req: Request, res: Response) => {
-  try {
-    const streak = req.body;
-    saveStreak(streak);
-    res.json({ success: true, streak });
-  } catch (error) {
-    console.error('Failed to save streak:', error);
-    res.status(500).json({ error: 'Failed to save streak' });
-  }
-});
-
-app.get('/api/streaks/:userId', async (req: Request, res: Response) => {
-  try {
-    const streak = getStreak(String(req.params.userId));
-    res.json(streak || null);
-  } catch (error) {
-    console.error('Failed to get streak:', error);
-    res.status(500).json({ error: 'Failed to get streak' });
-  }
-});
-
-// Health check
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', message: 'FitPal server is running' });
-});
+// All API routes live under /api.
+app.use('/api', apiRouter);
 
 // Serve the built frontend (single-process production deployment). The SPA
 // fallback returns index.html for any non-API, non-file route so client-side
@@ -256,7 +50,9 @@ if (fsSync.existsSync(STATIC_DIR)) {
   });
 }
 
-// Start server
+// Central error handler — registered last so it catches everything above.
+app.use(errorHandler);
+
 app.listen(PORT, () => {
   console.log(`🚀 FitPal server running on http://localhost:${PORT}`);
 });

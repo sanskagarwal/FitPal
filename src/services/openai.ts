@@ -9,6 +9,7 @@ async function aiCall<T>(endpoint: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/ai/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(body),
   });
 
@@ -239,6 +240,7 @@ export async function chatLogMealStream(
   const response = await fetch(`${API_BASE_URL}/ai/chat-meal-stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ history, loggedMeals }),
   });
 
