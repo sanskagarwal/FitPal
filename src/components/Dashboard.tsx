@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
-import { MealEntry, DailyStats, WeightEntry, NutrientInfo } from '../types';
+import { MealEntry, DailyStats, WeightEntry, NutrientInfo, DietPreference, MealType } from '../types';
 import { getMealsByDateRange, getWeightsByUser } from '../utils/db';
 import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange, formatNutrient, getGoalPercentage, formatDayLabel } from '../utils/helpers';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie } from 'recharts';
@@ -43,8 +43,8 @@ export const Dashboard = () => {
   const [nutrientSuggestion, setNutrientSuggestion] = useState<NutrientSuggestion | null>(null);
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
   const nutrientSuggestionRef = useRef<HTMLDivElement>(null);
-  const [dietPreference, setDietPreference] = useState<'vegetarian' | 'eggetarian' | 'non-vegetarian'>(
-    user?.profile.dietPreference || 'vegetarian'
+  const [dietPreference, setDietPreference] = useState<DietPreference>(
+    user?.profile.dietPreference || DietPreference.Vegetarian
   );
 
   const calculateTotals = useCallback((meals: MealEntry[]) => {
@@ -120,7 +120,7 @@ export const Dashboard = () => {
   }, [suggestingNutrient, nutrientSuggestion]);
 
   const getMealTypeStats = (): MealTypeStats[] => {
-    const mealTypes = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'];
+    const mealTypes = Object.values(MealType);
     return mealTypes.map(mealType => {
       const mealsOfType = todayMeals.filter(m => m.mealType === mealType);
       const totals = mealsOfType.reduce((acc, meal) => ({
@@ -422,14 +422,14 @@ export const Dashboard = () => {
           <div className="flex items-center gap-2">
             <select
               value={dietPreference}
-              onChange={(e) => setDietPreference(e.target.value as 'vegetarian' | 'eggetarian' | 'non-vegetarian')}
+              onChange={(e) => setDietPreference(e.target.value as DietPreference)}
               disabled={suggestingMeal}
               className="flex-1 sm:flex-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
               aria-label="Dietary preference"
             >
-              <option value="vegetarian">Vegetarian</option>
-              <option value="eggetarian">Eggetarian</option>
-              <option value="non-vegetarian">Non-vegetarian</option>
+              <option value={DietPreference.Vegetarian}>Vegetarian</option>
+              <option value={DietPreference.Eggetarian}>Eggetarian</option>
+              <option value={DietPreference.NonVegetarian}>Non-vegetarian</option>
             </select>
             <button
               onClick={handleMealSuggestion}

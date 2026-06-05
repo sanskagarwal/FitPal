@@ -1,4 +1,4 @@
-import { Food, NutrientInfo, Recipe } from '../types';
+import { Food, NutrientInfo, Recipe, DietPreference, MealType, MealUnit } from '../types';
 
 // All AI work now runs on the FitPal server (so the Azure OpenAI key never
 // reaches the browser). These helpers just call the backend `/api/ai/*` routes
@@ -41,7 +41,7 @@ export async function getRecipeSuggestions(
   preferences: string,
   goals: string,
   recentFoods: string[],
-  dietPreference?: string
+  dietPreference?: DietPreference
 ): Promise<Recipe[]> {
   return aiCall<Recipe[]>('recipes', { preferences, goals, recentFoods, dietPreference });
 }
@@ -94,7 +94,7 @@ export async function suggestMeal(
   remainingFats: number,
   remainingFiber: number,
   mealType: string,
-  dietPreference?: string
+  dietPreference?: DietPreference
 ): Promise<MealSuggestion> {
   return aiCall<MealSuggestion>('suggest-meal', {
     remainingCalories,
@@ -151,20 +151,7 @@ export async function suggestGoals(
 export interface ParsedMealFood {
   name: string;
   servingSize: string; // describes ONE unit, e.g. "1 katori (~150g)"
-  unit:
-    | 'serving'
-    | 'katori'
-    | 'bowl'
-    | 'plate'
-    | 'cup'
-    | 'glass'
-    | 'tbsp'
-    | 'tsp'
-    | 'piece'
-    | 'slice'
-    | 'gram'
-    | 'ml'
-    | 'oz';
+  unit: MealUnit;
   unitQuantity: number; // how many of `unit` the user had
   isIndian: boolean;
   category?: string;
@@ -180,7 +167,7 @@ export interface MealChatResult {
   action: MealChatAction; // log a new meal, edit an existing one, or delete one
   targetMealId?: string | null; // id of the existing meal for update/delete
   message: string; // assistant's reply: a clarifying question or a confirmation summary
-  mealType?: 'breakfast' | 'morning-snack' | 'lunch' | 'evening-snack' | 'dinner';
+  mealType?: MealType;
   time?: string | null; // HH:mm if known
   foods: ParsedMealFood[];
 }

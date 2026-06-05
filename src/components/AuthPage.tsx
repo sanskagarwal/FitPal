@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus } from 'lucide-react';
 import { saveWeight } from '../utils/db';
 import { generateId, calculateBMI, calculateAge } from '../utils/helpers';
-import { WeightEntry } from '../types';
+import { WeightEntry, Gender, ActivityLevel } from '../types';
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,10 +12,10 @@ export const AuthPage = () => {
     email: '',
     password: '',
     dateOfBirth: '',
-    gender: 'male' as 'male' | 'female' | 'other',
+    gender: Gender.Male as Gender,
     height: '',
     currentWeight: '',
-    activityLevel: 'moderate' as 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active',
+    activityLevel: ActivityLevel.Moderate as ActivityLevel,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,17 +46,17 @@ export const AuthPage = () => {
         const weight = parseInt(formData.currentWeight);
         
         // Mifflin-St Jeor Equation for BMR
-        const bmr = formData.gender === 'male' 
+        const bmr = formData.gender === Gender.Male 
           ? 10 * weight + 6.25 * height - 5 * age + 5
           : 10 * weight + 6.25 * height - 5 * age - 161;
         
         // Activity multipliers
-        const activityMultipliers = {
-          'sedentary': 1.2,
-          'light': 1.375,
-          'moderate': 1.55,
-          'active': 1.725,
-          'very-active': 1.9
+        const activityMultipliers: Record<ActivityLevel, number> = {
+          [ActivityLevel.Sedentary]: 1.2,
+          [ActivityLevel.Light]: 1.375,
+          [ActivityLevel.Moderate]: 1.55,
+          [ActivityLevel.Active]: 1.725,
+          [ActivityLevel.VeryActive]: 1.9
         };
         
         const maintenanceCalories = Math.round(bmr * activityMultipliers[formData.activityLevel]);
@@ -205,14 +205,14 @@ export const AuthPage = () => {
                   <label className="block text-xs font-medium text-gray-500 mb-1">Gender</label>
                   <select
                     value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
                     className="input-field"
                     aria-label="Gender"
                     required
                   >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value={Gender.Male}>Male</option>
+                    <option value={Gender.Female}>Female</option>
+                    <option value={Gender.Other}>Other</option>
                   </select>
                 </div>
               </div>
@@ -244,16 +244,16 @@ export const AuthPage = () => {
 
               <select
                 value={formData.activityLevel}
-                onChange={(e) => setFormData({ ...formData, activityLevel: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, activityLevel: e.target.value as ActivityLevel })}
                 className="input-field"
                 aria-label="Activity level"
                 required
               >
-                <option value="sedentary">Sedentary (little/no exercise)</option>
-                <option value="light">Light (1-3 days/week)</option>
-                <option value="moderate">Moderate (3-5 days/week)</option>
-                <option value="active">Active (6-7 days/week)</option>
-                <option value="very-active">Very Active (twice per day)</option>
+                <option value={ActivityLevel.Sedentary}>Sedentary (little/no exercise)</option>
+                <option value={ActivityLevel.Light}>Light (1-3 days/week)</option>
+                <option value={ActivityLevel.Moderate}>Moderate (3-5 days/week)</option>
+                <option value={ActivityLevel.Active}>Active (6-7 days/week)</option>
+                <option value={ActivityLevel.VeryActive}>Very Active (twice per day)</option>
               </select>
             </>
           )}

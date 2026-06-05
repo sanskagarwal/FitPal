@@ -97,6 +97,18 @@ npm run dev:all        # frontend → :5173, server → :3001
 
 Works with any OpenAI-compatible API; for **Azure OpenAI** set `AI_PROVIDER=azure`. See [.env.example](.env.example) for all options and **[DEVELOPER.md](docs/DEVELOPER.md)** for production builds and details.
 
+### Environment variables
+
+| Variable | Required | Default | Description |
+| --- | --- | --- | --- |
+| `AI_API_KEY` | Yes | — | API key for your AI provider (any non-empty value for local Ollama). |
+| `AI_BASE_URL` | Yes | — | OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. |
+| `AI_MODEL` | Yes | — | Model id, or the Azure deployment name when `AI_PROVIDER=azure`. |
+| `AI_PROVIDER` | No | `openai-compatible` | Set to `azure` to use the Azure OpenAI SDK. |
+| `AI_API_VERSION` | If Azure | — | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
+| `PORT` | No | `3001` | Port the storage/API server listens on. |
+| `VITE_API_URL` | No | `/api` | Base URL the frontend calls (inlined at build time). Only set for split deployments where the frontend and server are on different origins. |
+
 ---
 
 ## 🧭 Usage

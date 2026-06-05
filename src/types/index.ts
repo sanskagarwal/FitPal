@@ -1,4 +1,48 @@
 // User Profile Types
+export enum DietPreference {
+  Vegetarian = 'vegetarian',
+  Eggetarian = 'eggetarian',
+  NonVegetarian = 'non-vegetarian',
+}
+
+export enum Gender {
+  Male = 'male',
+  Female = 'female',
+  Other = 'other',
+}
+
+export enum ActivityLevel {
+  Sedentary = 'sedentary',
+  Light = 'light',
+  Moderate = 'moderate',
+  Active = 'active',
+  VeryActive = 'very-active',
+}
+
+export enum MealType {
+  Breakfast = 'breakfast',
+  MorningSnack = 'morning-snack',
+  Lunch = 'lunch',
+  EveningSnack = 'evening-snack',
+  Dinner = 'dinner',
+}
+
+export enum MealUnit {
+  Serving = 'serving',
+  Katori = 'katori',
+  Bowl = 'bowl',
+  Plate = 'plate',
+  Cup = 'cup',
+  Glass = 'glass',
+  Tbsp = 'tbsp',
+  Tsp = 'tsp',
+  Piece = 'piece',
+  Slice = 'slice',
+  Gram = 'gram',
+  Ml = 'ml',
+  Oz = 'oz',
+}
+
 export interface User {
   id: string;
   name: string;
@@ -10,10 +54,10 @@ export interface User {
 
 export interface UserProfile {
   dateOfBirth: string; // ISO date string (YYYY-MM-DD)
-  gender: 'male' | 'female' | 'other';
+  gender: Gender;
   height: number; // in cm
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
-  dietPreference?: 'vegetarian' | 'eggetarian' | 'non-vegetarian';
+  activityLevel: ActivityLevel;
+  dietPreference?: DietPreference;
   goals: UserGoals;
 }
 
@@ -78,7 +122,7 @@ export interface MealEntry {
   id: string;
   userId: string;
   date: Date;
-  mealType: 'breakfast' | 'morning-snack' | 'lunch' | 'evening-snack' | 'dinner';
+  mealType: MealType;
   foods: FoodEntry[];
   totalNutrients: NutrientInfo;
   notes?: string;
@@ -87,7 +131,7 @@ export interface MealEntry {
 export interface FoodEntry {
   food: Food;
   quantity: number; // multiplier of serving size
-  unit: 'serving' | 'katori' | 'bowl' | 'plate' | 'cup' | 'glass' | 'tbsp' | 'tsp' | 'piece' | 'slice' | 'gram' | 'ml' | 'oz';
+  unit: MealUnit;
   unitQuantity: number; // e.g., 1.5 cups
 }
 

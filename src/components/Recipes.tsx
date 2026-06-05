@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Recipe } from '../types';
+import { Recipe, DietPreference } from '../types';
 import { getRecipeSuggestions } from '../services/openai';
 import { ChefHat, Clock, Users } from 'lucide-react';
 import { Spinner } from './Spinner';
@@ -11,8 +11,8 @@ export const Recipes = () => {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [preferences, setPreferences] = useState('');
-  const [dietPreference, setDietPreference] = useState<'vegetarian' | 'eggetarian' | 'non-vegetarian'>(
-    user?.profile.dietPreference || 'vegetarian'
+  const [dietPreference, setDietPreference] = useState<DietPreference>(
+    user?.profile.dietPreference || DietPreference.Vegetarian
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -46,13 +46,13 @@ export const Recipes = () => {
         <div className="flex flex-col sm:flex-row gap-2">
           <select
             value={dietPreference}
-            onChange={(e) => setDietPreference(e.target.value as any)}
+            onChange={(e) => setDietPreference(e.target.value as DietPreference)}
             className="input-field sm:w-48"
             aria-label="Dietary preference"
           >
-            <option value="vegetarian">Vegetarian</option>
-            <option value="eggetarian">Eggetarian</option>
-            <option value="non-vegetarian">Non-vegetarian</option>
+            <option value={DietPreference.Vegetarian}>Vegetarian</option>
+            <option value={DietPreference.Eggetarian}>Eggetarian</option>
+            <option value={DietPreference.NonVegetarian}>Non-vegetarian</option>
           </select>
           <input
             type="text"

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Ruler, Calendar, Activity, Users, Salad } from 'lucide-react';
 import { calculateAge } from '../utils/helpers';
+import { DietPreference, Gender, ActivityLevel } from '../types';
 
 export const Profile = () => {
   const { user, updateProfile } = useAuth();
@@ -9,10 +10,10 @@ export const Profile = () => {
     name: user?.name || '',
     email: user?.email || '',
     dateOfBirth: user?.profile.dateOfBirth || '',
-    gender: user?.profile.gender || 'male',
+    gender: user?.profile.gender || Gender.Male,
     height: user?.profile.height || 0,
-    activityLevel: user?.profile.activityLevel || 'moderate',
-    dietPreference: user?.profile.dietPreference || 'vegetarian',
+    activityLevel: user?.profile.activityLevel || ActivityLevel.Moderate,
+    dietPreference: user?.profile.dietPreference || DietPreference.Vegetarian,
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -25,10 +26,10 @@ export const Profile = () => {
     try {
       await updateProfile({
         dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender as 'male' | 'female' | 'other',
+        gender: formData.gender as Gender,
         height: formData.height,
-        activityLevel: formData.activityLevel as any,
-        dietPreference: formData.dietPreference as 'vegetarian' | 'eggetarian' | 'non-vegetarian',
+        activityLevel: formData.activityLevel as ActivityLevel,
+        dietPreference: formData.dietPreference as DietPreference,
         goals: user!.profile.goals // Keep existing goals
       });
       setMessage('Profile updated successfully!');
@@ -115,14 +116,14 @@ export const Profile = () => {
               </label>
               <select
                 value={formData.gender}
-                onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'male' | 'female' | 'other' })}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
                 className="input-field"
                 aria-label="Gender"
                 required
               >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value={Gender.Male}>Male</option>
+                <option value={Gender.Female}>Female</option>
+                <option value={Gender.Other}>Other</option>
               </select>
             </div>
 
@@ -152,16 +153,16 @@ export const Profile = () => {
             </label>
             <select
               value={formData.activityLevel}
-              onChange={(e) => setFormData({ ...formData, activityLevel: e.target.value as any })}
+              onChange={(e) => setFormData({ ...formData, activityLevel: e.target.value as ActivityLevel })}
               className="input-field"
               aria-label="Activity level"
               required
             >
-              <option value="sedentary">Sedentary (Little or no exercise)</option>
-              <option value="light">Light (Exercise 1-3 days/week)</option>
-              <option value="moderate">Moderate (Exercise 3-5 days/week)</option>
-              <option value="active">Active (Exercise 6-7 days/week)</option>
-              <option value="very-active">Very Active (Intense exercise daily)</option>
+              <option value={ActivityLevel.Sedentary}>Sedentary (Little or no exercise)</option>
+              <option value={ActivityLevel.Light}>Light (Exercise 1-3 days/week)</option>
+              <option value={ActivityLevel.Moderate}>Moderate (Exercise 3-5 days/week)</option>
+              <option value={ActivityLevel.Active}>Active (Exercise 6-7 days/week)</option>
+              <option value={ActivityLevel.VeryActive}>Very Active (Intense exercise daily)</option>
             </select>
             <p className="text-xs text-gray-600 mt-1">
               This affects your daily calorie calculations
@@ -176,14 +177,14 @@ export const Profile = () => {
             </label>
             <select
               value={formData.dietPreference}
-              onChange={(e) => setFormData({ ...formData, dietPreference: e.target.value as any })}
+              onChange={(e) => setFormData({ ...formData, dietPreference: e.target.value as DietPreference })}
               className="input-field"
               aria-label="Dietary preference"
               required
             >
-              <option value="vegetarian">Vegetarian (no meat, fish, or eggs)</option>
-              <option value="eggetarian">Eggetarian (vegetarian + eggs)</option>
-              <option value="non-vegetarian">Non-vegetarian (meat, fish, eggs)</option>
+              <option value={DietPreference.Vegetarian}>Vegetarian (no meat, fish, or eggs)</option>
+              <option value={DietPreference.Eggetarian}>Eggetarian (vegetarian + eggs)</option>
+              <option value={DietPreference.NonVegetarian}>Non-vegetarian (meat, fish, eggs)</option>
             </select>
             <p className="text-xs text-gray-600 mt-1">
               Used for AI meal and recipe suggestions

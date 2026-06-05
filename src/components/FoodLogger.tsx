@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
-import { Food, MealEntry, FoodEntry, NutrientInfo } from '../types';
+import { Food, MealEntry, FoodEntry, NutrientInfo, MealType, MealUnit } from '../types';
 import { analyzeFoodWithAI, chatLogMeal, reestimateNutrientsForUnit, ParsedMealFood, MealChatResult, LoggedMealSummary } from '../services/openai';
 import { saveMeal, getMealsByUser, updateMeal, deleteMeal } from '../utils/db';
 import { generateId, getStartOfDay, getEndOfDay, combineDateWithCurrentTime, formatDayLabel } from '../utils/helpers';
@@ -11,8 +11,8 @@ import { Search, Plus, X, Edit2, Trash2, Sparkles, Send, Check } from 'lucide-re
 import { Toast, ToastType } from './Toast';
 import { Spinner } from './Spinner';
 
-const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
-const QUANTITY_UNITS = ['serving', 'katori', 'bowl', 'plate', 'cup', 'glass', 'tbsp', 'tsp', 'piece', 'slice', 'gram', 'ml', 'oz'] as const;
+const MEAL_TYPES = Object.values(MealType);
+const QUANTITY_UNITS = Object.values(MealUnit);
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -52,7 +52,7 @@ export const FoodLogger = () => {
   const [searchResults, setSearchResults] = useState<Food[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedFoods, setSelectedFoods] = useState<FoodEntry[]>([]);
-  const [mealType, setMealType] = useState<typeof MEAL_TYPES[number]>('breakfast');
+  const [mealType, setMealType] = useState<MealType>(MealType.Breakfast);
   const [notes, setNotes] = useState('');
   const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
@@ -149,7 +149,7 @@ export const FoodLogger = () => {
       id: existing ? existing.id : generateId(),
       userId: user.id,
       date,
-      mealType: result.mealType || existing?.mealType || 'breakfast',
+      mealType: result.mealType || existing?.mealType || MealType.Breakfast,
       foods,
       totalNutrients,
       notes: existing?.notes,
@@ -254,7 +254,7 @@ export const FoodLogger = () => {
     setSelectedFoods([...selectedFoods, { 
       food, 
       quantity: 1,
-      unit: 'serving',
+      unit: MealUnit.Serving,
       unitQuantity: 1
     }]);
     setSearchResults([]);
@@ -266,7 +266,7 @@ export const FoodLogger = () => {
     setSelectedFoods(selectedFoods.filter((_, i) => i !== index));
   };
 
-  const updateQuantity = (index: number, unitQuantity: number, unit: typeof QUANTITY_UNITS[number]) => {
+  const updateQuantity = (index: number, unitQuantity: number, unit: MealUnit) => {
     const updated = [...selectedFoods];
     updated[index].unitQuantity = unitQuantity;
     updated[index].unit = unit;
@@ -278,7 +278,7 @@ export const FoodLogger = () => {
 
   // Changing the unit changes what "one unit" means, so ask the AI to re-estimate
   // the per-unit nutrition for the new unit.
-  const changeFoodUnit = async (index: number, unit: typeof QUANTITY_UNITS[number]) => {
+  const changeFoodUnit = async (index: number, unit: MealUnit) => {
     const entry = selectedFoods[index];
     if (!entry || entry.unit === unit) return;
 
@@ -811,7 +811,7 @@ export const FoodLogger = () => {
                   />
                   <select
                     value={entry.unit}
-                    onChange={(e) => changeFoodUnit(index, e.target.value as typeof QUANTITY_UNITS[number])}
+                    onChange={(e) => changeFoodUnit(index, e.target.value as MealUnit)}
                     className="flex-1 sm:flex-none px-2 py-2 border border-gray-300 rounded text-sm disabled:opacity-50"
                     disabled={reestimatingIndex === index}
                     aria-label={`Unit for ${entry.food.name}`}

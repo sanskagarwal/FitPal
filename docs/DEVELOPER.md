@@ -81,11 +81,26 @@ AI_MODEL=gpt-4o-mini
 # AI_PROVIDER=azure
 # AI_API_VERSION=2024-08-01-preview
 
-# Storage server base URL (frontend → server)
-VITE_API_URL=http://localhost:3001/api
+# Optional: port the storage/API server listens on (default 3001).
+# PORT=3001
+
+# Optional: base URL the frontend uses to reach the API. Defaults to the
+# relative "/api" path. Only set this for split deployments where the frontend
+# and server live on different origins.
+# VITE_API_URL=http://localhost:3001/api
 ```
 
 > Only `VITE_`-prefixed variables are exposed to the frontend. The `AI_*` variables are read by the server only, so the API key never reaches the browser.
+
+| Variable | Required | Scope | Default | Description |
+| --- | --- | --- | --- | --- |
+| `AI_API_KEY` | Yes | Server | — | API key for the AI provider (any non-empty value for local Ollama). |
+| `AI_BASE_URL` | Yes | Server | — | Base URL of the OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. |
+| `AI_MODEL` | Yes | Server | — | Model id, or the deployment name when `AI_PROVIDER=azure`. |
+| `AI_PROVIDER` | No | Server | `openai-compatible` | Set to `azure` to use the Azure OpenAI SDK. |
+| `AI_API_VERSION` | If Azure | Server | — | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
+| `PORT` | No | Server | `3001` | Port the storage/API server listens on. |
+| `VITE_API_URL` | No | Frontend (build-time) | `/api` | Base URL the frontend calls. Inlined at build time. Only needed for split deployments where the frontend and server are on different origins. |
 
 ### Storage server port
 

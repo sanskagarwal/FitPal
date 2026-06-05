@@ -1,5 +1,7 @@
 // Simple hash function for password (for local storage only)
 // In production, you'd use a proper crypto library
+import { Gender, ActivityLevel } from '../types';
+
 export const hashPassword = async (password: string): Promise<string> => {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -43,23 +45,23 @@ export const calculateDailyCalories = (
   weight: number, // kg
   height: number, // cm
   age: number,
-  gender: 'male' | 'female' | 'other',
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active'
+  gender: Gender,
+  activityLevel: ActivityLevel
 ): number => {
   let bmr: number;
   
-  if (gender === 'male') {
+  if (gender === Gender.Male) {
     bmr = 10 * weight + 6.25 * height - 5 * age + 5;
   } else {
     bmr = 10 * weight + 6.25 * height - 5 * age - 161;
   }
 
-  const activityMultipliers = {
-    'sedentary': 1.2,
-    'light': 1.375,
-    'moderate': 1.55,
-    'active': 1.725,
-    'very-active': 1.9
+  const activityMultipliers: Record<ActivityLevel, number> = {
+    [ActivityLevel.Sedentary]: 1.2,
+    [ActivityLevel.Light]: 1.375,
+    [ActivityLevel.Moderate]: 1.55,
+    [ActivityLevel.Active]: 1.725,
+    [ActivityLevel.VeryActive]: 1.9
   };
 
   return Math.round(bmr * activityMultipliers[activityLevel]);

@@ -26,6 +26,52 @@ interface Recipe {
   nutrients: NutrientInfo;
 }
 
+// Shared domain enums (mirrors src/types). The string values are the contract
+// with the frontend and persisted data, so they must not change.
+enum DietPreference {
+  Vegetarian = 'vegetarian',
+  Eggetarian = 'eggetarian',
+  NonVegetarian = 'non-vegetarian',
+}
+
+enum Gender {
+  Male = 'male',
+  Female = 'female',
+  Other = 'other',
+}
+
+enum ActivityLevel {
+  Sedentary = 'sedentary',
+  Light = 'light',
+  Moderate = 'moderate',
+  Active = 'active',
+  VeryActive = 'very-active',
+}
+
+enum MealType {
+  Breakfast = 'breakfast',
+  MorningSnack = 'morning-snack',
+  Lunch = 'lunch',
+  EveningSnack = 'evening-snack',
+  Dinner = 'dinner',
+}
+
+enum MealUnit {
+  Serving = 'serving',
+  Katori = 'katori',
+  Bowl = 'bowl',
+  Plate = 'plate',
+  Cup = 'cup',
+  Glass = 'glass',
+  Tbsp = 'tbsp',
+  Tsp = 'tsp',
+  Piece = 'piece',
+  Slice = 'slice',
+  Gram = 'gram',
+  Ml = 'ml',
+  Oz = 'oz',
+}
+
 const SYSTEM_PROMPT = `You are FitPal, an expert nutritionist specializing in Indian cuisine. You help users track their nutrition by providing accurate nutritional information about Indian foods and meals. 
 
 Key responsibilities:
@@ -187,7 +233,7 @@ const ReestimateSchema = z.object({
   nutrients: NutrientsSchema,
 });
 
-async function reestimateNutrientsForUnit(foodName: string, unit: string) {
+async function reestimateNutrientsForUnit(foodName: string, unit: MealUnit) {
   const messages: ChatMessage[] = [
     {
       role: 'user',
@@ -231,13 +277,13 @@ async function getRecipeSuggestions(
   preferences: string,
   goals: string,
   recentFoods: string[],
-  dietPreference?: string
+  dietPreference?: DietPreference
 ): Promise<Recipe[]> {
   const dietLine = dietPreference
     ? `\nDietary type: ${dietPreference}. ${
-        dietPreference === 'vegetarian'
+        dietPreference === DietPreference.Vegetarian
           ? 'Only suggest pure vegetarian recipes (no meat, fish, or eggs).'
-          : dietPreference === 'eggetarian'
+          : dietPreference === DietPreference.Eggetarian
           ? 'Vegetarian recipes plus eggs are allowed, but no meat or fish.'
           : 'Non-vegetarian recipes are allowed (meat, fish, eggs).'
       }`
@@ -319,13 +365,13 @@ async function suggestMeal(
   remainingFats: number,
   remainingFiber: number,
   mealType: string,
-  dietPreference?: string
+  dietPreference?: DietPreference
 ) {
   const dietLine = dietPreference
     ? `\nDietary type: ${dietPreference}. ${
-        dietPreference === 'vegetarian'
+        dietPreference === DietPreference.Vegetarian
           ? 'Only suggest pure vegetarian foods (no meat, fish, or eggs).'
-          : dietPreference === 'eggetarian'
+          : dietPreference === DietPreference.Eggetarian
           ? 'Vegetarian foods plus eggs are allowed, but no meat or fish.'
           : 'Non-vegetarian foods are allowed (meat, fish, eggs).'
       }`
@@ -450,8 +496,8 @@ async function suggestGoals(
   height: number,
   currentWeight: number,
   age: number,
-  gender: string,
-  activityLevel: string,
+  gender: Gender,
+  activityLevel: ActivityLevel,
   targetWeight: number
 ) {
   const messages: ChatMessage[] = [
@@ -481,17 +527,17 @@ First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-
   } catch (error) {
     console.error('Error getting goal suggestions:', error);
     const bmr =
-      gender === 'male'
+      gender === Gender.Male
         ? 10 * currentWeight + 6.25 * height - 5 * age + 5
         : 10 * currentWeight + 6.25 * height - 5 * age - 161;
 
     const activityMultiplier =
       ({
-        sedentary: 1.2,
-        light: 1.375,
-        moderate: 1.55,
-        active: 1.725,
-        'very-active': 1.9,
+        [ActivityLevel.Sedentary]: 1.2,
+        [ActivityLevel.Light]: 1.375,
+        [ActivityLevel.Moderate]: 1.55,
+        [ActivityLevel.Active]: 1.725,
+        [ActivityLevel.VeryActive]: 1.9,
       } as Record<string, number>)[activityLevel] || 1.5;
 
     const maintenanceCalories = Math.round(bmr * activityMultiplier);
@@ -506,7 +552,7 @@ First compute maintenance calories (TDEE) using a standard BMR formula (Mifflin-
       adjustmentNote = 'a 300 kcal/day surplus for weight gain';
     }
 
-    const minCalories = gender === 'male' ? 1500 : 1200;
+    const minCalories = gender === Gender.Male ? 1500 : 1200;
     calories = Math.max(minCalories, calories);
 
     const protein = Math.round(currentWeight * 1.6);
@@ -580,23 +626,18 @@ ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
 
 For "delete", "foods" must be an empty array. For "update", "foods" must contain the full corrected list of foods for that meal. When status is "need_info", you may still include any foods you have already understood (with your best-guess quantities) so the user sees progress, but set status to "need_info" until the open question is resolved. When everything needed is known, set status to "ready".`;
 
-const MEAL_UNITS = [
-  'serving', 'katori', 'bowl', 'plate', 'cup', 'glass', 'tbsp', 'tsp', 'piece', 'slice', 'gram', 'ml', 'oz',
-] as const;
-const MEAL_TYPES = ['breakfast', 'morning-snack', 'lunch', 'evening-snack', 'dinner'] as const;
-
 const MealChatSchema = z.object({
   status: z.enum(['need_info', 'ready']),
   action: z.enum(['log', 'update', 'delete']),
   targetMealId: z.string().nullable(),
   message: z.string(),
-  mealType: z.enum(MEAL_TYPES).nullable(),
+  mealType: z.enum(MealType).nullable(),
   time: z.string().nullable(),
   foods: z.array(
     z.object({
       name: z.string(),
       servingSize: z.string(),
-      unit: z.enum(MEAL_UNITS),
+      unit: z.enum(MealUnit),
       unitQuantity: z.number(),
       isIndian: z.boolean(),
       category: z.string().nullable(),
