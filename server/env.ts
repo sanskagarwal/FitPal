@@ -18,3 +18,12 @@ for (const candidate of candidates) {
     break;
   }
 }
+
+// Fail fast on missing critical secrets. JWT_SECRET signs auth tokens; without
+// it the server cannot issue or verify sessions, so refuse to start.
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
+  console.error(
+    'FATAL: JWT_SECRET is missing or too short (min 16 chars). Set it in your .env (see .env.example).'
+  );
+  process.exit(1);
+}

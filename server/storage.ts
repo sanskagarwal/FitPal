@@ -123,7 +123,18 @@ export function putCachedNutrition(
 
 // ---------------------------------------------------------------------------
 // Users
+//
+// The full record (including the bcrypt password hash) is for server-internal
+// auth only. Anything sent to the client must go through `toPublicUser` so the
+// hash and any other sensitive fields never leave the server.
 // ---------------------------------------------------------------------------
+export interface StoredUser {
+  id: string;
+  email?: string;
+  password?: string;
+  [key: string]: unknown;
+}
+
 export function saveUser(user: { id?: string; email?: string }): void {
   db.prepare(
     `INSERT INTO users (id, email, data) VALUES (@id, @email, @data)
@@ -136,9 +147,28 @@ export function getUser(id: string): unknown | null {
   return row ? JSON.parse(row.data) : null;
 }
 
-export function getUserByEmail(email: string): unknown | null {
+// Full record (with password hash) — SERVER-ONLY, never send to the client.
+export function getUserRecordById(id: string): StoredUser | null {
+  const row = db.prepare('SELECT data FROM users WHERE id = ?').get(id) as { data: string } | undefined;
+  return row ? (JSON.parse(row.data) as StoredUser) : null;
+}
+
+export function getUserRecordByEmail(email: string): StoredUser | null {
   const row = db.prepare('SELECT data FROM users WHERE email = ?').get(email) as { data: string } | undefined;
-  return row ? JSON.parse(row.data) : null;
+  return row ? (JSON.parse(row.data) as StoredUser) : null;
+}
+
+export function emailExists(email: string): boolean {
+  const row = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
+  return Boolean(row);
+}
+
+// Strip sensitive fields before returning a user to the client.
+export function toPublicUser(user: StoredUser | null): Omit<StoredUser, 'password'> | null {
+  if (!user) return null;
+  const { password: _password, ...publicUser } = user;
+  void _password;
+  return publicUser;
 }
 
 // ---------------------------------------------------------------------------
@@ -157,13 +187,16 @@ export function getMeals(userId: string): unknown[] {
   return rows.map((r) => JSON.parse(r.data));
 }
 
-export function updateMeal(id: string, meal: unknown): boolean {
-  const result = db.prepare('UPDATE meals SET data = ? WHERE id = ?').run(JSON.stringify(meal), id);
+export function updateMeal(id: string, meal: unknown, userId: string): boolean {
+  const result = db
+    .prepare('UPDATE meals SET data = ? WHERE id = ? AND user_id = ?')
+    .run(JSON.stringify(meal), id, userId);
   return result.changes > 0;
 }
 
-export function deleteMeal(id: string): void {
-  db.prepare('DELETE FROM meals WHERE id = ?').run(id);
+export function deleteMeal(id: string, userId: string): boolean {
+  const result = db.prepare('DELETE FROM meals WHERE id = ? AND user_id = ?').run(id, userId);
+  return result.changes > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -182,13 +215,16 @@ export function getWeights(userId: string): unknown[] {
   return rows.map((r) => JSON.parse(r.data));
 }
 
-export function updateWeight(id: string, weight: unknown): boolean {
-  const result = db.prepare('UPDATE weights SET data = ? WHERE id = ?').run(JSON.stringify(weight), id);
+export function updateWeight(id: string, weight: unknown, userId: string): boolean {
+  const result = db
+    .prepare('UPDATE weights SET data = ? WHERE id = ? AND user_id = ?')
+    .run(JSON.stringify(weight), id, userId);
   return result.changes > 0;
 }
 
-export function deleteWeight(id: string): void {
-  db.prepare('DELETE FROM weights WHERE id = ?').run(id);
+export function deleteWeight(id: string, userId: string): boolean {
+  const result = db.prepare('DELETE FROM weights WHERE id = ? AND user_id = ?').run(id, userId);
+  return result.changes > 0;
 }
 
 // ---------------------------------------------------------------------------

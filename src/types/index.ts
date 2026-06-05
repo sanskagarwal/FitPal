@@ -47,7 +47,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string; // hashed locally
+  password?: string; // bcrypt hash; server-only, never present on the client
   createdAt: Date;
   profile: UserProfile;
 }

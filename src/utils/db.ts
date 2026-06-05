@@ -2,10 +2,12 @@ import { User, MealEntry, WeightEntry, NotificationSettings, Streak } from '../t
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-// Helper function for API calls
+// Helper function for API calls. `credentials: 'include'` sends the httpOnly
+// auth cookie so the server can authenticate the request and enforce ownership.
 async function apiCall(endpoint: string, method: string = 'GET', body?: any) {
   const options: RequestInit = {
     method,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -24,6 +26,76 @@ async function apiCall(endpoint: string, method: string = 'GET', body?: any) {
   return await response.json();
 }
 
+// ---------------------------------------------------------------------------
+// Auth operations. The server hashes passwords (bcrypt) and issues a session
+// JWT in an httpOnly cookie, so the browser never sees password hashes or
+// handles tokens directly.
+// ---------------------------------------------------------------------------
+export interface AuthResult {
+  ok: boolean;
+  status: number;
+  user?: User;
+  code?: string;
+  error?: string;
+}
+
+async function authRequest(endpoint: string, body?: unknown): Promise<AuthResult> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let data: { user?: User; code?: string; error?: string } | null = null;
+    try {
+      data = await response.json();
+    } catch {
+      // No/invalid JSON body — leave data null.
+    }
+    return {
+      ok: response.ok,
+      status: response.status,
+      user: data?.user,
+      code: data?.code,
+      error: data?.error,
+    };
+  } catch {
+    return { ok: false, status: 0, error: 'Network error' };
+  }
+}
+
+export const authRegister = (payload: {
+  name: string;
+  email: string;
+  password: string;
+  profile: User['profile'];
+}): Promise<AuthResult> => authRequest('register', payload);
+
+export const authLogin = (email: string, password: string): Promise<AuthResult> =>
+  authRequest('login', { email, password });
+
+export const authResetPassword = (email: string, password: string): Promise<AuthResult> =>
+  authRequest('reset-password', { email, password });
+
+export const authLogout = async (): Promise<void> => {
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+  } catch {
+    // Best-effort; the client clears its own state regardless.
+  }
+};
+
+export const authMe = async (): Promise<User | null> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+};
+
 // User operations
 export const saveUser = async (user: User): Promise<void> => {
   await apiCall(`/users`, 'POST', user);
@@ -32,14 +104,6 @@ export const saveUser = async (user: User): Promise<void> => {
 export const getUser = async (id: string): Promise<User | undefined> => {
   try {
     return await apiCall(`/users/${id}`);
-  } catch (error) {
-    return undefined;
-  }
-};
-
-export const getUserByEmail = async (email: string): Promise<User | undefined> => {
-  try {
-    return await apiCall(`/users/email/${encodeURIComponent(email)}`);
   } catch (error) {
     return undefined;
   }
@@ -150,10 +214,4 @@ export const initDB = async (): Promise<any> => {
 export const clearAllData = async (): Promise<void> => {
   // No-op - data is on server
   console.warn('clearAllData is not supported with server-based storage');
-};
-
-export const getAllUsers = async (): Promise<User[]> => {
-  // Not exposed in server API for security
-  console.warn('getAllUsers is not supported with server-based storage');
-  return [];
 };

@@ -1,13 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserProfile, UserGoals } from '../types';
-import { saveUser, getUser, getUserByEmail } from '../utils/db';
-import { hashPassword, verifyPassword, generateId, calculateDailyCalories, calculateMacros, calculateAge } from '../utils/helpers';
+import { saveUser, authLogin, authRegister, authLogout, authMe, authResetPassword } from '../utils/db';
+import { calculateDailyCalories, calculateMacros, calculateAge } from '../utils/helpers';
+
+// Distinguish a normal failed login from a legacy (pre-bcrypt) account that
+// must set a new password once before it can sign in.
+export type LoginResult = 'ok' | 'invalid' | 'legacy';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string, profile: UserProfile) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  register: (name: string, email: string, password: string, profile: UserProfile) => Promise<User | null>;
+  resetPassword: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   updateGoals: (goals: Partial<UserGoals>) => Promise<void>;
@@ -32,16 +37,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user session
+    // Restore the session from the httpOnly auth cookie (validated server-side).
     const loadUser = async () => {
-      const storedUserId = localStorage.getItem('fitpal-user-id');
-      if (storedUserId) {
-        const loadedUser = await getUser(storedUserId);
-        if (loadedUser) {
-          setUser(loadedUser);
-        } else {
-          localStorage.removeItem('fitpal-user-id');
-        }
+      const loadedUser = await authMe();
+      if (loadedUser) {
+        setUser(loadedUser);
       }
       setIsLoading(false);
     };
@@ -49,25 +49,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loadUser();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const user = await getUserByEmail(email);
-      if (!user) {
-        return false;
-      }
-
-      const isValid = await verifyPassword(password, user.password);
-      if (!isValid) {
-        return false;
-      }
-
-      setUser(user);
-      localStorage.setItem('fitpal-user-id', user.id);
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    const result = await authLogin(email, password);
+    if (result.ok && result.user) {
+      setUser(result.user);
+      return 'ok';
     }
+    if (result.status === 409 && result.code === 'legacy_password') {
+      return 'legacy';
+    }
+    return 'invalid';
   };
 
   const register = async (
@@ -75,57 +66,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email: string,
     password: string,
     profile: UserProfile
-  ): Promise<boolean> => {
-    try {
-      const existingUser = await getUserByEmail(email);
-      if (existingUser) {
-        return false;
-      }
+  ): Promise<User | null> => {
+    // Fill in any goals the caller left unset using the standard estimates.
+    const dailyCalories = calculateDailyCalories(
+      profile.goals.targetWeight,
+      profile.height,
+      calculateAge(profile.dateOfBirth),
+      profile.gender,
+      profile.activityLevel
+    );
 
-      const hashedPassword = await hashPassword(password);
-      
-      // Calculate recommended goals based on profile
-      const dailyCalories = calculateDailyCalories(
-        profile.goals.targetWeight,
-        profile.height,
-        calculateAge(profile.dateOfBirth),
-        profile.gender,
-        profile.activityLevel
-      );
-      
-      const macros = calculateMacros(dailyCalories);
+    const macros = calculateMacros(dailyCalories);
 
-      const newUser: User = {
-        id: generateId(),
-        name,
-        email,
-        password: hashedPassword,
-        createdAt: new Date(),
-        profile: {
-          ...profile,
-          goals: {
-            ...profile.goals,
-            targetCalories: profile.goals.targetCalories || dailyCalories,
-            targetProtein: profile.goals.targetProtein || macros.protein,
-            targetCarbs: profile.goals.targetCarbs || macros.carbs,
-            targetFats: profile.goals.targetFats || macros.fats,
-          }
-        },
-      };
+    const finalProfile: UserProfile = {
+      ...profile,
+      goals: {
+        ...profile.goals,
+        targetCalories: profile.goals.targetCalories || dailyCalories,
+        targetProtein: profile.goals.targetProtein || macros.protein,
+        targetCarbs: profile.goals.targetCarbs || macros.carbs,
+        targetFats: profile.goals.targetFats || macros.fats,
+      },
+    };
 
-      await saveUser(newUser);
-      setUser(newUser);
-      localStorage.setItem('fitpal-user-id', newUser.id);
-      return true;
-    } catch (error) {
-      console.error('Registration error:', error);
-      return false;
+    const result = await authRegister({ name, email, password, profile: finalProfile });
+    if (result.ok && result.user) {
+      setUser(result.user);
+      return result.user;
     }
+    return null;
   };
 
-  const logout = () => {
+  const resetPassword = async (email: string, password: string): Promise<boolean> => {
+    const result = await authResetPassword(email, password);
+    if (result.ok && result.user) {
+      setUser(result.user);
+      return true;
+    }
+    return false;
+  };
+
+  const logout = async () => {
+    await authLogout();
     setUser(null);
-    localStorage.removeItem('fitpal-user-id');
   };
 
   const updateProfile = async (profileUpdate: Partial<UserProfile>) => {
@@ -168,6 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isLoading,
         login,
         register,
+        resetPassword,
         logout,
         updateProfile,
         updateGoals,

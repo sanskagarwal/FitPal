@@ -19,8 +19,11 @@ export const AuthPage = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Set when an existing (legacy SHA-256) account must choose a new password
+  // once before it can sign in.
+  const [needsReset, setNeedsReset] = useState(false);
 
-  const { login, register } = useAuth();
+  const { login, register, resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +31,31 @@ export const AuthPage = () => {
     setLoading(true);
 
     try {
+      if (needsReset) {
+        if (!isValidEmail(formData.email) || !formData.password) {
+          setError('Enter your email and a new password');
+          setLoading(false);
+          return;
+        }
+        const ok = await resetPassword(formData.email, formData.password);
+        if (!ok) {
+          setError('Could not reset password. Please try again.');
+        }
+        setLoading(false);
+        return;
+      }
+
       if (isLogin) {
         if (!isValidEmail(formData.email)) {
           setError('Please enter a valid email address');
           setLoading(false);
           return;
         }
-        const success = await login(formData.email, formData.password);
-        if (!success) {
+        const result = await login(formData.email, formData.password);
+        if (result === 'legacy') {
+          setNeedsReset(true);
+          setError('Your account needs a new password. Set one below to continue.');
+        } else if (result !== 'ok') {
           setError('Invalid email or password');
         }
       } else {
@@ -90,35 +110,23 @@ export const AuthPage = () => {
           },
         });
 
-        // If registration successful, log initial weight
+        // If registration succeeded, log the user's initial weight using the
+        // id returned from the server (no localStorage round-trip needed).
         if (success) {
           try {
-            // Need to get the newly created user ID
-            const newUser = await new Promise<any>((resolve) => {
-              setTimeout(() => {
-                // This is a workaround - the user state should be available after successful registration
-                const storedUserId = localStorage.getItem('fitpal-user-id');
-                resolve({ id: storedUserId });
-              }, 100);
-            });
-
-            if (newUser?.id) {
-              const initialWeight: WeightEntry = {
-                id: generateId(),
-                userId: newUser.id,
-                date: new Date(),
-                weight: weight,
-                bmi: calculateBMI(weight, height),
-                notes: 'Initial weight at registration',
-              };
-              await saveWeight(initialWeight);
-            }
+            const initialWeight: WeightEntry = {
+              id: generateId(),
+              userId: success.id,
+              date: new Date(),
+              weight: weight,
+              bmi: calculateBMI(weight, height),
+              notes: 'Initial weight at registration',
+            };
+            await saveWeight(initialWeight);
           } catch (error) {
             console.error('Error logging initial weight:', error);
           }
-        }
-
-        if (!success) {
+        } else {
           setError('Email already exists');
         }
       }
@@ -139,7 +147,7 @@ export const AuthPage = () => {
 
         <div className="flex gap-2 mb-6">
           <button
-            onClick={() => setIsLogin(true)}
+            onClick={() => { setIsLogin(true); setNeedsReset(false); setError(''); }}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               isLogin ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'
             }`}
@@ -148,7 +156,7 @@ export const AuthPage = () => {
             Login
           </button>
           <button
-            onClick={() => setIsLogin(false)}
+            onClick={() => { setIsLogin(false); setNeedsReset(false); setError(''); }}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               !isLogin ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-700'
             }`}
@@ -280,7 +288,7 @@ export const AuthPage = () => {
             disabled={loading}
             className="btn-primary w-full"
           >
-            {loading ? 'Processing...' : isLogin ? 'Login' : 'Create Account'}
+            {loading ? 'Processing...' : needsReset ? 'Set New Password' : isLogin ? 'Login' : 'Create Account'}
           </button>
         </form>
       </div>
