@@ -4,9 +4,9 @@
 
 FitPal is a Progressive Web App (PWA) that helps you log Indian meals in plain language, track weight and goals, and get AI-driven nutrition insights. It runs as a React single-page app with a lightweight local Express server for storage, so your data stays on your own machine.
 
-![FitPal dashboard](docs/dashboard.png)
+![FitPal dashboard](docs/images/dashboard.png)
 
-> More screens (Login, Log Food, Weight, Goals, Recipes, Profile) are in the [docs/](docs/) folder.
+> More screens (Login, Log Food, Weight, Goals, Recipes, Profile) are in the [docs/images/](docs/images/) folder.
 
 ---
 
@@ -22,13 +22,13 @@ FitPal is a Progressive Web App (PWA) that helps you log Indian meals in plain l
 - 📱 **Installable PWA** — works offline, responsive across phone/tablet/desktop.
 - 🔒 **Privacy first** — file-based local storage, no third-party cloud beyond your own Azure OpenAI resource.
 
-See **[FEATURES.md](FEATURES.md)** for the full feature breakdown.
+See **[FEATURES.md](docs/FEATURES.md)** for the full feature breakdown.
 
 ---
 
 ## 🚧 In Progress
 
-Some features are actively being worked on — see **[TODO.md](TODO.md)** for details.
+Some features are actively being worked on — see **[TODO.md](docs/TODO.md)** for details.
 
 ---
 
@@ -146,8 +146,8 @@ FitPal/
 
 ## 🔗 More Docs
 
-- **[FEATURES.md](FEATURES.md)** — complete feature list
-- **[DEVELOPER.md](DEVELOPER.md)** — architecture, API reference, data models, and contribution guide
+- **[FEATURES.md](docs/FEATURES.md)** — complete feature list
+- **[DEVELOPER.md](docs/DEVELOPER.md)** — architecture, API reference, data models, and contribution guide
 
 ## 📄 License
 

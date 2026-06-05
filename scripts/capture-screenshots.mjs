@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const docsDir = join(__dirname, '..', 'docs');
+const docsDir = join(__dirname, '..', 'docs', 'images');
 
 const BASE = process.env.BASE_URL || 'http://localhost:5174';
 const EMAIL = process.env.FITPAL_EMAIL;
