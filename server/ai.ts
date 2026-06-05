@@ -3,9 +3,17 @@ import { generateText, Output, type LanguageModel, type ModelMessage } from 'ai'
 import { createAzure } from '@ai-sdk/azure';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { z } from 'zod';
+import { getCachedNutrition, putCachedNutrition } from './storage.js';
+import {
+  DietPreference,
+  Gender,
+  ActivityLevel,
+  MealType,
+  MealUnit,
+  NutrientsSchema,
+  type NutrientInfo,
+} from './domain.js';
 
-// Loosely-typed nutrient bag shared across responses.
-type NutrientInfo = Record<string, number>;
 interface Food {
   id: string;
   name: string;
@@ -24,52 +32,6 @@ interface Recipe {
   prepTime: string;
   servings: number;
   nutrients: NutrientInfo;
-}
-
-// Shared domain enums (mirrors src/types). The string values are the contract
-// with the frontend and persisted data, so they must not change.
-enum DietPreference {
-  Vegetarian = 'vegetarian',
-  Eggetarian = 'eggetarian',
-  NonVegetarian = 'non-vegetarian',
-}
-
-enum Gender {
-  Male = 'male',
-  Female = 'female',
-  Other = 'other',
-}
-
-enum ActivityLevel {
-  Sedentary = 'sedentary',
-  Light = 'light',
-  Moderate = 'moderate',
-  Active = 'active',
-  VeryActive = 'very-active',
-}
-
-enum MealType {
-  Breakfast = 'breakfast',
-  MorningSnack = 'morning-snack',
-  Lunch = 'lunch',
-  EveningSnack = 'evening-snack',
-  Dinner = 'dinner',
-}
-
-enum MealUnit {
-  Serving = 'serving',
-  Katori = 'katori',
-  Bowl = 'bowl',
-  Plate = 'plate',
-  Cup = 'cup',
-  Glass = 'glass',
-  Tbsp = 'tbsp',
-  Tsp = 'tsp',
-  Piece = 'piece',
-  Slice = 'slice',
-  Gram = 'gram',
-  Ml = 'ml',
-  Oz = 'oz',
 }
 
 const SYSTEM_PROMPT = `You are FitPal, an expert nutritionist specializing in Indian cuisine. You help users track their nutrition by providing accurate nutritional information about Indian foods and meals. 
@@ -126,19 +88,64 @@ function requireEnv(name: string): string {
   return value;
 }
 
+// Whether a failed AI call is worth retrying. Transient issues (network blips,
+// rate limits, upstream 5xx) and schema/parse failures often succeed on a
+// second attempt; configuration and auth errors will not, so we fail fast.
+function isRetryableError(error: unknown): boolean {
+  const status =
+    (error as { statusCode?: number; status?: number })?.statusCode ??
+    (error as { status?: number })?.status;
+  if (typeof status === 'number') {
+    if (status === 429) return true;
+    if (status >= 500) return true;
+    if (status >= 400) return false; // auth/validation/bad-request: don't retry
+  }
+  const name = (error as { name?: string })?.name ?? '';
+  const message = ((error as { message?: string })?.message ?? '').toLowerCase();
+  // AI SDK throws these when the model returns malformed/invalid JSON.
+  if (name.includes('NoObjectGenerated') || name.includes('JSONParse')) return true;
+  if (name.includes('TypeValidation')) return true;
+  // Generic network failures surfaced by fetch/undici.
+  return /network|timeout|timed out|econnreset|econnrefused|fetch failed|socket hang up/.test(
+    message
+  );
+}
+
+// Run an AI call with a few exponential-backoff retries on transient failures.
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts || !isRetryableError(error)) break;
+      const delayMs = 300 * 2 ** (attempt - 1) + Math.floor(Math.random() * 200);
+      console.warn(
+        `AI call failed (attempt ${attempt}/${attempts}), retrying in ${delayMs}ms:`,
+        (error as { message?: string })?.message || error
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastError;
+}
+
 // Free-form text completion (for non-JSON responses).
 async function completeText(
   messages: ChatMessage[],
   temperature = 0.7,
   system = SYSTEM_PROMPT
 ): Promise<string> {
-  const { text } = await generateText({
-    model: getModel(),
-    system,
-    messages,
-    temperature,
-    maxOutputTokens: 2000,
-  });
+  const { text } = await withRetry(() =>
+    generateText({
+      model: getModel(),
+      system,
+      messages,
+      temperature,
+      maxOutputTokens: 2000,
+    })
+  );
   return text.trim();
 }
 
@@ -152,33 +159,17 @@ async function completeStructured<T>(
   temperature = 0.7,
   system = SYSTEM_PROMPT
 ): Promise<T> {
-  const { output } = await generateText({
-    model: getModel(),
-    system,
-    messages,
-    temperature,
-    output: Output.object({ schema, name: schemaName }),
-  });
+  const { output } = await withRetry(() =>
+    generateText({
+      model: getModel(),
+      system,
+      messages,
+      temperature,
+      output: Output.object({ schema, name: schemaName }),
+    })
+  );
   return output;
 }
-
-// Shared nutrient schema.
-const NutrientsSchema = z.object({
-  calories: z.number(),
-  protein: z.number(),
-  carbs: z.number(),
-  fats: z.number(),
-  fiber: z.number(),
-  sugar: z.number(),
-  sodium: z.number(),
-  vitaminA: z.number(),
-  vitaminC: z.number(),
-  vitaminD: z.number(),
-  calcium: z.number(),
-  iron: z.number(),
-  magnesium: z.number(),
-  potassium: z.number(),
-});
 
 // ---------------------------------------------------------------------------
 // Food analysis
@@ -681,16 +672,36 @@ ${mealsContext}`;
     message: parsed.message || '',
     mealType: parsed.mealType ?? undefined,
     time: parsed.time ?? null,
-    foods: parsed.foods.map((f) => ({
-      name: f.name,
-      servingSize: f.servingSize,
-      unit: f.unit,
-      unitQuantity: f.unitQuantity,
-      isIndian: f.isIndian,
-      category: f.category ?? undefined,
-      confidence: f.confidence,
-      nutrients: f.nutrients as NutrientInfo,
-    })),
+    foods: parsed.foods.map((f) => {
+      // Ground the per-unit macros against the nutrition cache so the same food
+      // logs consistently. A cache hit overrides macros (cached values win) but
+      // keeps the model's micronutrient estimates; a confident miss is learned
+      // for next time.
+      const cached = getCachedNutrition(f.name, f.unit);
+      let nutrients = f.nutrients as NutrientInfo;
+      let servingSize = f.servingSize;
+      let confidence = f.confidence;
+      if (cached) {
+        nutrients = { ...nutrients, ...cached.nutrients };
+        if (cached.servingSize) servingSize = cached.servingSize;
+        confidence = 'high';
+      } else if (f.confidence === 'high') {
+        putCachedNutrition(f.name, f.unit, {
+          servingSize: f.servingSize,
+          nutrients: f.nutrients as Record<string, number>,
+        });
+      }
+      return {
+        name: f.name,
+        servingSize,
+        unit: f.unit,
+        unitQuantity: f.unitQuantity,
+        isIndian: f.isIndian,
+        category: f.category ?? undefined,
+        confidence,
+        nutrients,
+      };
+    }),
   };
 }
 

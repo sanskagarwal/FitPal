@@ -23,6 +23,7 @@ import {
   saveStreak,
   getStreak,
 } from './storage.js';
+import { validateMeal } from './validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,6 +99,10 @@ app.put('/api/users/:id', async (req: Request, res: Response) => {
 app.post('/api/meals', async (req: Request, res: Response) => {
   try {
     const meal = req.body;
+    const check = validateMeal(meal);
+    if (!check.ok) {
+      return res.status(400).json({ error: check.error });
+    }
     addMeal(meal);
     res.json({ success: true, meal });
   } catch (error) {
@@ -119,6 +124,10 @@ app.get('/api/meals/:userId', async (req: Request, res: Response) => {
 app.put('/api/meals/:id', async (req: Request, res: Response) => {
   try {
     const updatedMeal = req.body;
+    const check = validateMeal(updatedMeal);
+    if (!check.ok) {
+      return res.status(400).json({ error: check.error });
+    }
     const found = updateMeal(String(req.params.id), updatedMeal);
     if (!found) {
       return res.status(404).json({ error: 'Meal not found' });

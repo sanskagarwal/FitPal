@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
+import { NUTRITION_SEED } from './nutritionSeed.js';
 
 // ---------------------------------------------------------------------------
 // SQLite-backed storage layer.
@@ -51,7 +52,73 @@ export function initStorage(dataDir: string): void {
       user_id TEXT PRIMARY KEY,
       data    TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS nutrition_cache (
+      key     TEXT PRIMARY KEY,
+      data    TEXT NOT NULL,
+      source  TEXT NOT NULL
+    );
   `);
+
+  seedNutritionCache();
+}
+
+// ---------------------------------------------------------------------------
+// Nutrition cache
+//
+// Grounds the chat agent's per-unit macros so the same food logs consistently
+// instead of being re-estimated each time. Seeded with curated staples, then
+// grows at runtime from high-confidence model outputs. Keyed by normalized
+// "name|unit".
+// ---------------------------------------------------------------------------
+export function nutritionKey(name: string, unit: string): string {
+  const normName = name
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return `${normName}|${unit.toLowerCase().trim()}`;
+}
+
+function seedNutritionCache(): void {
+  const insert = db.prepare(
+    'INSERT OR IGNORE INTO nutrition_cache (key, data, source) VALUES (?, ?, ?)'
+  );
+  const tx = db.transaction(() => {
+    for (const entry of NUTRITION_SEED) {
+      insert.run(
+        nutritionKey(entry.name, entry.unit),
+        JSON.stringify({ servingSize: entry.servingSize, nutrients: entry.nutrients }),
+        'seed'
+      );
+    }
+  });
+  tx();
+}
+
+export interface CachedNutrition {
+  servingSize?: string;
+  nutrients: Record<string, number>;
+}
+
+export function getCachedNutrition(name: string, unit: string): CachedNutrition | null {
+  const row = db
+    .prepare('SELECT data FROM nutrition_cache WHERE key = ?')
+    .get(nutritionKey(name, unit)) as { data: string } | undefined;
+  return row ? (JSON.parse(row.data) as CachedNutrition) : null;
+}
+
+// Store a learned entry only if absent, so curated seeds are never overwritten
+// by model output and the first confident estimate becomes the stable value.
+export function putCachedNutrition(
+  name: string,
+  unit: string,
+  value: CachedNutrition
+): void {
+  db.prepare(
+    'INSERT OR IGNORE INTO nutrition_cache (key, data, source) VALUES (?, ?, ?)'
+  ).run(nutritionKey(name, unit), JSON.stringify(value), 'learned');
 }
 
 // ---------------------------------------------------------------------------
