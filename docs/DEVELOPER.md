@@ -26,13 +26,13 @@ A guide to setting up, running, and extending FitPal.
 FitPal has three parts:
 
 1. **Frontend SPA** (`src/`) — React 19 + TypeScript + Vite. All UI, state, and navigation live here. Navigation is **state-based** (a `currentPage` string with a `switch` in `App.tsx`), not React Router.
-2. **AI service** (`src/services/openai.ts`) — a thin client that calls the backend `/api/ai/*` routes. The actual **Azure OpenAI** calls run **server-side** (`server/ai.ts`) using the `openai` SDK's `AzureOpenAI` client with **structured outputs** validated by `zod`, so the API key never reaches the browser.
-3. **Storage server** (`server/`) — a small **Express 5** app that persists data in a **SQLite** database (`better-sqlite3`) at `server/data/fitpal.db`, serves the built frontend, and proxies AI calls. The frontend talks to it via a REST client in `src/utils/db.ts`. On first run it imports any legacy `server/data/*.json` files from the old file-based store.
+2. **AI service** (`src/services/openai.ts`) — a thin client that calls the backend `/api/ai/*` routes. The actual AI calls run **server-side** (`server/ai.ts`) via the **Vercel AI SDK**, which talks to any OpenAI-compatible Chat Completions API (OpenAI, LiteLLM, OpenRouter, Ollama, vLLM, Azure OpenAI, …) with **structured outputs** validated by `zod`, so the API key never reaches the browser.
+3. **Storage server** (`server/`) — a small **Express 5** app that persists data in a **SQLite** database (`better-sqlite3`) at `server/data/fitpal.db`, serves the built frontend, and proxies AI calls. The frontend talks to it via a REST client in `src/utils/db.ts`.
 
 ```
 Browser (React SPA) ──HTTP──> Express server ──> server/data/fitpal.db (SQLite)
         │                          │
-        │                          └──HTTPS──> Azure OpenAI (GPT-4o, structured outputs)
+        │                          └──HTTPS──> AI provider (OpenAI-compatible API, structured outputs)
         └──(served by the same Express process)
 ```
 
@@ -43,7 +43,7 @@ Browser (React SPA) ──HTTP──> Express server ──> server/data/fitpal.
 - **Node.js 24+** ([download](https://nodejs.org/))
 - **npm** (bundled with Node)
 - **Git**
-- An **Azure OpenAI** resource with a GPT-4o (or compatible) deployment — required for AI features.
+- An **AI provider** with an OpenAI-compatible Chat Completions API (OpenAI, LiteLLM, OpenRouter, Ollama, vLLM, Azure OpenAI, …) — required for AI features.
 
 ---
 
@@ -71,18 +71,21 @@ cp .env.example .env
 ```
 
 ```env
-# Azure OpenAI (used client-side by src/services/openai.ts)
-VITE_AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
-VITE_AZURE_OPENAI_KEY=your_api_key_here
-VITE_AZURE_OPENAI_DEPLOYMENT=gpt-4o
-# Optional — defaults to 2024-08-01-preview
-VITE_AZURE_OPENAI_API_VERSION=2024-08-01-preview
+# AI provider (server-side only — never shipped to the browser).
+# Works with any OpenAI-compatible Chat Completions API.
+AI_API_KEY=your-key-here
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+# To use Azure OpenAI instead, set AI_PROVIDER=azure with AI_BASE_URL as the
+# resource endpoint, AI_MODEL as the deployment name, and AI_API_VERSION set.
+# AI_PROVIDER=azure
+# AI_API_VERSION=2024-08-01-preview
 
-# Storage server base URL
+# Storage server base URL (frontend → server)
 VITE_API_URL=http://localhost:3001/api
 ```
 
-> Only `VITE_`-prefixed variables are exposed to the frontend. The Azure key ships to the browser in a dev/local build — never use an unrestricted production secret.
+> Only `VITE_`-prefixed variables are exposed to the frontend. The `AI_*` variables are read by the server only, so the API key never reaches the browser.
 
 ### Storage server port
 
@@ -156,7 +159,7 @@ FitPal/
 │   ├── context/
 │   │   └── AuthContext.tsx     # Auth state & actions
 │   ├── services/
-│   │   └── openai.ts           # Azure OpenAI integration (structured outputs)
+│   │   └── openai.ts           # Client for the backend /api/ai routes
 │   ├── utils/
 │   │   ├── db.ts               # REST client for the storage server
 │   │   ├── helpers.ts          # Dates, formatting, calculations
@@ -168,8 +171,8 @@ FitPal/
 │   └── index.css               # Tailwind + global styles
 ├── server/
 │   ├── index.ts                # Express REST API + static hosting
-│   ├── ai.ts                   # Azure OpenAI integration (server-side)
-│   ├── storage.ts              # SQLite storage layer + JSON importer
+│   ├── ai.ts                   # AI integration via the Vercel AI SDK (server-side)
+│   ├── storage.ts              # SQLite storage layer
 │   ├── data/                   # SQLite database (fitpal.db)
 │   ├── package.json
 │   └── tsconfig.json
@@ -198,23 +201,23 @@ FitPal/
 - tsx (dev execution)
 
 **AI**
-- Azure OpenAI (GPT-4o) via the `openai` SDK
-- `zod` schemas + `zodResponseFormat` for strict structured outputs
+- Any OpenAI-compatible Chat Completions API via the **Vercel AI SDK** (`ai` + `@ai-sdk/openai-compatible`, plus `@ai-sdk/azure` for Azure)
+- `zod` schemas with `generateText` + `Output.object` for structured outputs
 
 ---
 
 ## AI Integration
 
-All AI logic lives in `src/services/openai.ts`.
+The AI client used by the frontend lives in `src/services/openai.ts`, but it only forwards requests to the backend `/api/ai/*` routes. **All real AI logic runs server-side in `server/ai.ts`** so the API key never reaches the browser.
 
-- **Client** — `getClient()` lazily creates an `AzureOpenAI` instance with `dangerouslyAllowBrowser: true`. It throws a clear error if `VITE_AZURE_OPENAI_ENDPOINT` / `VITE_AZURE_OPENAI_KEY` are missing.
+- **Model** — `getModel()` lazily builds a Vercel AI SDK `LanguageModel` from generic env vars (`AI_API_KEY`, `AI_BASE_URL`, `AI_MODEL`). `AI_PROVIDER` selects the SDK: `openai-compatible` (default) or `azure` (which also needs `AI_API_VERSION`). Missing config throws a clear error — nothing is inferred.
 - **Helpers**
-  - `completeText(messages, temperature?)` — free-form text via `chat.completions.create`.
-  - `completeStructured(messages, schema, schemaName, temperature?)` — strict JSON via `chat.completions.parse` + `zodResponseFormat`.
-- **Structured outputs** use `zod` schemas. Because strict mode requires every field, mark optional fields with `.nullable()`.
-- **Key functions** include food analysis (with a `confidence` field), per-unit nutrient re-estimation, agentic meal chat (log/update/delete actions), recipe suggestions, dietary insights, and goal/nutrient suggestions.
+  - `completeText(messages, temperature?)` — free-form text via `generateText`.
+  - `completeStructured(messages, schema, schemaName, temperature?)` — structured JSON via `generateText` with `Output.object`, validated against a `zod` schema.
+- **Structured outputs** use `zod` schemas. Mark optional fields with `.nullable()` for the widest model compatibility.
+- **Key functions** include food analysis (with a `confidence` field), per-unit nutrient re-estimation, agentic meal chat (log/update/delete actions), recipe suggestions, dietary insights, and goal/nutrient suggestions. Each is exposed as an HTTP route by the `aiRouter` in `server/ai.ts`.
 
-To add a new AI capability, define a `zod` schema, build your messages, and call `completeStructured` — follow the existing functions as templates.
+To add a new AI capability, define a `zod` schema, build your messages, call `completeStructured`, and wire it into `aiRouter` — follow the existing functions as templates.
 
 ---
 
@@ -269,7 +272,7 @@ Errors return `404` (not found) or `500` (operation failed) with an `{ "error": 
 
 ## Data Models
 
-These mirror `src/types/index.ts`. Records are stored in a SQLite database at `server/data/fitpal.db` (tables: `users`, `meals`, `weights`, `notifications`, `streaks`), each row holding the object as a JSON blob. Legacy `server/data/*.json` files from the old file-based store are imported automatically on first run.
+These mirror `src/types/index.ts`. Records are stored in a SQLite database at `server/data/fitpal.db` (tables: `users`, `meals`, `weights`, `notifications`, `streaks`), each row holding the object as a JSON blob.
 
 ```ts
 interface User {
@@ -416,7 +419,7 @@ npx serve -s dist -l 5173
 cd server && npm start
 ```
 
-Set production env values (scoped Azure key, production `VITE_API_URL`) before building, since `VITE_` vars are inlined at build time.
+Set production env values (the server-side `AI_*` variables and a production `VITE_API_URL`) before building. `VITE_` vars are inlined at build time, while `AI_*` are read by the server at runtime.
 
 > The PWA service worker only runs in a production build served over HTTPS or localhost.
 
@@ -438,9 +441,9 @@ npm install
 ```
 
 **AI not working**
-- Verify `VITE_AZURE_OPENAI_ENDPOINT` looks like `https://xxx.openai.azure.com`.
-- Confirm the key and that the deployment name matches a deployed model.
-- Check your Azure OpenAI quota/region.
+- Confirm the server-side `AI_API_KEY`, `AI_BASE_URL`, and `AI_MODEL` are all set (the server throws on missing config).
+- Verify `AI_BASE_URL` points at a reachable OpenAI-compatible endpoint and `AI_MODEL` is a valid model id for that provider.
+- For Azure, ensure `AI_PROVIDER=azure`, `AI_API_VERSION` is set, `AI_BASE_URL` is the resource endpoint, and `AI_MODEL` is the deployment name.
 
 **CORS / network errors**
 - Ensure the storage server is running and `VITE_API_URL` points to it.

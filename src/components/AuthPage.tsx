@@ -119,7 +119,7 @@ export const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-start justify-center p-4 py-10 sm:py-16">
       <div className="card max-w-md w-full">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-primary-600 mb-2">🥗 FitPal</h1>
@@ -259,7 +259,7 @@ export const AuthPage = () => {
           )}
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm" role="alert" aria-live="polite">
               {error}
             </div>
           )}

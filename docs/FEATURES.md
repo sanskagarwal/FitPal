@@ -80,7 +80,7 @@ Everything FitPal can do — your AI-powered Indian nutrition tracker.
 
 - **Local-first storage** — data is saved as JSON files by a small Express server on your machine.
 - **Export / import** — back up and restore your data.
-- **No third-party cloud** beyond your own Azure OpenAI resource for AI features.
+- **No third-party cloud** beyond the AI provider you choose for AI features.
 - **Hashed passwords** and no analytics or tracking.
 
 ## 📱 Progressive Web App

@@ -52,90 +52,6 @@ export function initStorage(dataDir: string): void {
       data    TEXT NOT NULL
     );
   `);
-
-  migrateFromJsonFiles(dataDir);
-}
-
-// ---------------------------------------------------------------------------
-// One-time importer: loads any existing `*.json` files from the old file-based
-// store into SQLite. Idempotent (upserts / INSERT OR IGNORE) and gated by a
-// marker file so it only runs once.
-// ---------------------------------------------------------------------------
-function migrateFromJsonFiles(dataDir: string): void {
-  const marker = path.join(dataDir, '.sqlite-migrated');
-  if (fs.existsSync(marker)) return;
-
-  let files: string[] = [];
-  try {
-    files = fs.readdirSync(dataDir).filter((f) => f.endsWith('.json'));
-  } catch {
-    files = [];
-  }
-
-  if (files.length === 0) {
-    fs.writeFileSync(marker, new Date().toISOString());
-    return;
-  }
-
-  const readJson = (file: string): unknown => {
-    try {
-      return JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf-8'));
-    } catch (error) {
-      console.error(`Skipping unreadable JSON file during migration: ${file}`, error);
-      return null;
-    }
-  };
-
-  let imported = 0;
-  const importAll = db.transaction(() => {
-    for (const file of files) {
-      if (file.startsWith('user-')) {
-        const user = readJson(file) as { id?: string } | null;
-        if (user?.id) {
-          saveUser(user);
-          imported++;
-        }
-      } else if (file.startsWith('meals-')) {
-        const meals = readJson(file) as Array<{ id?: string; userId?: string }> | null;
-        if (Array.isArray(meals)) {
-          for (const meal of meals) {
-            if (meal?.id) {
-              insertMealIgnore(meal);
-              imported++;
-            }
-          }
-        }
-      } else if (file.startsWith('weights-')) {
-        const weights = readJson(file) as Array<{ id?: string; userId?: string }> | null;
-        if (Array.isArray(weights)) {
-          for (const weight of weights) {
-            if (weight?.id) {
-              insertWeightIgnore(weight);
-              imported++;
-            }
-          }
-        }
-      } else if (file.startsWith('notifications-')) {
-        const settings = readJson(file) as { userId?: string } | null;
-        if (settings?.userId) {
-          saveNotifications(settings);
-          imported++;
-        }
-      } else if (file.startsWith('streak-')) {
-        const streak = readJson(file) as { userId?: string } | null;
-        if (streak?.userId) {
-          saveStreak(streak);
-          imported++;
-        }
-      }
-    }
-  });
-
-  importAll();
-  fs.writeFileSync(marker, new Date().toISOString());
-  if (imported > 0) {
-    console.log(`📦 Migrated ${imported} record(s) from JSON files into SQLite.`);
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -169,14 +85,6 @@ export function addMeal(meal: { id: string; userId: string }): void {
   );
 }
 
-function insertMealIgnore(meal: { id?: string; userId?: string }): void {
-  db.prepare('INSERT OR IGNORE INTO meals (id, user_id, data) VALUES (?, ?, ?)').run(
-    meal.id,
-    meal.userId ?? null,
-    JSON.stringify(meal)
-  );
-}
-
 export function getMeals(userId: string): unknown[] {
   const rows = db.prepare('SELECT data FROM meals WHERE user_id = ?').all(userId) as { data: string }[];
   return rows.map((r) => JSON.parse(r.data));
@@ -198,14 +106,6 @@ export function addWeight(weight: { id: string; userId: string }): void {
   db.prepare('INSERT INTO weights (id, user_id, data) VALUES (?, ?, ?)').run(
     weight.id,
     weight.userId,
-    JSON.stringify(weight)
-  );
-}
-
-function insertWeightIgnore(weight: { id?: string; userId?: string }): void {
-  db.prepare('INSERT OR IGNORE INTO weights (id, user_id, data) VALUES (?, ?, ?)').run(
-    weight.id,
-    weight.userId ?? null,
     JSON.stringify(weight)
   );
 }

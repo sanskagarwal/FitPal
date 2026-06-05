@@ -1,17 +1,8 @@
 import { Router, Request, Response } from 'express';
-import OpenAI, { AzureOpenAI } from 'openai';
-import { zodResponseFormat } from 'openai/helpers/zod';
+import { generateText, Output, type LanguageModel, type ModelMessage } from 'ai';
+import { createAzure } from '@ai-sdk/azure';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { z } from 'zod';
-
-// ---------------------------------------------------------------------------
-// Azure OpenAI configuration (server-side only — the key never reaches the browser)
-// ---------------------------------------------------------------------------
-const AZURE_OPENAI_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || '';
-const AZURE_OPENAI_KEY = process.env.AZURE_OPENAI_KEY || '';
-const AZURE_OPENAI_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o';
-const AZURE_OPENAI_API_VERSION = process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview';
-
-type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
 
 // Loosely-typed nutrient bag shared across responses.
 type NutrientInfo = Record<string, number>;
@@ -46,54 +37,76 @@ Key responsibilities:
 
 Be culturally accurate and focus on Indian meals, ingredients, and cooking methods.`;
 
-// Lazily-created Azure OpenAI client.
-let azureClient: AzureOpenAI | null = null;
-function getClient(): AzureOpenAI {
-  if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_KEY) {
-    throw new Error(
-      'Azure OpenAI credentials not configured. Please set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_KEY in the server environment.'
-    );
+type ChatMessage = ModelMessage;
+
+// Lazily-created language model, configured entirely from generic env vars via
+// the Vercel AI SDK. Required: AI_API_KEY, AI_BASE_URL, AI_MODEL. AI_PROVIDER
+// selects the SDK: 'openai-compatible' (default) treats the endpoint as an
+// OpenAI-compatible API (OpenAI, LiteLLM, OpenRouter, Ollama, vLLM, …); 'azure'
+// uses the Azure OpenAI SDK, where AI_BASE_URL is the resource endpoint and
+// AI_MODEL is the deployment name. Nothing is inferred — missing config throws.
+let aiModel: LanguageModel | null = null;
+function getModel(): LanguageModel {
+  if (aiModel) return aiModel;
+
+  const apiKey = requireEnv('AI_API_KEY');
+  const baseURL = requireEnv('AI_BASE_URL');
+  const model = requireEnv('AI_MODEL');
+  const provider = (process.env.AI_PROVIDER || 'openai-compatible').toLowerCase();
+
+  switch (provider) {
+    case 'openai-compatible':
+      aiModel = createOpenAICompatible({ name: 'fitpal-ai', baseURL, apiKey })(model);
+      break;
+    case 'azure':
+      aiModel = createAzure({
+        baseURL: `${baseURL.replace(/\/+$/, '')}/openai`,
+        apiKey,
+        apiVersion: requireEnv('AI_API_VERSION'),
+        useDeploymentBasedUrls: true,
+      }).chat(model);
+      break;
+    default:
+      throw new Error(
+        `Unsupported AI_PROVIDER "${provider}". Use "openai-compatible" (default) or "azure".`
+      );
   }
-  if (!azureClient) {
-    azureClient = new AzureOpenAI({
-      endpoint: AZURE_OPENAI_ENDPOINT,
-      apiKey: AZURE_OPENAI_KEY,
-      apiVersion: AZURE_OPENAI_API_VERSION,
-      deployment: AZURE_OPENAI_DEPLOYMENT,
-    });
-  }
-  return azureClient;
+  return aiModel;
+}
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing required environment variable ${name}. See .env.example.`);
+  return value;
 }
 
 // Free-form text completion (for non-JSON responses).
 async function completeText(messages: ChatMessage[], temperature = 0.7): Promise<string> {
-  const completion = await getClient().chat.completions.create({
-    model: AZURE_OPENAI_DEPLOYMENT,
+  const { text } = await generateText({
+    model: getModel(),
     messages,
     temperature,
-    max_tokens: 2000,
+    maxOutputTokens: 2000,
   });
-  return completion.choices[0]?.message?.content?.trim() || '';
+  return text.trim();
 }
 
-// Structured completion using OpenAI structured outputs (strict JSON schema from zod).
+// Structured completion. The AI SDK picks the right strategy (native JSON
+// schema, JSON mode or tool calling) for the configured model and validates the
+// result against the zod schema.
 async function completeStructured<T>(
   messages: ChatMessage[],
   schema: z.ZodType<T>,
   schemaName: string,
   temperature = 0.7
 ): Promise<T> {
-  const completion = await getClient().chat.completions.parse({
-    model: AZURE_OPENAI_DEPLOYMENT,
+  const { output } = await generateText({
+    model: getModel(),
     messages,
     temperature,
-    response_format: zodResponseFormat(schema, schemaName),
+    output: Output.object({ schema, name: schemaName }),
   });
-  const parsed = completion.choices[0]?.message?.parsed;
-  if (parsed == null) {
-    throw new Error('Model did not return a structured response.');
-  }
-  return parsed;
+  return output;
 }
 
 // Shared nutrient schema.

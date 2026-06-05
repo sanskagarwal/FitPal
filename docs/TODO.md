@@ -1,9 +1,9 @@
 # TODO
 
-Work currently in progress / planned for FitPal.
+Planned and in-progress work for FitPal, ordered by priority.
 
-## 🚧 In Progress
-
-- [ ] **Release & installation** — publish a versioned release with an easy install path (e.g. a Docker image) so users can run FitPal without a manual setup.
-- [ ] **Self-hosted AI model** — deploy an alternative model and update the docs/wiki to remove the hard dependency on Azure OpenAI GPT-4o.
-- [ ] **Code Refactor** - duplicated code everywhere
+| Priority | Task | Notes |
+| --- | --- | --- |
+| High | Easy install & release | Publish a versioned release with a one-step install path (e.g. a prebuilt Docker image) so users can run FitPal without manual setup. |
+| Medium | Native provider support | Add dedicated Anthropic (`@ai-sdk/anthropic`) and Google (`@ai-sdk/google`) providers so users can target those APIs directly, without an OpenAI-compatible gateway. |
+| Medium | Reduce duplicated code | Consolidate repeated logic across the server and components into shared helpers. |

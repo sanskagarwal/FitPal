@@ -8,10 +8,12 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@ai-sdk/azure": "^3.0.70",
+    "@ai-sdk/openai-compatible": "^2.0.48",
+    "ai": "^6.0.197",
     "better-sqlite3": "^12.10.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "openai": "^6.42.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
