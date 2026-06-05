@@ -57,3 +57,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+
+  cleanup:
+    name: Prune old untagged images
+    needs: docker
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete untagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ github.event.repository.name }}
+          package-type: container
+          # Only remove orphaned (untagged) manifests; never touch tagged images.
+          delete-only-untagged-versions: true
+          # Keep the most recent untagged digests, since the current
+          # multi-arch manifest still references its per-platform children.
+          min-versions-to-keep: 10
