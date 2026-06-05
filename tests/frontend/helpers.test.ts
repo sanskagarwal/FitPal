@@ -15,6 +15,7 @@ import {
   formatDayLabel,
   calculateStreak,
   formatNutrient,
+  formatMealTypeLabel,
   getGoalPercentage,
   generateId,
 } from '../../src/utils/helpers';
@@ -209,6 +210,17 @@ describe('formatNutrient', () => {
   it('rounds to one decimal and appends the unit', () => {
     expect(formatNutrient(12.345, 'g')).toBe('12.3g');
     expect(formatNutrient(100, 'mg')).toBe('100mg');
+  });
+});
+
+describe('formatMealTypeLabel', () => {
+  it('capitalizes a single-word meal type', () => {
+    expect(formatMealTypeLabel('breakfast')).toBe('Breakfast');
+  });
+
+  it('replaces hyphens with spaces and capitalizes only the first letter', () => {
+    expect(formatMealTypeLabel('morning-snack')).toBe('Morning snack');
+    expect(formatMealTypeLabel('evening-snack')).toBe('Evening snack');
   });
 });
 

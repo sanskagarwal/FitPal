@@ -1,10 +1,15 @@
 import { Sparkles, X, UtensilsCrossed } from 'lucide-react';
-import { DietPreference, MealSuggestion } from '../../types';
+import { DietPreference, MealType, MealSuggestion, MEAL_CALORIE_CAPS } from '../../types';
+import { formatMealTypeLabel } from '../../utils/helpers';
 import { Spinner, LoadingBlock } from '../Spinner';
 
 interface MealSuggestionPanelProps {
   dietPreference: DietPreference;
   setDietPreference: (value: DietPreference) => void;
+  mealType: MealType;
+  setMealType: (value: MealType) => void;
+  calorieCap: number;
+  setCalorieCap: (value: number) => void;
   suggestingMeal: boolean;
   mealSuggestion: MealSuggestion | null;
   onSuggest: () => void;
@@ -14,11 +19,16 @@ interface MealSuggestionPanelProps {
 export const MealSuggestionPanel = ({
   dietPreference,
   setDietPreference,
+  mealType,
+  setMealType,
+  calorieCap,
+  setCalorieCap,
   suggestingMeal,
   mealSuggestion,
   onSuggest,
   onDismiss,
 }: MealSuggestionPanelProps) => {
+  const defaultCap = MEAL_CALORIE_CAPS[mealType];
   return (
     <div className="card bg-gradient-to-br from-primary-50 to-primary-100">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -26,7 +36,20 @@ export const MealSuggestionPanel = ({
           <Sparkles className="w-6 h-6 text-primary-600" />
           <h2 className="text-xl font-semibold">AI Meal Suggestion</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={mealType}
+            onChange={(e) => setMealType(e.target.value as MealType)}
+            disabled={suggestingMeal}
+            className="flex-1 sm:flex-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+            aria-label="Meal type"
+          >
+            {Object.values(MealType).map((type) => (
+              <option key={type} value={type}>
+                {formatMealTypeLabel(type)}
+              </option>
+            ))}
+          </select>
           <select
             value={dietPreference}
             onChange={(e) => setDietPreference(e.target.value as DietPreference)}
@@ -48,6 +71,40 @@ export const MealSuggestionPanel = ({
           </button>
         </div>
       </div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <label htmlFor="meal-calorie-cap" className="text-sm font-medium text-gray-700">
+          Calorie cap for this {formatMealTypeLabel(mealType).toLowerCase()}
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            id="meal-calorie-cap"
+            type="number"
+            min={100}
+            max={2000}
+            step={50}
+            value={calorieCap}
+            disabled={suggestingMeal}
+            onChange={(e) => setCalorieCap(Number(e.target.value))}
+            className="w-28 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+          />
+          <span className="text-sm text-gray-500">kcal</span>
+          {calorieCap !== defaultCap && (
+            <button
+              type="button"
+              onClick={() => setCalorieCap(defaultCap)}
+              disabled={suggestingMeal}
+              className="text-xs font-medium text-primary-600 hover:text-primary-700"
+            >
+              Reset to {defaultCap}
+            </button>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mb-4">
+        Targeting a <span className="font-medium">{formatMealTypeLabel(mealType).toLowerCase()}</span> of
+        up to <span className="font-medium">{calorieCap} kcal</span>, capped at your remaining daily
+        budget.
+      </p>
       {suggestingMeal ? (
         <div className="bg-white p-4 rounded-lg">
           <LoadingBlock label="Building a meal around your remaining goals…" />
@@ -60,8 +117,8 @@ export const MealSuggestionPanel = ({
               <UtensilsCrossed className="w-5 h-5 text-primary-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="inline-block text-[11px] font-medium uppercase tracking-wide text-primary-600 capitalize">
-                {mealSuggestion.mealType}
+              <span className="inline-block text-[11px] font-medium uppercase tracking-wide text-primary-600">
+                {formatMealTypeLabel(mealSuggestion.mealType)}
               </span>
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-snug break-words">
                 {mealSuggestion.name}

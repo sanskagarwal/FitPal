@@ -86,14 +86,17 @@ export function mealSuggestionPrompt(args: {
   mealType: string;
   dietPreference?: DietPreference;
 }): string {
-  return `Suggest a single Indian ${args.mealType} meal to help meet these remaining daily targets:
+  const mealLabel = args.mealType.replace(/-/g, ' ');
+  return `Suggest a single Indian ${mealLabel} meal using realistic single-meal portions.
+
+Treat these as the target budget for one meal, not the user's entire remaining day:
 Calories: ${args.remainingCalories} kcal
 Protein: ${args.remainingProtein}g
 Carbs: ${args.remainingCarbs}g
 Fats: ${args.remainingFats}g
 Fiber: ${args.remainingFiber}g${dietLine(args.dietPreference, 'foods')}
 
-Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). All nutrition numbers must be the totals for the whole meal.`;
+Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). Do not combine multiple full meals or try to exhaust a large daily calorie gap in one suggestion. All nutrition numbers must be the totals for the whole meal.`;
 }
 
 export function nutrientSuggestionPrompt(

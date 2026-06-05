@@ -39,6 +39,17 @@ export enum MealType {
   Dinner = 'dinner',
 }
 
+// Calorie budget for a single meal of each type. These keep AI meal suggestions
+// to one realistic meal instead of trying to fill the user's entire remaining
+// day. Shared so the UI can show the same target it sends to the server.
+export const MEAL_CALORIE_CAPS: Record<MealType, number> = {
+  [MealType.Breakfast]: 550,
+  [MealType.MorningSnack]: 300,
+  [MealType.Lunch]: 750,
+  [MealType.EveningSnack]: 300,
+  [MealType.Dinner]: 750,
+};
+
 export enum MealUnit {
   Serving = 'serving',
   Katori = 'katori',

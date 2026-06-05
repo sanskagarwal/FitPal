@@ -9,9 +9,10 @@ import {
   ActivityLevel,
   MealType,
   MealUnit,
+  MEAL_CALORIE_CAPS,
 } from '../../server/shared/enums';
 
-export { DietPreference, Gender, ActivityLevel, MealType, MealUnit };
+export { DietPreference, Gender, ActivityLevel, MealType, MealUnit, MEAL_CALORIE_CAPS };
 
 export interface User {
   id: string;

@@ -187,6 +187,13 @@ export const formatNutrient = (value: number | undefined, unit: string): string 
   return `${Math.round(value * 10) / 10}${unit}`;
 };
 
+// Format a meal-type value (e.g. "morning-snack") into a human label with a
+// single leading capital ("Morning snack").
+export const formatMealTypeLabel = (mealType: string): string => {
+  const text = mealType.replace(/-/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
 // Percentage of goal
 export const getGoalPercentage = (current: number, target: number): number => {
   if (target === 0) return 0;

@@ -1,0 +1,70 @@
+import { describe, it, expect } from 'vitest';
+import { getMealSuggestionTargets } from '../../server/services/aiService.js';
+import { MEAL_CALORIE_CAPS, MealType } from '../../server/domain.js';
+
+// getMealSuggestionTargets keeps AI meal suggestions to one realistic meal by
+// capping the calorie target per meal type and scaling the macros down by the
+// same factor, instead of trying to fill the user's entire remaining day.
+
+describe('getMealSuggestionTargets', () => {
+  it('caps a large remaining budget at the meal-type calorie cap', () => {
+    const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch);
+    expect(targets.calories).toBe(MEAL_CALORIE_CAPS[MealType.Lunch]);
+  });
+
+  it('scales macros down by the same factor the calories were capped by', () => {
+    // 1500 kcal remaining capped to a 750 kcal lunch -> scale = 0.5.
+    const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch);
+    expect(targets.protein).toBe(60);
+    expect(targets.carbs).toBe(90);
+    expect(targets.fats).toBe(25);
+    expect(targets.fiber).toBe(15);
+  });
+
+  it('leaves a small remaining budget untouched (no upscaling)', () => {
+    const targets = getMealSuggestionTargets(400, 30, 50, 12, 8, MealType.Lunch);
+    expect(targets).toEqual({ calories: 400, protein: 30, carbs: 50, fats: 12, fiber: 8 });
+  });
+
+  it('applies a lower cap for snacks than for main meals', () => {
+    const snack = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.MorningSnack);
+    expect(snack.calories).toBe(MEAL_CALORIE_CAPS[MealType.MorningSnack]);
+    expect(snack.calories).toBeLessThan(MEAL_CALORIE_CAPS[MealType.Lunch]);
+  });
+
+  it('resolves a free-form meal type with spaces (e.g. "morning snack")', () => {
+    const fromSpaces = getMealSuggestionTargets(1500, 120, 180, 50, 30, 'morning snack');
+    const fromEnum = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.MorningSnack);
+    expect(fromSpaces).toEqual(fromEnum);
+  });
+
+  it('falls back to a default cap for an unknown meal type', () => {
+    const targets = getMealSuggestionTargets(2000, 100, 200, 60, 40, 'brunch');
+    expect(targets.calories).toBe(650);
+  });
+
+  it('clamps negative remaining values to zero', () => {
+    const targets = getMealSuggestionTargets(-200, -10, -20, -5, -3, MealType.Dinner);
+    expect(targets).toEqual({ calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
+  });
+
+  it('honours a user-supplied calorie cap below the meal-type default', () => {
+    const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch, 500);
+    expect(targets.calories).toBe(500);
+  });
+
+  it('honours a user-supplied calorie cap above the meal-type default', () => {
+    const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch, 900);
+    expect(targets.calories).toBe(900);
+  });
+
+  it('still caps a user-supplied cap at the remaining daily budget', () => {
+    const targets = getMealSuggestionTargets(400, 30, 50, 12, 8, MealType.Lunch, 900);
+    expect(targets.calories).toBe(400);
+  });
+
+  it('falls back to the meal-type default for an invalid cap override', () => {
+    const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch, 0);
+    expect(targets.calories).toBe(MEAL_CALORIE_CAPS[MealType.Lunch]);
+  });
+});

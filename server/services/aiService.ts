@@ -11,6 +11,7 @@ import {
   ActivityLevel,
   MealType,
   MealUnit,
+  MEAL_CALORIE_CAPS,
   NutrientsSchema,
   type NutrientInfo,
 } from '../domain.js';
@@ -376,6 +377,49 @@ const MealSuggestionSchema = z.object({
   reason: z.string(),
 });
 
+const MEAL_CALORIE_CAP_FALLBACK = 650;
+
+// Map a free-form meal type (e.g. "morning snack") to its MealType enum value
+// so spelling/spacing differences still resolve to the right calorie budget.
+function resolveMealType(mealType: string): MealType | undefined {
+  const normalized = mealType.trim().toLowerCase().replace(/\s+/g, '-');
+  return (Object.values(MealType) as string[]).includes(normalized)
+    ? (normalized as MealType)
+    : undefined;
+}
+
+function normalizeMealTarget(value: number) {
+  return Math.max(0, Math.round(value));
+}
+
+export function getMealSuggestionTargets(
+  remainingCalories: number,
+  remainingProtein: number,
+  remainingCarbs: number,
+  remainingFats: number,
+  remainingFiber: number,
+  mealType: string,
+  calorieCapOverride?: number
+) {
+  const resolved = resolveMealType(mealType);
+  const defaultCap = resolved ? MEAL_CALORIE_CAPS[resolved] : MEAL_CALORIE_CAP_FALLBACK;
+  const calorieCap =
+    typeof calorieCapOverride === 'number' && Number.isFinite(calorieCapOverride) && calorieCapOverride > 0
+      ? Math.round(calorieCapOverride)
+      : defaultCap;
+  const calorieTarget = Math.min(normalizeMealTarget(remainingCalories), calorieCap);
+  const safeRemainingCalories = Math.max(0, remainingCalories);
+  const scale = safeRemainingCalories > 0 ? Math.min(1, calorieTarget / safeRemainingCalories) : 0;
+
+  return {
+    calories: calorieTarget,
+    protein: normalizeMealTarget(remainingProtein * scale),
+    carbs: normalizeMealTarget(remainingCarbs * scale),
+    fats: normalizeMealTarget(remainingFats * scale),
+    fiber: normalizeMealTarget(remainingFiber * scale),
+  };
+}
+
 export async function suggestMeal(
   remainingCalories: number,
   remainingProtein: number,
@@ -383,17 +427,28 @@ export async function suggestMeal(
   remainingFats: number,
   remainingFiber: number,
   mealType: string,
-  dietPreference?: DietPreference
+  dietPreference?: DietPreference,
+  calorieCap?: number
 ) {
+  const mealTargets = getMealSuggestionTargets(
+    remainingCalories,
+    remainingProtein,
+    remainingCarbs,
+    remainingFats,
+    remainingFiber,
+    mealType,
+    calorieCap
+  );
+
   const messages: ChatMessage[] = [
     {
       role: 'user',
       content: mealSuggestionPrompt({
-        remainingCalories,
-        remainingProtein,
-        remainingCarbs,
-        remainingFats,
-        remainingFiber,
+        remainingCalories: mealTargets.calories,
+        remainingProtein: mealTargets.protein,
+        remainingCarbs: mealTargets.carbs,
+        remainingFats: mealTargets.fats,
+        remainingFiber: mealTargets.fiber,
         mealType,
         dietPreference,
       }),
@@ -431,11 +486,11 @@ export async function suggestMeal(
         { item: 'Curd', portion: '1 katori' },
       ],
       nutrition: {
-        calories: Math.max(0, Math.round(remainingCalories)),
-        protein: Math.max(0, Math.round(remainingProtein)),
-        carbs: Math.max(0, Math.round(remainingCarbs)),
-        fats: Math.max(0, Math.round(remainingFats)),
-        fiber: Math.max(0, Math.round(remainingFiber)),
+        calories: mealTargets.calories,
+        protein: mealTargets.protein,
+        carbs: mealTargets.carbs,
+        fats: mealTargets.fats,
+        fiber: mealTargets.fiber,
       },
       reason: 'Balances protein, carbs, fibre and a little healthy fat to fill your remaining goals.',
     };

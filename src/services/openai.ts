@@ -106,7 +106,8 @@ export async function suggestMeal(
   remainingFats: number,
   remainingFiber: number,
   mealType: string,
-  dietPreference?: DietPreference
+  dietPreference?: DietPreference,
+  calorieCap?: number
 ): Promise<MealSuggestion> {
   return aiCall<MealSuggestion>('suggest-meal', {
     remainingCalories,
@@ -116,6 +117,7 @@ export async function suggestMeal(
     remainingFiber,
     mealType,
     dietPreference,
+    calorieCap,
   });
 }
 

@@ -60,7 +60,8 @@ export const aiController = {
         req.body.remainingFats,
         req.body.remainingFiber,
         req.body.mealType,
-        req.body.dietPreference
+        req.body.dietPreference,
+        req.body.calorieCap
       )
     ),
 

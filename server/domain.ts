@@ -9,7 +9,7 @@ import { z } from 'zod';
 // and nutritionSeed.ts import the enums from this module.
 // ---------------------------------------------------------------------------
 
-export { DietPreference, Gender, ActivityLevel, MealType, MealUnit } from './shared/enums.js';
+export { DietPreference, Gender, ActivityLevel, MealType, MealUnit, MEAL_CALORIE_CAPS } from './shared/enums.js';
 
 // Loosely-typed nutrient bag shared across responses.
 export type NutrientInfo = Record<string, number>;

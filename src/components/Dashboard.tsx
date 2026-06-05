@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
-import { NutrientInfo, DietPreference, MealSuggestion, NutrientSuggestion, DietaryInsight } from '../types';
+import { NutrientInfo, DietPreference, MealType, MealSuggestion, NutrientSuggestion, DietaryInsight, MEAL_CALORIE_CAPS } from '../types';
 import {
   suggestMeal,
   suggestFoodForNutrient,
@@ -19,6 +19,17 @@ import { NutrientSuggestionPanel } from './dashboard/NutrientSuggestionPanel';
 import { WeightProgress } from './dashboard/WeightProgress';
 import { MacroDistributionChart, WeeklyNutritionTrendsChart } from './dashboard/ChartSection';
 
+// Pick a sensible default meal type from the current time of day. The user can
+// override this in the suggestion panel.
+const defaultMealTypeForNow = (): MealType => {
+  const hour = new Date().getHours();
+  if (hour < 10) return MealType.Breakfast;
+  if (hour < 12) return MealType.MorningSnack;
+  if (hour < 15) return MealType.Lunch;
+  if (hour < 18) return MealType.EveningSnack;
+  return MealType.Dinner;
+};
+
 export const Dashboard = () => {
   const { user } = useAuth();
   const { selectedDate, isToday } = useSelectedDate();
@@ -34,6 +45,15 @@ export const Dashboard = () => {
   const [dietPreference, setDietPreference] = useState<DietPreference>(
     user?.profile.dietPreference || DietPreference.Vegetarian
   );
+  const [mealType, setMealType] = useState<MealType>(() => defaultMealTypeForNow());
+  const [calorieCap, setCalorieCap] = useState<number>(() => MEAL_CALORIE_CAPS[defaultMealTypeForNow()]);
+
+  // Changing the meal type resets the calorie cap to that meal's default. The
+  // user can still override it afterwards via the cap input.
+  const handleMealTypeChange = (value: MealType) => {
+    setMealType(value);
+    setCalorieCap(MEAL_CALORIE_CAPS[value]);
+  };
 
   // Re-sync the diet preference when the signed-in user's preference changes
   // (e.g. after re-login), so meal suggestions don't use a previous user's
@@ -57,14 +77,6 @@ export const Dashboard = () => {
     const remainingFats = goals.targetFats - todayStats.totalFats;
     const remainingFiber = (goals.targetFiber || 30) - (micronutrients.fiber || 0);
 
-    // Determine which meal type to suggest
-    const currentHour = new Date().getHours();
-    let mealType = 'dinner';
-    if (currentHour < 10) mealType = 'breakfast';
-    else if (currentHour < 12) mealType = 'morning snack';
-    else if (currentHour < 15) mealType = 'lunch';
-    else if (currentHour < 18) mealType = 'evening snack';
-
     try {
       const suggestion = await suggestMeal(
         Math.round(remainingCalories),
@@ -73,7 +85,8 @@ export const Dashboard = () => {
         Math.round(remainingFats),
         Math.round(remainingFiber),
         mealType,
-        dietPreference
+        dietPreference,
+        calorieCap
       );
       setMealSuggestion(suggestion);
     } catch (error) {
@@ -175,6 +188,10 @@ export const Dashboard = () => {
       <MealSuggestionPanel
         dietPreference={dietPreference}
         setDietPreference={setDietPreference}
+        mealType={mealType}
+        setMealType={handleMealTypeChange}
+        calorieCap={calorieCap}
+        setCalorieCap={setCalorieCap}
         suggestingMeal={suggestingMeal}
         mealSuggestion={mealSuggestion}
         onSuggest={handleMealSuggestion}
