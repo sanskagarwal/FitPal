@@ -625,9 +625,7 @@ Behaviour:
    - "slice" for bread/cake; otherwise "gram"/"ml"/"serving"/"cup"/"oz"
 2. Ask SHORT clarifying questions ONLY when something important is genuinely ambiguous (unclear quantity, unknown food, which meal to edit, or you cannot reasonably infer the meal type). Do not over-ask — make sensible assumptions for obvious cases and state them.
 3. Infer mealType from the food or the stated time when possible (e.g. dosa in the morning -> breakfast).
-4. CRITICAL — the "nutrients" object MUST be for exactly ONE single unit of the food, NEVER for the total amount the user ate. The app multiplies these per-unit values by "unitQuantity" itself, so if you pre-multiply you will DOUBLE-COUNT. Set unitQuantity to how many units the user had, and keep nutrients for just one unit.
-5. Keep every nutrient realistic for a typical Indian home portion of ONE unit. Base estimates on the food's actual ingredients and standard portion weight, and stay within plausible ranges for that dish. Do not overstate calories, protein, carbs, fats or any micronutrient — when unsure, prefer a sensible mid-range value over an extreme one.
-6. Set "confidence" per food to how sure you are about its nutrition values: "high" for well-known dishes with reliable, standard nutrition; "medium" when you can reasonably estimate; "low" when the food is unusual, ambiguous, or you are largely guessing. Being honest with a "low" lets the user correct the calories.
+4. Set "unitQuantity" to how many units the user had (e.g. 2 for "2 rotis"). Do NOT estimate any calories or nutrients — a separate step fills those in. Focus ONLY on correctly identifying each food, the unit Indians use for it, and the quantity.
 
 ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
 {
@@ -644,21 +642,18 @@ ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
       "unit": "katori",
       "unitQuantity": 2,
       "isIndian": true,
-      "category": "lunch",
-      "confidence": "high" | "medium" | "low",
-      "nutrients": {
-        "calories": number, "protein": number, "carbs": number, "fats": number,
-        "fiber": number, "sugar": number, "sodium": number,
-        "vitaminA": number, "vitaminC": number, "vitaminD": number,
-        "calcium": number, "iron": number, "magnesium": number, "potassium": number
-      }
+      "category": "lunch"
     }
   ]
 }
 
 For "delete", "foods" must be an empty array. For "update", "foods" must contain the full corrected list of foods for that meal. When status is "need_info", you may still include any foods you have already understood (with your best-guess quantities) so the user sees progress, but set status to "need_info" until the open question is resolved. When everything needed is known, set status to "ready".`;
 
-const MealChatSchema = z.object({
+// Stage 1 — extraction only. The model identifies foods, units, quantities and
+// the action; it does NOT estimate nutrition (that is stage 2). Dropping the
+// 14-field nutrients object per food makes this call's output much smaller, so
+// it streams the assistant `message` sooner than the old single-shot schema.
+const MealExtractSchema = z.object({
   status: z.enum(['need_info', 'ready']),
   action: z.enum(['log', 'update', 'delete']),
   targetMealId: z.string().nullable(),
@@ -673,11 +668,171 @@ const MealChatSchema = z.object({
       unitQuantity: z.number(),
       isIndian: z.boolean(),
       category: z.string().nullable(),
+    })
+  ),
+});
+
+type ExtractedMeal = z.infer<typeof MealExtractSchema>;
+type ExtractedFood = ExtractedMeal['foods'][number];
+
+const ZERO_NUTRIENTS: NutrientInfo = {
+  calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0, sugar: 0, sodium: 0,
+  vitaminA: 0, vitaminC: 0, vitaminD: 0, calcium: 0, iron: 0, magnesium: 0, potassium: 0,
+};
+
+// Stage 2 — nutrition lookup. Given already-identified foods, return per-ONE-unit
+// nutrition only (no parsing, no conversation).
+const NUTRITION_FILL_SYSTEM_PROMPT = `You are a precise nutrition database for Indian foods. For each food given, return the nutrition for exactly ONE unit of the stated unit — NEVER the total amount eaten (the app multiplies by quantity itself). Keep every value realistic for a typical Indian home portion of one unit; when unsure prefer a sensible mid-range value over an extreme one. Set "confidence" to "high" for well-known dishes with reliable nutrition, "medium" when reasonably estimating, "low" when largely guessing. Return the "foods" array in the SAME ORDER and with the SAME COUNT as the input list.`;
+
+const NutritionFillSchema = z.object({
+  foods: z.array(
+    z.object({
+      servingSize: z.string(),
       confidence: z.enum(['high', 'medium', 'low']),
       nutrients: NutrientsSchema,
     })
   ),
 });
+
+interface FilledNutrition {
+  servingSize: string;
+  confidence: 'high' | 'medium' | 'low';
+  nutrients: NutrientInfo;
+}
+
+// One batched model call covering several foods at once (not one call per food).
+async function batchFillNutrition(foods: ExtractedFood[]): Promise<FilledNutrition[]> {
+  const list = foods
+    .map((f, i) => `${i + 1}. "${f.name}" — one ${f.unit} (${f.servingSize})`)
+    .join('\n');
+  const messages: ChatMessage[] = [
+    {
+      role: 'user',
+      content: `Provide per-one-unit nutrition for each of these Indian foods, in the same order:\n${list}`,
+    },
+  ];
+  const { foods: filled } = await completeStructured(
+    messages,
+    NutritionFillSchema,
+    'nutrition_fill',
+    0.2,
+    NUTRITION_FILL_SYSTEM_PROMPT
+  );
+  return filled.map((f) => ({
+    servingSize: f.servingSize,
+    confidence: f.confidence,
+    nutrients: f.nutrients as NutrientInfo,
+  }));
+}
+
+// Single-food fallback, reusing the existing per-unit re-estimator.
+async function singleFillNutrition(food: ExtractedFood): Promise<FilledNutrition> {
+  const { servingSize, confidence, nutrients } = await reestimateNutrientsForUnit(food.name, food.unit);
+  return { servingSize, confidence, nutrients };
+}
+
+// Always returns exactly one result per input food. Tries the batched call, then
+// fills any gaps individually so a length mismatch or batch failure never breaks
+// the request.
+async function fillNutrition(foods: ExtractedFood[]): Promise<FilledNutrition[]> {
+  if (foods.length === 0) return [];
+  let batched: FilledNutrition[] = [];
+  try {
+    batched = await batchFillNutrition(foods);
+  } catch (error) {
+    console.warn('Batched nutrition fill failed, filling individually:', error);
+  }
+  if (batched.length === foods.length) return batched;
+  const out: FilledNutrition[] = [];
+  for (let i = 0; i < foods.length; i++) {
+    out.push(batched[i] ?? (await singleFillNutrition(foods[i])));
+  }
+  return out;
+}
+
+interface GroundedFood {
+  name: string;
+  servingSize: string;
+  unit: MealUnit;
+  unitQuantity: number;
+  isIndian: boolean;
+  category?: string;
+  confidence: 'high' | 'medium' | 'low';
+  nutrients: NutrientInfo;
+}
+
+// Resolve per-unit nutrition for extracted foods: cache first (consistent + free),
+// then ONE batched model call for any misses, learning confident results back
+// into the cache. When `useModel` is false (clarifying turns whose proposal is
+// never shown) misses get a zero placeholder so no model call is made at all.
+async function resolveFoodsNutrition(
+  foods: ExtractedFood[],
+  useModel: boolean
+): Promise<GroundedFood[]> {
+  const grounded: (GroundedFood | null)[] = new Array(foods.length).fill(null);
+  const misses: { index: number; food: ExtractedFood }[] = [];
+
+  foods.forEach((f, i) => {
+    const cached = getCachedNutrition(f.name, f.unit);
+    if (cached) {
+      grounded[i] = {
+        name: f.name,
+        servingSize: cached.servingSize || f.servingSize,
+        unit: f.unit,
+        unitQuantity: f.unitQuantity,
+        isIndian: f.isIndian,
+        category: f.category ?? undefined,
+        confidence: 'high',
+        nutrients: cached.nutrients as NutrientInfo,
+      };
+    } else {
+      misses.push({ index: i, food: f });
+    }
+  });
+
+  if (misses.length > 0) {
+    const filled = useModel
+      ? await fillNutrition(misses.map((m) => m.food))
+      : misses.map(() => ({ servingSize: '', confidence: 'low' as const, nutrients: { ...ZERO_NUTRIENTS } }));
+    misses.forEach((m, j) => {
+      const fill = filled[j];
+      if (useModel && fill.confidence === 'high') {
+        putCachedNutrition(m.food.name, m.food.unit, {
+          servingSize: fill.servingSize,
+          nutrients: fill.nutrients as Record<string, number>,
+        });
+      }
+      grounded[m.index] = {
+        name: m.food.name,
+        servingSize: fill.servingSize || m.food.servingSize,
+        unit: m.food.unit,
+        unitQuantity: m.food.unitQuantity,
+        isIndian: m.food.isIndian,
+        category: m.food.category ?? undefined,
+        confidence: fill.confidence,
+        nutrients: fill.nutrients,
+      };
+    });
+  }
+
+  return grounded as GroundedFood[];
+}
+
+// Combine a stage-1 extraction with resolved nutrition into the final result.
+// Nutrition is only looked up via the model when the meal is ready to act on;
+// clarifying turns (need_info) skip it, keeping those turns to a single call.
+async function assembleChatResult(extracted: ExtractedMeal) {
+  const foods = await resolveFoodsNutrition(extracted.foods, extracted.status === 'ready');
+  return {
+    status: extracted.status,
+    action: extracted.action,
+    targetMealId: extracted.targetMealId ?? null,
+    message: extracted.message || '',
+    mealType: extracted.mealType ?? undefined,
+    time: extracted.time ?? null,
+    foods,
+  };
+}
 
 interface LoggedMealSummary {
   id: string;
@@ -691,8 +846,8 @@ async function chatLogMeal(
   loggedMeals: LoggedMealSummary[] = []
 ) {
   const { system, messages } = buildChatPrompt(history, loggedMeals);
-  const parsed = await completeStructured(messages, MealChatSchema, 'meal_chat', 0.2, system);
-  return groundChatResult(parsed);
+  const extracted = await completeStructured(messages, MealExtractSchema, 'meal_extract', 0.2, system);
+  return assembleChatResult(extracted);
 }
 
 // Streaming variant: emits the assistant's `message` text via `onMessage` as it
@@ -702,14 +857,14 @@ async function chatLogMealStream(
   history: { role: 'user' | 'assistant'; content: string }[],
   loggedMeals: LoggedMealSummary[],
   onMessage: (text: string) => void
-): Promise<ReturnType<typeof groundChatResult>> {
+) {
   const { system, messages } = buildChatPrompt(history, loggedMeals);
   const result = streamText({
     model: getModel(),
     system,
     messages,
     temperature: 0.2,
-    output: Output.object({ schema: MealChatSchema, name: 'meal_chat' }),
+    output: Output.object({ schema: MealExtractSchema, name: 'meal_extract' }),
   });
 
   let lastMessage = '';
@@ -720,8 +875,8 @@ async function chatLogMealStream(
     }
   }
 
-  const parsed = await result.output;
-  return groundChatResult(parsed);
+  const extracted = await result.output;
+  return assembleChatResult(extracted);
 }
 
 // Build the system prompt (with current time + already-logged meals context)
@@ -741,46 +896,6 @@ Current local time is ${now.toLocaleString()}. Use this to infer meal type/time 
 
 ${mealsContext}`;
   return { system, messages: [...history] };
-}
-
-// Ground a parsed meal result against the nutrition cache. A cache hit overrides
-// macros (cached values win) but keeps the model's micronutrient estimates; a
-// confident miss is learned for next time so the same food logs consistently.
-function groundChatResult(parsed: z.infer<typeof MealChatSchema>) {
-  return {
-    status: parsed.status,
-    action: parsed.action,
-    targetMealId: parsed.targetMealId ?? null,
-    message: parsed.message || '',
-    mealType: parsed.mealType ?? undefined,
-    time: parsed.time ?? null,
-    foods: parsed.foods.map((f) => {
-      const cached = getCachedNutrition(f.name, f.unit);
-      let nutrients = f.nutrients as NutrientInfo;
-      let servingSize = f.servingSize;
-      let confidence = f.confidence;
-      if (cached) {
-        nutrients = { ...nutrients, ...cached.nutrients };
-        if (cached.servingSize) servingSize = cached.servingSize;
-        confidence = 'high';
-      } else if (f.confidence === 'high') {
-        putCachedNutrition(f.name, f.unit, {
-          servingSize: f.servingSize,
-          nutrients: f.nutrients as Record<string, number>,
-        });
-      }
-      return {
-        name: f.name,
-        servingSize,
-        unit: f.unit,
-        unitQuantity: f.unitQuantity,
-        isIndian: f.isIndian,
-        category: f.category ?? undefined,
-        confidence,
-        nutrients,
-      };
-    }),
-  };
 }
 
 // ---------------------------------------------------------------------------
