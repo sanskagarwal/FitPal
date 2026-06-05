@@ -1,47 +1,17 @@
 // User Profile Types
-export enum DietPreference {
-  Vegetarian = 'vegetarian',
-  Eggetarian = 'eggetarian',
-  NonVegetarian = 'non-vegetarian',
-}
+//
+// The string enums below are the contract with the server and persisted data.
+// They are defined once in `server/shared/enums.ts` (a dependency-free module)
+// and re-exported here so the frontend and backend can no longer drift apart.
+import {
+  DietPreference,
+  Gender,
+  ActivityLevel,
+  MealType,
+  MealUnit,
+} from '../../server/shared/enums';
 
-export enum Gender {
-  Male = 'male',
-  Female = 'female',
-  Other = 'other',
-}
-
-export enum ActivityLevel {
-  Sedentary = 'sedentary',
-  Light = 'light',
-  Moderate = 'moderate',
-  Active = 'active',
-  VeryActive = 'very-active',
-}
-
-export enum MealType {
-  Breakfast = 'breakfast',
-  MorningSnack = 'morning-snack',
-  Lunch = 'lunch',
-  EveningSnack = 'evening-snack',
-  Dinner = 'dinner',
-}
-
-export enum MealUnit {
-  Serving = 'serving',
-  Katori = 'katori',
-  Bowl = 'bowl',
-  Plate = 'plate',
-  Cup = 'cup',
-  Glass = 'glass',
-  Tbsp = 'tbsp',
-  Tsp = 'tsp',
-  Piece = 'piece',
-  Slice = 'slice',
-  Gram = 'gram',
-  Ml = 'ml',
-  Oz = 'oz',
-}
+export { DietPreference, Gender, ActivityLevel, MealType, MealUnit };
 
 export interface User {
   id: string;

@@ -3,56 +3,13 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 // Shared server-side domain types.
 //
-// These enums mirror src/types but live here because the server is built in
-// isolation (its tsconfig rootDir is ./server). The string values are the
-// contract with the frontend and persisted data, so they must not change.
-// This is the single source of truth on the server — ai.ts, validation.ts and
-// nutritionSeed.ts all import from here instead of re-declaring strings.
+// The string enums are the contract with the frontend and persisted data, so
+// they are defined once in `shared/enums.ts` and re-exported here (and from
+// `src/types/index.ts`) to stop the two sides drifting. ai.ts, validation.ts
+// and nutritionSeed.ts import the enums from this module.
 // ---------------------------------------------------------------------------
 
-export enum DietPreference {
-  Vegetarian = 'vegetarian',
-  Eggetarian = 'eggetarian',
-  NonVegetarian = 'non-vegetarian',
-}
-
-export enum Gender {
-  Male = 'male',
-  Female = 'female',
-  Other = 'other',
-}
-
-export enum ActivityLevel {
-  Sedentary = 'sedentary',
-  Light = 'light',
-  Moderate = 'moderate',
-  Active = 'active',
-  VeryActive = 'very-active',
-}
-
-export enum MealType {
-  Breakfast = 'breakfast',
-  MorningSnack = 'morning-snack',
-  Lunch = 'lunch',
-  EveningSnack = 'evening-snack',
-  Dinner = 'dinner',
-}
-
-export enum MealUnit {
-  Serving = 'serving',
-  Katori = 'katori',
-  Bowl = 'bowl',
-  Plate = 'plate',
-  Cup = 'cup',
-  Glass = 'glass',
-  Tbsp = 'tbsp',
-  Tsp = 'tsp',
-  Piece = 'piece',
-  Slice = 'slice',
-  Gram = 'gram',
-  Ml = 'ml',
-  Oz = 'oz',
-}
+export { DietPreference, Gender, ActivityLevel, MealType, MealUnit } from './shared/enums.js';
 
 // Loosely-typed nutrient bag shared across responses.
 export type NutrientInfo = Record<string, number>;
