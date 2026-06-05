@@ -17,7 +17,7 @@ import { MealBreakdownTable } from './dashboard/MealBreakdownTable';
 import { MicronutrientsPanel } from './dashboard/MicronutrientsPanel';
 import { NutrientSuggestionPanel } from './dashboard/NutrientSuggestionPanel';
 import { WeightProgress } from './dashboard/WeightProgress';
-import { ChartSection } from './dashboard/ChartSection';
+import { MacroDistributionChart, WeeklyNutritionTrendsChart } from './dashboard/ChartSection';
 
 export const Dashboard = () => {
   const { user } = useAuth();
@@ -157,6 +157,21 @@ export const Dashboard = () => {
         onNutrientSuggestion={handleNutrientSuggestion}
       />
 
+      <MicronutrientsPanel
+        micronutrients={micronutrients}
+        goals={goals}
+        suggestingNutrient={suggestingNutrient}
+        onNutrientSuggestion={handleNutrientSuggestion}
+        isToday={isToday}
+        selectedDate={selectedDate}
+      />
+
+      <NutrientSuggestionPanel
+        suggestingNutrient={suggestingNutrient}
+        nutrientSuggestion={nutrientSuggestion}
+        onDismiss={() => setNutrientSuggestion(null)}
+      />
+
       <MealSuggestionPanel
         dietPreference={dietPreference}
         setDietPreference={setDietPreference}
@@ -176,29 +191,15 @@ export const Dashboard = () => {
 
       <MealBreakdownTable mealTypeStats={mealTypeStats} isToday={isToday} selectedDate={selectedDate} />
 
-      <MicronutrientsPanel
-        micronutrients={micronutrients}
-        goals={goals}
-        suggestingNutrient={suggestingNutrient}
-        onNutrientSuggestion={handleNutrientSuggestion}
-        isToday={isToday}
-        selectedDate={selectedDate}
-      />
-
-      <NutrientSuggestionPanel
-        suggestingNutrient={suggestingNutrient}
-        nutrientSuggestion={nutrientSuggestion}
-        onDismiss={() => setNutrientSuggestion(null)}
-      />
-
       <WeightProgress recentWeight={recentWeight} goals={goals} />
 
-      <ChartSection
+      <MacroDistributionChart
         todayStats={todayStats}
-        weeklyData={weeklyData}
         isToday={isToday}
         selectedDate={selectedDate}
       />
+
+      <WeeklyNutritionTrendsChart weeklyData={weeklyData} />
     </div>
   );
 };
