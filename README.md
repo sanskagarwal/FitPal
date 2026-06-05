@@ -35,8 +35,52 @@ Some features are actively being worked on — see **[TODO.md](docs/TODO.md)** f
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Node.js 24+**
 - An **Azure OpenAI** resource with a GPT-4o (or compatible) deployment — required for AI features.
+- **Docker** (for the recommended self-host path) **or Node.js 24+** (to run from source).
+
+The AI key is read **server-side only** — it is never shipped to the browser.
+
+---
+
+## 🐳 Self-Hosting with Docker (recommended)
+
+The whole app (frontend + API) runs as a single container. Your data is stored
+as JSON on a mounted volume, so it survives upgrades.
+
+```bash
+# 1. Grab the compose file and the env template
+curl -O https://raw.githubusercontent.com/sanskagarwal/FitPal/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/sanskagarwal/FitPal/main/.env.example
+
+# 2. Edit .env with your Azure OpenAI details:
+#      AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+#      AZURE_OPENAI_KEY=your_api_key_here
+#      AZURE_OPENAI_DEPLOYMENT=gpt-4o
+
+# 3. Start it
+docker compose up -d
+```
+
+Open <http://localhost:3001>. Update later with `docker compose pull && docker compose up -d`.
+
+> The image is published as `ghcr.io/sanskagarwal/fitpal`. To build locally
+> instead, comment out `image:` in
+> `docker-compose.yml`, uncomment `build: .`, and run `docker compose up -d --build`.
+
+### Run the container directly (without compose)
+
+```bash
+docker run -d --name fitpal -p 3001:3001 \
+  -e AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com \
+  -e AZURE_OPENAI_KEY=your_api_key_here \
+  -e AZURE_OPENAI_DEPLOYMENT=gpt-4o \
+  -v fitpal-data:/app/data \
+  ghcr.io/sanskagarwal/fitpal:latest
+```
+
+---
+
+## 🧑‍💻 Run from source (development)
 
 ### 1. Install
 
@@ -56,13 +100,10 @@ cp .env.example .env
 Edit `.env` with your Azure OpenAI details:
 
 ```env
-VITE_AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
-VITE_AZURE_OPENAI_KEY=your_api_key_here
-VITE_AZURE_OPENAI_DEPLOYMENT=gpt-4o
-VITE_API_URL=http://localhost:3001/api
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+AZURE_OPENAI_KEY=your_api_key_here
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
 ```
-
-> ⚠️ The AI calls run **client-side**, so the key is shipped to the browser in a dev build. Use a scoped/proxied key for any real deployment — never a production secret.
 
 ### 3. Run
 
@@ -70,14 +111,22 @@ VITE_API_URL=http://localhost:3001/api
 npm run dev:all
 ```
 
-- Frontend → http://localhost:5173
-- Storage server → http://localhost:3001
+- Frontend → http://localhost:5173 (proxies `/api` to the server)
+- Storage + AI server → http://localhost:3001
 
 Or run them in separate terminals:
 
 ```bash
 npm run dev      # frontend
-npm run server   # storage server
+npm run server   # storage + AI server
+```
+
+### Production build from source
+
+```bash
+npm run build                 # build the frontend
+cd server && npm run build    # build the server
+node dist/index.js            # serves API + the built frontend on one port
 ```
 
 ---
@@ -102,12 +151,13 @@ npm run server   # storage server
 - Recharts (charts) · Motion / Framer Motion (animations) · Lucide (icons) · react-markdown
 - vite-plugin-pwa (offline + installable)
 
-**Storage server**
+**Server**
 - Express 5 + TypeScript (tsx for dev)
 - File-based JSON storage under `server/data/`
+- Serves the built frontend and proxies all AI calls (single process in production)
 
 **AI**
-- Azure OpenAI (GPT-4o) via the `openai` SDK with structured outputs (`zod`)
+- Azure OpenAI (GPT-4o) via the `openai` SDK with structured outputs (`zod`), called **server-side** so the key stays private
 
 ---
 
@@ -118,13 +168,16 @@ FitPal/
 ├── src/                  # Frontend SPA
 │   ├── components/       # UI (Dashboard, FoodLogger, WeightTracker, …)
 │   ├── context/          # AuthContext
-│   ├── services/         # openai.ts (Azure OpenAI integration)
+│   ├── services/         # openai.ts (calls the backend /api/ai routes)
 │   ├── utils/            # db.ts (API client), helpers, export/import
 │   └── types/            # Shared TypeScript types
-├── server/               # Local Express storage server
-│   ├── index.ts          # REST API
+├── server/               # Express storage + AI server
+│   ├── index.ts          # REST API + static frontend hosting
+│   ├── ai.ts             # Azure OpenAI integration (server-side)
 │   └── data/             # JSON files (per user)
 ├── public/               # PWA icons & static assets
+├── Dockerfile            # Multi-stage build (single-process image)
+├── docker-compose.yml    # Self-host deployment
 ├── vite.config.ts        # Vite + PWA config
 └── package.json
 ```

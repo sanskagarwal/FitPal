@@ -1,0 +1,18 @@
+services:
+  fitpal:
+    container_name: fitpal
+    # Pull the published image…
+    image: ghcr.io/sanskagarwal/fitpal:latest
+    # …or build it locally instead (comment out `image:` above and uncomment):
+    # build: .
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    volumes:
+      # Your meals, weights and profile are stored as JSON on this volume.
+      - fitpal-data:/app/data
+
+volumes:
+  fitpal-data:

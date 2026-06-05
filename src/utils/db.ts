@@ -1,6 +1,6 @@
 import { User, MealEntry, WeightEntry, NotificationSettings, Streak } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Helper function for API calls
 async function apiCall(endpoint: string, method: string = 'GET', body?: any) {
