@@ -90,21 +90,43 @@ export function mealSuggestionPrompt(args: {
 }): string {
   const mealLabel = args.mealType.replace(/-/g, ' ');
   const count = args.count ?? 3;
+  const isSnack = /snack/.test(args.mealType.toLowerCase());
   const varietyLine = args.varietyHint
     ? `\nFor inspiration, lean towards these cuisines this time: ${args.varietyHint}.`
     : '';
-  return `Suggest ${count} distinct Indian ${mealLabel} options, each a single meal with realistic portions.
 
-Treat these as the target budget for ONE meal (each option individually), not the user's entire remaining day:
+  const intro = isSnack
+    ? `Suggest ${count} distinct Indian ${mealLabel} options. These are light snacks, NOT full meals — think simple, easy single items or a small pairing (e.g. a handful of roasted chana, a fruit, a bowl of sprouts, masala chai with a biscuit, dhokla, a small bowl of curd).`
+    : `Suggest ${count} distinct Indian ${mealLabel} options, each a single meal with realistic portions.`;
+
+  const budgetIntro = isSnack
+    ? `Treat these as the target budget for ONE snack (each option individually), not the user's entire remaining day:`
+    : `Treat these as the target budget for ONE meal (each option individually), not the user's entire remaining day:`;
+
+  const varietyGuidance = isSnack
+    ? `Make the ${count} options genuinely different from each other (e.g. something savoury, something sweet, something fruit- or protein-based). Keep them quick and simple — do not turn a snack into a plated meal with multiple dishes, a grain base and sides.`
+    : `Make the ${count} options genuinely different from each other: different main dish, grain/base, and cooking style, drawing from different regional cuisines. Avoid defaulting to the most common dishes (e.g. plain dal-roti every time) and avoid near-duplicates or minor variants of the same meal.`;
+
+  const portionLine = isSnack
+    ? `Use common, easily available Indian foods. Keep portions small and realistic for a snack (katori, piece, glass, handful, tbsp, etc.). For each option, all nutrition numbers must be the totals for that whole snack.`
+    : `Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). Do not combine multiple full meals or try to exhaust a large daily calorie gap in one option. For each option, all nutrition numbers must be the totals for that whole meal.`;
+
+  const accuracyLine = `IMPORTANT — accurate nutrition: The numbers above are only a guide for CHOOSING what to suggest; do NOT just copy them back. Report the REAL nutrition of the exact foods and portions in each option. Protein especially must reflect the actual ingredients (e.g. plain roti/rice/potato dishes are low in protein; dal, paneer, curd, eggs, soya, chana and meat are higher). Make each option internally consistent so calories ≈ protein×4 + carbs×4 + fats×9. It is fine for an option to fall short of the protein guide if the dish genuinely has less — report the truthful value rather than inflating it.`;
+
+  return `${intro}
+
+${budgetIntro}
 Calories: ${args.remainingCalories} kcal
 Protein: ${args.remainingProtein}g
 Carbs: ${args.remainingCarbs}g
 Fats: ${args.remainingFats}g
 Fiber: ${args.remainingFiber}g${dietLine(args.dietPreference, 'foods')}
 
-Make the ${count} options genuinely different from each other: different main dish, grain/base, and cooking style, drawing from different regional cuisines. Avoid defaulting to the most common dishes (e.g. plain dal-roti every time) and avoid near-duplicates or minor variants of the same meal.${varietyLine}
+${varietyGuidance}${varietyLine}
 
-Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). Do not combine multiple full meals or try to exhaust a large daily calorie gap in one option. For each option, all nutrition numbers must be the totals for that whole meal.`;
+${portionLine}
+
+${accuracyLine}`;
 }
 
 export function nutrientSuggestionPrompt(

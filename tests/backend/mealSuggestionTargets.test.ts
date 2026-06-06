@@ -67,4 +67,25 @@ describe('getMealSuggestionTargets', () => {
     const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch, 0);
     expect(targets.calories).toBe(MEAL_CALORIE_CAPS[MealType.Lunch]);
   });
+
+  it('clamps each macro to a realistic share of the meal calories', () => {
+    // Only 700 kcal remaining but the user is far behind on protein (120g). The
+    // raw scaling (scale = 1) would assign the whole day's protein to one meal.
+    const targets = getMealSuggestionTargets(700, 120, 60, 60, 30, MealType.Lunch);
+    // Protein capped at 40% of 700 kcal / 4 = 70g (not 120g).
+    expect(targets.protein).toBe(70);
+    // Fats capped at 40% of 700 kcal / 9 = 31g (not 60g).
+    expect(targets.fats).toBe(31);
+    // Carbs (60g) are under the 65% ceiling, so they pass through unchanged.
+    expect(targets.carbs).toBe(60);
+  });
+
+  it('leaves macros that already fit within the realistic ceilings untouched', () => {
+    // 1500 kcal remaining capped to a 750 kcal lunch -> scale = 0.5.
+    const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch);
+    // Scaled protein 60g is below the 75g ceiling (40% of 750 / 4).
+    expect(targets.protein).toBe(60);
+    expect(targets.carbs).toBe(90);
+    expect(targets.fats).toBe(25);
+  });
 });

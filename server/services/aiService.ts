@@ -444,7 +444,41 @@ const MEAL_SUGGESTION_FALLBACK = [
   },
 ];
 
+// Lighter fallbacks for snack meal types, so a failed AI call still returns
+// simple snack foods rather than full plated meals.
+const SNACK_SUGGESTION_FALLBACK = [
+  {
+    name: 'Roasted chana',
+    description: 'A crunchy, protein-rich savoury snack.',
+    ingredients: [{ item: 'Roasted chana', portion: '1 small bowl (handful)' }],
+    reason: 'High in protein and fibre with very little fat.',
+  },
+  {
+    name: 'Fruit and curd',
+    description: 'A light, refreshing sweet snack.',
+    ingredients: [
+      { item: 'Seasonal fruit', portion: '1 bowl' },
+      { item: 'Curd', portion: '1 katori' },
+    ],
+    reason: 'Natural sugars, fibre and a little protein from curd.',
+  },
+  {
+    name: 'Sprouts chaat',
+    description: 'A tangy, no-cook protein snack.',
+    ingredients: [
+      { item: 'Moong sprouts', portion: '1 katori' },
+      { item: 'Onion, tomato and lemon', portion: 'to taste' },
+    ],
+    reason: 'Plant protein and fibre that keeps you full between meals.',
+  },
+];
+
 const MEAL_CALORIE_CAP_FALLBACK = 650;
+
+// Snack meal types get lighter, simpler suggestions than full meals.
+function isSnackMealType(mealType: string): boolean {
+  return /snack/.test(mealType.toLowerCase());
+}
 
 // Map a free-form meal type (e.g. "morning snack") to its MealType enum value
 // so spelling/spacing differences still resolve to the right calorie budget.
@@ -478,11 +512,14 @@ export function getMealSuggestionTargets(
   const safeRemainingCalories = Math.max(0, remainingCalories);
   const scale = safeRemainingCalories > 0 ? Math.min(1, calorieTarget / safeRemainingCalories) : 0;
 
+  const maxFromCalories = (energyFraction: number, kcalPerGram: number) =>
+    Math.round((calorieTarget * energyFraction) / kcalPerGram);
+
   return {
     calories: calorieTarget,
-    protein: normalizeMealTarget(remainingProtein * scale),
-    carbs: normalizeMealTarget(remainingCarbs * scale),
-    fats: normalizeMealTarget(remainingFats * scale),
+    protein: Math.min(normalizeMealTarget(remainingProtein * scale), maxFromCalories(0.4, 4)),
+    carbs: Math.min(normalizeMealTarget(remainingCarbs * scale), maxFromCalories(0.65, 4)),
+    fats: Math.min(normalizeMealTarget(remainingFats * scale), maxFromCalories(0.4, 9)),
     fiber: normalizeMealTarget(remainingFiber * scale),
   };
 }
@@ -525,9 +562,10 @@ export async function suggestMeal(
   ];
 
   try {
-    // Higher temperature so re-clicking yields genuinely different dishes
-    // instead of variants of the same meal.
-    const parsed = await completeStructured(messages, MealSuggestionsSchema, 'meal_suggestions', 0.9);
+    // Moderate temperature: enough for varied dishes (variety is also driven by
+    // the cuisine seed and explicit instructions) while keeping the reported
+    // nutrition numbers reliable. Too high makes the macros sloppy.
+    const parsed = await completeStructured(messages, MealSuggestionsSchema, 'meal_suggestions', 0.7);
     return parsed.suggestions.map((s) => ({
       name: s.name || `${mealType} suggestion`,
       description: s.description || '',
@@ -546,7 +584,8 @@ export async function suggestMeal(
     }));
   } catch (error) {
     logger.error('Error getting meal suggestion', { error: error instanceof Error ? error.message : String(error) });
-    return MEAL_SUGGESTION_FALLBACK.map((meal) => ({
+    const fallback = isSnackMealType(mealType) ? SNACK_SUGGESTION_FALLBACK : MEAL_SUGGESTION_FALLBACK;
+    return fallback.map((meal) => ({
       ...meal,
       mealType,
       nutrition: {
