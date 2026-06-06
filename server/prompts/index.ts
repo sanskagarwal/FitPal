@@ -85,18 +85,26 @@ export function mealSuggestionPrompt(args: {
   remainingFiber: number;
   mealType: string;
   dietPreference?: DietPreference;
+  count?: number;
+  varietyHint?: string;
 }): string {
   const mealLabel = args.mealType.replace(/-/g, ' ');
-  return `Suggest a single Indian ${mealLabel} meal using realistic single-meal portions.
+  const count = args.count ?? 3;
+  const varietyLine = args.varietyHint
+    ? `\nFor inspiration, lean towards these cuisines this time: ${args.varietyHint}.`
+    : '';
+  return `Suggest ${count} distinct Indian ${mealLabel} options, each a single meal with realistic portions.
 
-Treat these as the target budget for one meal, not the user's entire remaining day:
+Treat these as the target budget for ONE meal (each option individually), not the user's entire remaining day:
 Calories: ${args.remainingCalories} kcal
 Protein: ${args.remainingProtein}g
 Carbs: ${args.remainingCarbs}g
 Fats: ${args.remainingFats}g
 Fiber: ${args.remainingFiber}g${dietLine(args.dietPreference, 'foods')}
 
-Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). Do not combine multiple full meals or try to exhaust a large daily calorie gap in one suggestion. All nutrition numbers must be the totals for the whole meal.`;
+Make the ${count} options genuinely different from each other: different main dish, grain/base, and cooking style, drawing from different regional cuisines. Avoid defaulting to the most common dishes (e.g. plain dal-roti every time) and avoid near-duplicates or minor variants of the same meal.${varietyLine}
+
+Use common, easily available Indian foods. Keep portions realistic (katori, piece, glass, tbsp, etc.). Do not combine multiple full meals or try to exhaust a large daily calorie gap in one option. For each option, all nutrition numbers must be the totals for that whole meal.`;
 }
 
 export function nutrientSuggestionPrompt(

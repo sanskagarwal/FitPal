@@ -36,7 +36,7 @@ export const Dashboard = () => {
   const { loading, todayStats, weeklyData, recentWeight, mealTypeStats, micronutrients } =
     useDashboardData(user, selectedDate);
 
-  const [mealSuggestion, setMealSuggestion] = useState<MealSuggestion | null>(null);
+  const [mealSuggestions, setMealSuggestions] = useState<MealSuggestion[] | null>(null);
   const [suggestingMeal, setSuggestingMeal] = useState(false);
   const [nutrientSuggestion, setNutrientSuggestion] = useState<NutrientSuggestion | null>(null);
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
@@ -68,7 +68,7 @@ export const Dashboard = () => {
     if (!user || !todayStats) return;
 
     setSuggestingMeal(true);
-    setMealSuggestion(null);
+    setMealSuggestions(null);
 
     const goals = user.profile.goals;
     const remainingCalories = goals.targetCalories - todayStats.totalCalories;
@@ -88,7 +88,7 @@ export const Dashboard = () => {
         dietPreference,
         calorieCap
       );
-      setMealSuggestion(suggestion);
+      setMealSuggestions(suggestion);
     } catch (error) {
       console.error('Error getting meal suggestion:', error);
     } finally {
@@ -193,9 +193,9 @@ export const Dashboard = () => {
         calorieCap={calorieCap}
         setCalorieCap={setCalorieCap}
         suggestingMeal={suggestingMeal}
-        mealSuggestion={mealSuggestion}
+        mealSuggestions={mealSuggestions}
         onSuggest={handleMealSuggestion}
-        onDismiss={() => setMealSuggestion(null)}
+        onDismiss={() => setMealSuggestions(null)}
       />
 
       <InsightPanel

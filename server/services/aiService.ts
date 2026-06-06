@@ -363,7 +363,7 @@ export async function getDietaryInsights(
 // ---------------------------------------------------------------------------
 // Meal suggestion
 // ---------------------------------------------------------------------------
-const MealSuggestionSchema = z.object({
+const MealSuggestionItemSchema = z.object({
   name: z.string(),
   description: z.string(),
   ingredients: z.array(z.object({ item: z.string(), portion: z.string() })),
@@ -376,6 +376,73 @@ const MealSuggestionSchema = z.object({
   }),
   reason: z.string(),
 });
+
+const MealSuggestionsSchema = z.object({
+  suggestions: z.array(MealSuggestionItemSchema).min(3),
+});
+
+// How many distinct options we ask the model for each time.
+const MEAL_SUGGESTION_COUNT = 3;
+
+// Regional cuisines we rotate through so re-clicking surfaces genuinely
+// different dishes rather than variants of the same meal. A random subset is
+// fed to the model as a soft nudge each call.
+const INDIAN_CUISINE_STYLES = [
+  'North Indian',
+  'South Indian',
+  'Bengali',
+  'Gujarati',
+  'Maharashtrian',
+  'Punjabi',
+  'Rajasthani',
+  'Kerala',
+  'Hyderabadi',
+  'Goan',
+  'Kashmiri',
+  'Tamil',
+  'Andhra',
+  'Indo-Chinese',
+];
+
+function buildVarietyHint(): string {
+  const shuffled = [...INDIAN_CUISINE_STYLES].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, MEAL_SUGGESTION_COUNT).join(', ');
+}
+
+// Distinct fallbacks used if the AI call fails, so the user still sees variety.
+const MEAL_SUGGESTION_FALLBACK = [
+  {
+    name: 'Dal, roti and sabzi',
+    description: 'A simple, balanced North Indian plate.',
+    ingredients: [
+      { item: 'Dal (lentils)', portion: '1 katori' },
+      { item: 'Roti', portion: '2 pieces' },
+      { item: 'Mixed vegetable sabzi', portion: '1 katori' },
+      { item: 'Curd', portion: '1 katori' },
+    ],
+    reason: 'Balances protein, carbs, fibre and a little healthy fat.',
+  },
+  {
+    name: 'Sambar rice with poriyal',
+    description: 'A comforting South Indian combination.',
+    ingredients: [
+      { item: 'Sambar', portion: '1 katori' },
+      { item: 'Steamed rice', portion: '1 katori' },
+      { item: 'Vegetable poriyal', portion: '1 katori' },
+    ],
+    reason: 'Lentils and vegetables give protein and fibre with light fat.',
+  },
+  {
+    name: 'Rajma with jeera rice',
+    description: 'A protein-rich kidney bean curry with cumin rice.',
+    ingredients: [
+      { item: 'Rajma (kidney beans)', portion: '1 katori' },
+      { item: 'Jeera rice', portion: '1 katori' },
+      { item: 'Salad', portion: '1 plate' },
+    ],
+    reason: 'Beans add plant protein and fibre to keep you full.',
+  },
+];
 
 const MEAL_CALORIE_CAP_FALLBACK = 650;
 
@@ -451,40 +518,37 @@ export async function suggestMeal(
         remainingFiber: mealTargets.fiber,
         mealType,
         dietPreference,
+        count: MEAL_SUGGESTION_COUNT,
+        varietyHint: buildVarietyHint(),
       }),
     },
   ];
 
   try {
-    const parsed = await completeStructured(messages, MealSuggestionSchema, 'meal_suggestion', 0.5);
-    return {
-      name: parsed.name || `${mealType} suggestion`,
-      description: parsed.description || '',
+    // Higher temperature so re-clicking yields genuinely different dishes
+    // instead of variants of the same meal.
+    const parsed = await completeStructured(messages, MealSuggestionsSchema, 'meal_suggestions', 0.9);
+    return parsed.suggestions.map((s) => ({
+      name: s.name || `${mealType} suggestion`,
+      description: s.description || '',
       mealType,
-      ingredients: parsed.ingredients
+      ingredients: s.ingredients
         .map((i) => ({ item: String(i.item || ''), portion: String(i.portion || '') }))
         .filter((i) => i.item),
       nutrition: {
-        calories: Math.round(parsed.nutrition.calories || 0),
-        protein: Math.round(parsed.nutrition.protein || 0),
-        carbs: Math.round(parsed.nutrition.carbs || 0),
-        fats: Math.round(parsed.nutrition.fats || 0),
-        fiber: Math.round(parsed.nutrition.fiber || 0),
+        calories: Math.round(s.nutrition.calories || 0),
+        protein: Math.round(s.nutrition.protein || 0),
+        carbs: Math.round(s.nutrition.carbs || 0),
+        fats: Math.round(s.nutrition.fats || 0),
+        fiber: Math.round(s.nutrition.fiber || 0),
       },
-      reason: parsed.reason || '',
-    };
+      reason: s.reason || '',
+    }));
   } catch (error) {
     logger.error('Error getting meal suggestion', { error: error instanceof Error ? error.message : String(error) });
-    return {
-      name: 'Balanced Indian plate',
-      description: 'A simple, balanced meal using everyday Indian foods.',
+    return MEAL_SUGGESTION_FALLBACK.map((meal) => ({
+      ...meal,
       mealType,
-      ingredients: [
-        { item: 'Dal (lentils)', portion: '1 katori' },
-        { item: 'Roti or rice', portion: '2 pieces / 1 katori' },
-        { item: 'Mixed vegetable sabzi', portion: '1 katori' },
-        { item: 'Curd', portion: '1 katori' },
-      ],
       nutrition: {
         calories: mealTargets.calories,
         protein: mealTargets.protein,
@@ -492,8 +556,7 @@ export async function suggestMeal(
         fats: mealTargets.fats,
         fiber: mealTargets.fiber,
       },
-      reason: 'Balances protein, carbs, fibre and a little healthy fat to fill your remaining goals.',
-    };
+    }));
   }
 }
 

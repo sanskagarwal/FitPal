@@ -108,8 +108,8 @@ export async function suggestMeal(
   mealType: string,
   dietPreference?: DietPreference,
   calorieCap?: number
-): Promise<MealSuggestion> {
-  return aiCall<MealSuggestion>('suggest-meal', {
+): Promise<MealSuggestion[]> {
+  return aiCall<MealSuggestion[]>('suggest-meal', {
     remainingCalories,
     remainingProtein,
     remainingCarbs,
