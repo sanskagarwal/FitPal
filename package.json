@@ -16,14 +16,10 @@
     "release": "node scripts/release.mjs"
   },
   "dependencies": {
-    "date-fns": "^4.4.0",
-    "idb": "^8.0.3",
     "lucide-react": "^1.17.0",
     "motion": "^12.40.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.16.0",
     "recharts": "^3.8.1"
   },
   "devDependencies": {

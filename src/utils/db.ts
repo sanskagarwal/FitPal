@@ -233,14 +233,3 @@ export const getStreak = async (userId: string): Promise<Streak | undefined> => 
     return undefined;
   }
 };
-
-// Legacy compatibility - keep these functions but they now do nothing
-export const initDB = async (): Promise<unknown> => {
-  // No-op for server-based storage
-  return null;
-};
-
-export const clearAllData = async (): Promise<void> => {
-  // No-op - data is on server
-  console.warn('clearAllData is not supported with server-based storage');
-};

@@ -91,8 +91,14 @@ curl -o .env https://raw.githubusercontent.com/sanskagarwal/FitPal/main/.env.exa
 docker compose up -d
 ```
 
-Open <http://localhost:3001>. Update later with
-`docker compose pull && docker compose up -d`.
+Open <http://localhost:3001>.
+
+To update to the latest image later:
+
+```bash
+docker compose pull
+docker compose up -d
+```
 
 > Image: `ghcr.io/sanskagarwal/fitpal`. To build locally, swap `image:` for
 > `build: .` in `docker-compose.yml` and run `docker compose up -d --build`.

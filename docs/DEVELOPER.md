@@ -254,7 +254,7 @@ FitPal/
 - React 19 + TypeScript
 - Vite 8 (dev server + build)
 - Tailwind CSS v4 (`@tailwindcss/postcss`)
-- Recharts (charts), Motion (animations), Lucide (icons), react-markdown
+- Recharts (charts), Motion (animations), Lucide (icons)
 - vite-plugin-pwa + workbox-window (installable, offline)
 
 **Storage server**

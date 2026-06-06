@@ -135,17 +135,6 @@ export interface NotificationSettings {
   snack?: string;
 }
 
-// Azure OpenAI Types
-export interface OpenAIRequest {
-  prompt: string;
-  context?: string;
-}
-
-export interface OpenAIResponse {
-  message: string;
-  data?: unknown;
-}
-
 // Recipe Type
 export interface Recipe {
   id: string;
