@@ -11,6 +11,7 @@ interface MealChatProps {
   chatInput: string;
   setChatInput: (value: string) => void;
   chatLoading: boolean;
+  chatPreparing: boolean;
   proposedMeal: MealChatResult | null;
   todayMeals: MealEntry[];
   onSend: () => void;
@@ -25,6 +26,7 @@ export const MealChat = ({
   chatInput,
   setChatInput,
   chatLoading,
+  chatPreparing,
   proposedMeal,
   todayMeals,
   onSend,
@@ -39,7 +41,7 @@ export const MealChat = ({
   useEffect(() => {
     const el = chatScrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [chatMessages, chatLoading]);
+  }, [chatMessages, chatLoading, chatPreparing]);
 
   return (
     <div className="card">
@@ -85,6 +87,14 @@ export const MealChat = ({
               <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
                 <Spinner className="w-4 h-4" />
                 Thinking…
+              </div>
+            </div>
+          )}
+          {chatPreparing && !proposedMeal && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
+                <Spinner className="w-4 h-4" />
+                Preparing your meal…
               </div>
             </div>
           )}

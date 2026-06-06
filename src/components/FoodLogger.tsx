@@ -60,6 +60,7 @@ export const FoodLogger = () => {
         chatInput={chat.chatInput}
         setChatInput={chat.setChatInput}
         chatLoading={chat.chatLoading}
+        chatPreparing={chat.chatPreparing}
         proposedMeal={chat.proposedMeal}
         todayMeals={todayMeals}
         onSend={chat.sendChat}

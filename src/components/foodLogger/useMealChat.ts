@@ -32,6 +32,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatPreparing, setChatPreparing] = useState(false);
   const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(null);
 
   const buildMealFromParsed = (result: MealChatResult, existing?: MealEntry): MealEntry | null => {
@@ -84,6 +85,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     setChatMessages(newHistory);
     setChatInput('');
     setChatLoading(true);
+    setChatPreparing(false);
     setProposedMeal(null);
 
     try {
@@ -106,7 +108,9 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
       const updateAssistant = (text: string) =>
         setChatMessages([...newHistory, { role: 'assistant', content: text }]);
 
-      const result = await chatLogMealStream(newHistory, loggedMeals, updateAssistant);
+      const result = await chatLogMealStream(newHistory, loggedMeals, updateAssistant, () =>
+        setChatPreparing(true)
+      );
       // Ensure the final message is shown even if no stream chunks arrived.
       setChatMessages([...newHistory, { role: 'assistant', content: result.message }]);
       const isActionable =
@@ -123,6 +127,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
       ]);
     } finally {
       setChatLoading(false);
+      setChatPreparing(false);
     }
   };
 
@@ -160,6 +165,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   const resetChat = () => {
     setChatMessages([]);
     setChatInput('');
+    setChatPreparing(false);
     setProposedMeal(null);
   };
 
@@ -182,6 +188,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     chatInput,
     setChatInput,
     chatLoading,
+    chatPreparing,
     proposedMeal,
     sendChat,
     confirmChatMeal,

@@ -171,11 +171,14 @@ export async function chatLogMeal(
 
 // Streaming variant. Calls `onMessage` with the assistant's reply text as it is
 // generated, then resolves with the final, nutrition-grounded result. Falls
-// back to the non-streaming endpoint if streaming is unavailable.
+// back to the non-streaming endpoint if streaming is unavailable. `onMessageDone`
+// fires once the reply has fully streamed but the server is still grounding the
+// meal's nutrition, so the UI can show a "preparing" indicator for that gap.
 export async function chatLogMealStream(
   history: MealChatMessage[],
   loggedMeals: LoggedMealSummary[],
-  onMessage: (text: string) => void
+  onMessage: (text: string) => void,
+  onMessageDone?: () => void
 ): Promise<MealChatResult> {
   const response = await fetch(`${API_BASE_URL}/ai/chat-meal-stream`, {
     method: 'POST',
@@ -208,6 +211,8 @@ export async function chatLogMealStream(
   await readNdjsonStream(response.body, (event) => {
     if (event.t === 'msg' && typeof event.v === 'string') {
       onMessage(event.v);
+    } else if (event.t === 'msg_done') {
+      onMessageDone?.();
     } else if (event.t === 'done') {
       final = event.v as MealChatResult;
     } else if (event.t === 'error') {

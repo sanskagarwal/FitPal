@@ -87,6 +87,7 @@ export const aiController = {
 
   // Streaming chat endpoint. Responds with newline-delimited JSON (NDJSON):
   //   {"t":"msg","v":"<assistant message so far>"}  — emitted as the reply streams
+  //   {"t":"msg_done"}                              — reply finished; grounding nutrition next
   //   {"t":"done","v":<MealChatResult>}             — final, nutrition-grounded result
   //   {"t":"error","v":"<reason>"}                  — only if both streaming and fallback fail
   // If streaming fails mid-flight, fall back to the non-streaming path (which
@@ -101,8 +102,11 @@ export const aiController = {
     const write = (obj: unknown) => res.write(`${JSON.stringify(obj)}\n`);
 
     try {
-      const final = await chatLogMealStream(history, loggedMeals, (text) =>
-        write({ t: 'msg', v: text })
+      const final = await chatLogMealStream(
+        history,
+        loggedMeals,
+        (text) => write({ t: 'msg', v: text }),
+        () => write({ t: 'msg_done' })
       );
       write({ t: 'done', v: final });
     } catch (error: unknown) {

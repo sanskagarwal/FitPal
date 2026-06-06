@@ -913,7 +913,8 @@ export async function chatLogMeal(
 export async function chatLogMealStream(
   history: { role: 'user' | 'assistant'; content: string }[],
   loggedMeals: LoggedMealSummary[],
-  onMessage: (text: string) => void
+  onMessage: (text: string) => void,
+  onMessageDone?: () => void
 ) {
   const system = mealChatSystemPrompt(loggedMeals);
   const result = streamText({
@@ -933,5 +934,6 @@ export async function chatLogMealStream(
   }
 
   const extracted = await result.output;
+  if (extracted.status === 'ready' && extracted.foods.length > 0) onMessageDone?.();
   return assembleChatResult(extracted);
 }
