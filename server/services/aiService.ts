@@ -275,7 +275,7 @@ export async function getRecipeSuggestions(
     { role: 'user', content: recipesPrompt(preferences, goals, recentFoods, dietPreference) },
   ];
   try {
-    const { recipes } = await completeStructured(messages, RecipesSchema, 'recipe_suggestions', 0.5);
+    const { recipes } = await completeStructured(messages, RecipesSchema, 'recipe_suggestions', 0.6);
     return recipes.map((recipe) => ({
       id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: recipe.name,
@@ -617,7 +617,7 @@ export async function suggestFoodForNutrient(
   ];
 
   try {
-    const parsed = await completeStructured(messages, NutrientSuggestionSchema, 'nutrient_suggestion', 0.3);
+    const parsed = await completeStructured(messages, NutrientSuggestionSchema, 'nutrient_suggestion', 0.45);
     return {
       nutrient: nutrientName,
       foods: parsed.foods
@@ -665,7 +665,7 @@ export async function suggestGoals(
   ];
 
   try {
-    return await completeStructured(messages, GoalsSchema, 'nutrition_goals', 0.3);
+    return await completeStructured(messages, GoalsSchema, 'nutrition_goals', 0.1);
   } catch (error) {
     logger.error('Error getting goal suggestions', { error: error instanceof Error ? error.message : String(error) });
     const bmr =
