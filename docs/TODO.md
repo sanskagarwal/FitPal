@@ -4,7 +4,6 @@ Planned and in-progress work for FitPal, ordered by priority.
 
 | Priority | Task | Notes |
 | --- | --- | --- |
-| High | Wire up data backup/restore UI | Export/import logic already exists in `src/utils/exportImport.ts` but is not connected to any UI. Add Export (JSON/CSV) and Import buttons, e.g. on the Profile page. |
 | High | Self-service account deletion | Let a user delete their account and all associated data. No delete-user path exists today. |
 | Medium | Admin management portal | Introduce an admin role to view/disable/delete users, toggle open registration, and see basic instance stats. |
 | Medium | Barcode / photo-based food logging | Let users log food by scanning a barcode or photo instead of typing, building on the existing AI food analysis. |

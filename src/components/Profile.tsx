@@ -2,6 +2,7 @@ import { User } from 'lucide-react';
 import { useProfileForm } from './profile/useProfileForm';
 import { ProfileForm } from './profile/ProfileForm';
 import { ProfileInfoCard } from './profile/ProfileInfoCard';
+import { DataManagementCard } from './profile/DataManagementCard';
 
 export const Profile = () => {
   const { formData, updateField, loading, message, currentWeight, handleSubmit } = useProfileForm();
@@ -28,6 +29,8 @@ export const Profile = () => {
           onSubmit={handleSubmit}
         />
       </div>
+
+      <DataManagementCard />
 
       <ProfileInfoCard />
     </div>
