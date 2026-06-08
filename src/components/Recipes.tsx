@@ -45,7 +45,7 @@ export const Recipes = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Recipe Suggestions</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Recipe Suggestions</h1>
 
       <div className="card">
         <div className="flex items-center gap-3 mb-4">

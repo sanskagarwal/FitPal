@@ -85,7 +85,7 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
   return (
     <div
       ref={containerRef}
-      className="absolute left-1/2 top-full z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 shadow-lg"
+      className="absolute left-1/2 top-full z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 p-3 shadow-lg"
       role="dialog"
       aria-label="Choose a date"
     >
@@ -93,16 +93,16 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
       <div className="mb-2 flex items-center justify-between">
         <button
           onClick={goToPrevMonth}
-          className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
           aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="text-sm font-semibold text-gray-800">{monthLabel}</span>
+        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{monthLabel}</span>
         <button
           onClick={goToNextMonth}
           disabled={nextMonthDisabled}
-          className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
           aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" />
@@ -110,7 +110,7 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
       </div>
 
       {/* Weekday labels */}
-      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-gray-400">
+      <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-gray-400 dark:text-gray-500">
         {WEEKDAYS.map((w) => (
           <div key={w}>{w}</div>
         ))}
@@ -125,9 +125,9 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
           const isToday = isSameDay(day, today);
           const hasCalories = (caloriesByDay[toDateInputValue(day)] || 0) > 0;
 
-          let tone = 'bg-gray-100 text-gray-400';
-          if (hasCalories) tone = 'bg-primary-500 text-white hover:bg-primary-600';
-          else if (!isFuture) tone = 'bg-gray-100 text-gray-600 hover:bg-gray-200';
+          let tone = 'bg-gray-100 text-gray-400 dark:bg-gray-700/50 dark:text-gray-500';
+          if (hasCalories) tone = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500';
+          else if (!isFuture) tone = 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
 
           return (
             <button
@@ -156,12 +156,12 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
       </div>
 
       {/* Legend */}
-      <div className="mt-3 flex items-center justify-center gap-4 border-t border-gray-100 pt-2 text-[11px] text-gray-500">
+      <div className="mt-3 flex items-center justify-center gap-4 border-t border-gray-100 dark:border-gray-700 pt-2 text-[11px] text-gray-500 dark:text-gray-400">
         <span className="flex items-center gap-1.5">
           <span className="h-3 w-3 rounded bg-primary-500" /> Logged
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded bg-gray-100" /> No meals
+          <span className="h-3 w-3 rounded bg-gray-100 dark:bg-gray-700" /> No meals
         </span>
       </div>
     </div>

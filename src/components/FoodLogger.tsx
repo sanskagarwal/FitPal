@@ -42,7 +42,7 @@ export const FoodLogger = () => {
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Log Your Meal</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Log Your Meal</h1>
         <DateNavigator />
       </div>
 

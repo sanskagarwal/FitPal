@@ -27,37 +27,37 @@ const getMotivationalMessage = (
     return {
       icon: AlertCircle,
       message: `You're ${Math.round(caloriePercent - 100)}% over your calorie goal. Consider lighter meals for the rest of the day! 💪`,
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
-      textColor: 'text-red-800',
-      iconColor: 'text-red-600',
+      bgColor: 'bg-red-50 dark:bg-red-900/30',
+      borderColor: 'border-red-200 dark:border-red-800',
+      textColor: 'text-red-800 dark:text-red-200',
+      iconColor: 'text-red-600 dark:text-red-400',
     };
   } else if (caloriePercent > 100) {
     return {
       icon: AlertCircle,
       message: `You've reached your calorie goal! Great job tracking. Keep it balanced! 🎯`,
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-200',
-      textColor: 'text-amber-800',
-      iconColor: 'text-amber-600',
+      bgColor: 'bg-amber-50 dark:bg-amber-900/30',
+      borderColor: 'border-amber-200 dark:border-amber-800',
+      textColor: 'text-amber-800 dark:text-amber-200',
+      iconColor: 'text-amber-600 dark:text-amber-400',
     };
   } else if (caloriePercent >= 80) {
     return {
       icon: TrendingUp,
       message: `You're on track! ${Math.round(100 - caloriePercent)}% of calories remaining. Keep going! 🌟`,
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200',
-      textColor: 'text-green-800',
-      iconColor: 'text-green-600',
+      bgColor: 'bg-green-50 dark:bg-green-900/30',
+      borderColor: 'border-green-200 dark:border-green-800',
+      textColor: 'text-green-800 dark:text-green-200',
+      iconColor: 'text-green-600 dark:text-green-400',
     };
   }
   return {
     icon: Sparkles,
     message: `Great start! You have plenty of room for nutritious meals today. Stay consistent! ✨`,
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-800',
-    iconColor: 'text-blue-600',
+    bgColor: 'bg-blue-50 dark:bg-blue-900/30',
+    borderColor: 'border-blue-200 dark:border-blue-800',
+    textColor: 'text-blue-800 dark:text-blue-200',
+    iconColor: 'text-blue-600 dark:text-blue-400',
   };
 };
 

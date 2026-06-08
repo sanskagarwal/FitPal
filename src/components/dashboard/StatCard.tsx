@@ -35,13 +35,13 @@ export const StatCard = ({
     <motion.div className="stat-card" variants={statCardItem}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-primary-700 font-medium">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          <p className="text-xs text-gray-600">{targetLabel}</p>
+          <p className="text-sm text-primary-700 dark:text-primary-300 font-medium">{label}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-300">{targetLabel}</p>
         </div>
         <Icon className={`w-10 h-10 ${iconClassName}`} />
       </div>
-      <div className="mt-2 bg-gray-200 rounded-full h-2">
+      <div className="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
         <div
           className={`${barClassName} h-2 rounded-full transition-all`}
           style={{ width: `${Math.min(percentage, 100)}%` }}
@@ -51,7 +51,7 @@ export const StatCard = ({
         <button
           onClick={onSuggest}
           disabled={suggestDisabled}
-          className="mt-2 text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 min-h-11"
+          className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1 min-h-11"
         >
           <Lightbulb className="w-3 h-3" />
           Suggest Foods

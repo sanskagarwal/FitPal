@@ -23,9 +23,9 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50 pt-safe px-safe">
+      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 pt-safe px-safe">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🥗</span>
@@ -42,8 +42,8 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                   onClick={() => onNavigate(item.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
                     currentPage === item.id
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -58,8 +58,8 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
               onClick={() => onNavigate('profile')}
               className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
                 currentPage === 'profile'
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
               }`}
               title="View profile"
             >
@@ -68,7 +68,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
             </button>
             <button
               onClick={logout}
-              className="hidden md:flex items-center gap-2 text-gray-600 hover:text-red-600"
+              className="hidden md:flex items-center gap-2 text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400"
             >
               <LogOut className="w-4 h-4" />
               Logout
@@ -77,7 +77,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden -mr-2 inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+              className="md:hidden -mr-2 inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -92,7 +92,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
+            className="md:hidden border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 overflow-hidden"
           >
             <nav className="p-4 space-y-2">
               {menuItems.map((item) => {
@@ -106,8 +106,8 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                     }}
                     className={`w-full flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
                       currentPage === item.id
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -122,8 +122,8 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                 }}
                 className={`w-full flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
                   currentPage === 'profile'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
                 }`}
               >
                 <UserCircle className="w-4 h-4" />
@@ -131,7 +131,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
               </button>
               <button
                 onClick={logout}
-                className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg"
+                className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
@@ -148,8 +148,8 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-600">
+      <footer className="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 mt-12">
+        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>FitPal - Track Indian meals smartly & privately</p>
           <p className="mt-1">All data stored locally on your device</p>
         </div>

@@ -28,7 +28,7 @@ export const LogWeightForm = ({
       <h2 className="text-xl font-semibold mb-4">Log Your Weight</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Weight (kg) *
           </label>
           <input
@@ -44,7 +44,7 @@ export const LogWeightForm = ({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Body Fat % (optional)
           </label>
           <input
@@ -60,7 +60,7 @@ export const LogWeightForm = ({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Notes (optional)
           </label>
           <input

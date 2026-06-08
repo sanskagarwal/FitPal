@@ -25,13 +25,13 @@ export const MicronutrientCard = ({
 }: MicronutrientCardProps) => {
   return (
     <div className={`p-3 ${bgClassName} rounded-lg`}>
-      <p className="text-sm text-gray-600">{label}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-300">{label}</p>
       <p className={`text-xl font-bold ${valueClassName}`}>{Math.round(value)}{unit}</p>
-      <p className="text-xs text-gray-500">Target: {target}{unit}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400">Target: {target}{unit}</p>
       <button
         onClick={onSuggest}
         disabled={suggestDisabled}
-        className="mt-1 text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 min-h-11"
+        className="mt-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-1 min-h-11"
       >
         <Lightbulb className="w-3 h-3" />
         Suggest

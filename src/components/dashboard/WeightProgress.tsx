@@ -13,20 +13,20 @@ export const WeightProgress = ({ recentWeight, goals }: WeightProgressProps) => 
       <h2 className="text-xl font-semibold mb-4">Current Progress</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
-          <p className="text-sm text-gray-600">Current Weight</p>
-          <p className="text-2xl font-bold text-primary-600">{recentWeight.weight} kg</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Current Weight</p>
+          <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">{recentWeight.weight} kg</p>
         </div>
         <div>
-          <p className="text-sm text-gray-600">Target Weight</p>
-          <p className="text-2xl font-bold text-gray-900">{goals?.targetWeight} kg</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Target Weight</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{goals?.targetWeight} kg</p>
         </div>
         <div>
-          <p className="text-sm text-gray-600">BMI</p>
-          <p className="text-2xl font-bold text-gray-900">{recentWeight.bmi}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">BMI</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{recentWeight.bmi}</p>
         </div>
         <div>
-          <p className="text-sm text-gray-600">To Go</p>
-          <p className="text-2xl font-bold text-amber-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">To Go</p>
+          <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
             {Math.abs(recentWeight.weight - (goals?.targetWeight || 0)).toFixed(1)} kg
           </p>
         </div>

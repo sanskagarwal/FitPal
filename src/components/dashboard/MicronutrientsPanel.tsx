@@ -31,35 +31,35 @@ export const MicronutrientsPanel = ({
   }[] = [
     {
       label: 'Fiber', value: micronutrients.fiber || 0, unit: 'g', target: goals?.targetFiber || 30,
-      bgClassName: 'bg-purple-50', valueClassName: 'text-purple-600', suggestName: 'Fiber',
+      bgClassName: 'bg-purple-50 dark:bg-purple-900/30', valueClassName: 'text-purple-600 dark:text-purple-300', suggestName: 'Fiber',
     },
     {
       label: 'Vitamin A', value: micronutrients.vitaminA || 0, unit: 'mcg', target: goals?.targetVitaminA || 900,
-      bgClassName: 'bg-orange-50', valueClassName: 'text-orange-600', suggestName: 'Vitamin A',
+      bgClassName: 'bg-orange-50 dark:bg-orange-900/30', valueClassName: 'text-orange-600 dark:text-orange-300', suggestName: 'Vitamin A',
     },
     {
       label: 'Vitamin C', value: micronutrients.vitaminC || 0, unit: 'mg', target: goals?.targetVitaminC || 90,
-      bgClassName: 'bg-green-50', valueClassName: 'text-green-600', suggestName: 'Vitamin C',
+      bgClassName: 'bg-green-50 dark:bg-green-900/30', valueClassName: 'text-green-600 dark:text-green-300', suggestName: 'Vitamin C',
     },
     {
       label: 'Vitamin D', value: micronutrients.vitaminD || 0, unit: 'mcg', target: goals?.targetVitaminD || 15,
-      bgClassName: 'bg-yellow-50', valueClassName: 'text-yellow-600', suggestName: 'Vitamin D',
+      bgClassName: 'bg-yellow-50 dark:bg-yellow-900/30', valueClassName: 'text-yellow-600 dark:text-yellow-300', suggestName: 'Vitamin D',
     },
     {
       label: 'Calcium', value: micronutrients.calcium || 0, unit: 'mg', target: goals?.targetCalcium || 1000,
-      bgClassName: 'bg-blue-50', valueClassName: 'text-blue-600', suggestName: 'Calcium',
+      bgClassName: 'bg-blue-50 dark:bg-blue-900/30', valueClassName: 'text-blue-600 dark:text-blue-300', suggestName: 'Calcium',
     },
     {
       label: 'Iron', value: micronutrients.iron || 0, unit: 'mg', target: goals?.targetIron || 18,
-      bgClassName: 'bg-red-50', valueClassName: 'text-red-600', suggestName: 'Iron',
+      bgClassName: 'bg-red-50 dark:bg-red-900/30', valueClassName: 'text-red-600 dark:text-red-300', suggestName: 'Iron',
     },
     {
       label: 'Magnesium', value: micronutrients.magnesium || 0, unit: 'mg', target: goals?.targetMagnesium || 400,
-      bgClassName: 'bg-indigo-50', valueClassName: 'text-indigo-600', suggestName: 'Magnesium',
+      bgClassName: 'bg-indigo-50 dark:bg-indigo-900/30', valueClassName: 'text-indigo-600 dark:text-indigo-300', suggestName: 'Magnesium',
     },
     {
       label: 'Potassium', value: micronutrients.potassium || 0, unit: 'mg', target: goals?.targetPotassium || 3500,
-      bgClassName: 'bg-pink-50', valueClassName: 'text-pink-600', suggestName: 'Potassium',
+      bgClassName: 'bg-pink-50 dark:bg-pink-900/30', valueClassName: 'text-pink-600 dark:text-pink-300', suggestName: 'Potassium',
     },
   ];
 

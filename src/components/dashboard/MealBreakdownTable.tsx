@@ -15,27 +15,27 @@ export const MealBreakdownTable = ({ mealTypeStats, isToday, selectedDate }: Mea
       <h2 className="text-xl font-semibold mb-4">{isToday ? "Today's" : `${formatDayLabel(selectedDate)}'s`} Meal Breakdown</h2>
       <div className="space-y-3">
         {mealTypeStats.map((stat) => (
-          <div key={stat.mealType} className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-gray-900 capitalize mb-2">{stat.mealType}</h3>
+          <div key={stat.mealType} className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 capitalize mb-2">{stat.mealType}</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
               <div>
-                <span className="text-gray-600">Calories:</span>
+                <span className="text-gray-600 dark:text-gray-300">Calories:</span>
                 <span className="ml-1 font-semibold">{Math.round(stat.calories)}</span>
               </div>
               <div>
-                <span className="text-gray-600">Protein:</span>
+                <span className="text-gray-600 dark:text-gray-300">Protein:</span>
                 <span className="ml-1 font-semibold">{Math.round(stat.protein)}g</span>
               </div>
               <div>
-                <span className="text-gray-600">Carbs:</span>
+                <span className="text-gray-600 dark:text-gray-300">Carbs:</span>
                 <span className="ml-1 font-semibold">{Math.round(stat.carbs)}g</span>
               </div>
               <div>
-                <span className="text-gray-600">Fats:</span>
+                <span className="text-gray-600 dark:text-gray-300">Fats:</span>
                 <span className="ml-1 font-semibold">{Math.round(stat.fats)}g</span>
               </div>
               <div>
-                <span className="text-gray-600">Fiber:</span>
+                <span className="text-gray-600 dark:text-gray-300">Fiber:</span>
                 <span className="ml-1 font-semibold">{Math.round(stat.fiber)}g</span>
               </div>
             </div>

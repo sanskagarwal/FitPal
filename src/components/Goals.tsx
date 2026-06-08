@@ -29,7 +29,7 @@ export const Goals = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Your Goals</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Your Goals</h1>
 
       <div className="card">
         <div className="flex items-center gap-3 mb-6">
