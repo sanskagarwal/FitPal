@@ -27,7 +27,7 @@ export const MicronutrientCard = ({
     <div className={`p-3 ${bgClassName} rounded-lg`}>
       <p className="text-sm text-gray-600 dark:text-gray-300">{label}</p>
       <p className={`text-xl font-bold ${valueClassName}`}>{Math.round(value)}{unit}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400">Target: {target}{unit}</p>
+      <p className="text-xs text-gray-600 dark:text-gray-400">Target: {target}{unit}</p>
       <button
         onClick={onSuggest}
         disabled={suggestDisabled}

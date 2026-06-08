@@ -73,7 +73,7 @@ export const FoodLogger = () => {
       {/* Divider */}
       <div className="flex items-center gap-3 pt-2">
         <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1" />
-        <span className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Or add manually</span>
+        <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Or add manually</span>
         <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1" />
       </div>
 
@@ -87,7 +87,7 @@ export const FoodLogger = () => {
               onClick={() => editor.setMealType(type)}
               className={`py-2 px-4 rounded-lg font-medium transition-colors capitalize ${
                 editor.mealType === type
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-primary-700 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
               }`}
             >

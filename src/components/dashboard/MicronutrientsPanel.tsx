@@ -43,7 +43,7 @@ export const MicronutrientsPanel = ({
     },
     {
       label: 'Vitamin D', value: micronutrients.vitaminD || 0, unit: 'mcg', target: goals?.targetVitaminD || 15,
-      bgClassName: 'bg-yellow-50 dark:bg-yellow-900/30', valueClassName: 'text-yellow-600 dark:text-yellow-300', suggestName: 'Vitamin D',
+      bgClassName: 'bg-yellow-50 dark:bg-yellow-900/30', valueClassName: 'text-yellow-700 dark:text-yellow-300', suggestName: 'Vitamin D',
     },
     {
       label: 'Calcium', value: micronutrients.calcium || 0, unit: 'mg', target: goals?.targetCalcium || 1000,

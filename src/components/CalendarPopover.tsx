@@ -126,7 +126,7 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
           const hasCalories = (caloriesByDay[toDateInputValue(day)] || 0) > 0;
 
           let tone = 'bg-gray-100 text-gray-400 dark:bg-gray-700/50 dark:text-gray-500';
-          if (hasCalories) tone = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500';
+          if (hasCalories) tone = 'bg-primary-700 text-white hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500';
           else if (!isFuture) tone = 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600';
 
           return (
