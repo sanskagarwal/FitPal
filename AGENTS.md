@@ -48,6 +48,13 @@ weight. It has three parts:
 - The server is layered: routes to controllers to services to repositories.
   Keep that separation when adding endpoints.
 - Styling uses **Tailwind CSS utility classes**. Follow existing patterns.
+- **Dark mode.** Every component must ship `dark:` variants. Reuse the
+  light-to-dark color mapping documented at the top of `src/index.css` and keep
+  text contrast at WCAG AA (the Playwright accessibility suite checks both
+  themes). The theme follows the OS color scheme; there is no in-app toggle yet.
+- **Mobile/edge-to-edge.** Use the `.pt-safe`, `.pb-safe`, and `.px-safe`
+  utilities (`src/index.css`) for safe-area insets on notched devices; the
+  viewport meta tag already sets `viewport-fit=cover`.
 - Avoid too many emojis and em-dashes in documentation. Keep it simple, subtle,
   and professional.
 - Keep changes minimal and focused, and match the surrounding code style.

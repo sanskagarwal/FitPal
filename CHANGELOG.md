@@ -10,6 +10,31 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- Dark mode: every screen now follows your operating system color scheme, with
+  contrast tuned for WCAG AA in both light and dark themes.
+- Self-service account deletion: permanently remove your account and all of your
+  data from the Profile page, gated behind your password and a typed
+  confirmation.
+- Data restore: import a previously exported backup to restore your meals,
+  weight, goals, and profile.
+- Edge-to-edge mobile support with `viewport-fit=cover` and safe-area insets so
+  content clears notches and home indicators.
+
+### Changed
+
+- Responsive layout pass across all pages for more comfortable spacing and
+  touch targets on small screens.
+
+### Fixed
+
+- Numerous accessibility issues, including low-contrast text in dark mode.
+
+### Removed
+
+- Unused frontend dependencies, trimming the install footprint.
+
 ## [0.1.0] - 2026-06-06
 
 ### Added

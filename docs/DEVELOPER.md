@@ -322,6 +322,7 @@ limiter.
 | `POST` | `/auth/login` | Public | Log in and start a session |
 | `POST` | `/auth/logout` | Public | Clear the session cookie |
 | `GET` | `/auth/me` | Required | Return the current user |
+| `DELETE` | `/auth/account` | Required | Permanently delete the account and all of its data (requires password) |
 
 ### Users
 

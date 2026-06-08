@@ -123,6 +123,8 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 
 ## Interface and polish
 
+- **Dark mode.** Every screen follows your operating system color scheme, with
+  contrast tuned for WCAG AA in both light and dark themes.
 - **Subtle motion.** Page cross-fades, staggered cards, animated chat and lists,
   and toast slide-ins (Motion).
 - **Keyboard-friendly and accessible.** Enter and Escape on forms and inline
