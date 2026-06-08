@@ -10,7 +10,7 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
     <>
       {/* Calorie Goal */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
           Daily Calories Target
         </label>
         <input
@@ -22,13 +22,13 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
           className="input-field"
           required
         />
-        <p className="text-xs text-gray-600 mt-1">Recommended: 1800-2500 for most adults</p>
+        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Recommended: 1800-2500 for most adults</p>
       </div>
 
       {/* Macros */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Protein (grams/day)
           </label>
           <input
@@ -40,11 +40,11 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
             className="input-field"
             required
           />
-          <p className="text-xs text-gray-600 mt-1">Builds muscle</p>
+          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Builds muscle</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Carbs (grams/day)
           </label>
           <input
@@ -56,11 +56,11 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
             className="input-field"
             required
           />
-          <p className="text-xs text-gray-600 mt-1">Energy source</p>
+          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Energy source</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Fats (grams/day)
           </label>
           <input
@@ -72,7 +72,7 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
             className="input-field"
             required
           />
-          <p className="text-xs text-gray-600 mt-1">Essential nutrients</p>
+          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Essential nutrients</p>
         </div>
       </div>
     </>

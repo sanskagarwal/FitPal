@@ -12,7 +12,7 @@ export const RegisterFields = ({ formData, updateField }: RegisterFieldsProps) =
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Date of Birth</label>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date of Birth</label>
           <input
             type="date"
             placeholder="Date of Birth"
@@ -24,7 +24,7 @@ export const RegisterFields = ({ formData, updateField }: RegisterFieldsProps) =
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Gender</label>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Gender</label>
           <select
             value={formData.gender}
             onChange={(e) => updateField('gender', e.target.value as Gender)}

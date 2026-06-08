@@ -14,10 +14,10 @@ export const Profile = () => {
 
       <div className="card">
         <div className="flex items-center gap-3 mb-6">
-          <User className="w-8 h-8 text-primary-600" />
+          <User className="w-8 h-8 text-primary-600 dark:text-primary-400" />
           <div>
             <h2 className="text-xl font-semibold">Personal Information</h2>
-            <p className="text-sm text-gray-600">Update your personal details and metrics</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Update your personal details and metrics</p>
           </div>
         </div>
 

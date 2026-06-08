@@ -9,11 +9,11 @@ interface AIGoalSuggestionProps {
 
 export const AIGoalSuggestion = ({ gettingSuggestion, aiExplanation, onGetSuggestions }: AIGoalSuggestionProps) => {
   return (
-    <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+    <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-purple-600" />
-          <h3 className="font-semibold text-purple-900">AI-Powered Goal Suggestions</h3>
+          <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <h3 className="font-semibold text-purple-900 dark:text-purple-200">AI-Powered Goal Suggestions</h3>
         </div>
         <button
           type="button"
@@ -26,15 +26,15 @@ export const AIGoalSuggestion = ({ gettingSuggestion, aiExplanation, onGetSugges
         </button>
       </div>
       {gettingSuggestion ? (
-        <div className="bg-white p-3 rounded">
+        <div className="bg-white dark:bg-gray-800 p-3 rounded">
           <LoadingBlock label="Crunching your profile and target to recommend goals…" />
         </div>
       ) : aiExplanation ? (
-        <div className="bg-white p-3 rounded text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+        <div className="bg-white dark:bg-gray-800 p-3 rounded text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">
           {aiExplanation}
         </div>
       ) : (
-        <p className="text-sm text-purple-700">
+        <p className="text-sm text-purple-700 dark:text-purple-300">
           Get personalized nutrition goals based on your profile using AI
         </p>
       )}

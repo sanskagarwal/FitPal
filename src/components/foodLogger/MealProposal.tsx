@@ -30,19 +30,19 @@ export const MealProposal = ({
       transition={{ duration: 0.22, ease: 'easeOut' }}
       className={`mb-4 p-4 border rounded-lg ${
         proposedMeal.action === 'delete'
-          ? 'border-red-200 bg-red-50'
-          : 'border-primary-200 bg-primary-50'
+          ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/30'
+          : 'border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-900/30'
       }`}
     >
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-gray-800">
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100">
           {proposedMeal.action === 'delete'
             ? 'Ready to delete'
             : proposedMeal.action === 'update'
             ? 'Ready to update'
             : 'Ready to log'}
           {proposedMeal.mealType && proposedMeal.action !== 'delete' && (
-            <span className="ml-2 text-sm font-normal text-gray-600 capitalize">
+            <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-300 capitalize">
               ({proposedMeal.mealType.replace('-', ' ')}
               {proposedMeal.time ? ` • ${proposedMeal.time}` : ''})
             </span>
@@ -53,7 +53,7 @@ export const MealProposal = ({
         (() => {
           const target = todayMeals.find((m) => m.id === proposedMeal.targetMealId);
           return (
-            <p className="text-sm text-gray-700 mb-3">
+            <p className="text-sm text-gray-700 dark:text-gray-200 mb-3">
               {target
                 ? `This will remove your ${target.mealType.replace('-', ' ')} (${target.foods
                     .map((fe) => fe.food.name)
@@ -65,21 +65,21 @@ export const MealProposal = ({
       ) : (
         <ul className="space-y-1 mb-3">
           {proposedMeal.foods.map((f, i) => (
-            <li key={i} className="text-sm text-gray-700 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+            <li key={i} className="text-sm text-gray-700 dark:text-gray-200 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
               <span className="flex items-center gap-2 min-w-0">
                 <span className="truncate">
                   • {f.unitQuantity} {f.unit} {f.name}
                 </span>
                 <ConfidenceBadge confidence={f.confidence} />
               </span>
-              <span className="flex items-center gap-1 text-gray-500 shrink-0">
+              <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 shrink-0">
                 <input
                   type="number"
                   min="0"
                   step="10"
                   value={Math.round(f.nutrients.calories)}
                   onChange={(e) => onUpdateProposedFoodCalories(i, parseFloat(e.target.value) || 0)}
-                  className="w-16 px-1.5 py-1 border border-gray-300 rounded text-sm bg-white"
+                  className="w-16 px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100"
                   title="Calories per unit — edit if the estimate looks off"
                 />
                 <span>×{f.unitQuantity} = {Math.round(f.nutrients.calories * f.unitQuantity)} cal</span>
@@ -90,7 +90,7 @@ export const MealProposal = ({
       )}
       {proposedMeal.action !== 'delete' &&
         proposedMeal.foods.some((f) => f.confidence === 'low') && (
-          <div className="mb-3 flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-2">
+          <div className="mb-3 flex items-start gap-2 text-xs alert-warning rounded-md px-2.5 py-2">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>
               Some items are rough estimates (marked{' '}

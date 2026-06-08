@@ -25,10 +25,10 @@ export const DataManagementCard = () => {
       )}
 
       <div className="flex items-center gap-3 mb-6">
-        <Database className="w-8 h-8 text-primary-600" />
+        <Database className="w-8 h-8 text-primary-600 dark:text-primary-400" />
         <div>
           <h2 className="text-xl font-semibold">Data &amp; Backup</h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
             Export your data for safekeeping or restore it from a backup
           </p>
         </div>
@@ -36,11 +36,11 @@ export const DataManagementCard = () => {
 
       <div className="space-y-6">
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 flex items-center gap-2">
             <Download className="w-4 h-4" />
             Export
           </h3>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             JSON is a complete backup you can restore later. CSV is a spreadsheet-friendly
             copy of your meals and weights.
           </p>
@@ -66,12 +66,12 @@ export const DataManagementCard = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+        <div className="border-t border-gray-100 dark:border-gray-700 pt-6">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 flex items-center gap-2">
             <Upload className="w-4 h-4" />
             Restore
           </h3>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             Import a FitPal JSON backup. Existing entries with the same id are updated,
             and everything is restored to your account.
           </p>

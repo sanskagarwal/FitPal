@@ -1,8 +1,8 @@
 export const GoalsTips = () => {
   return (
-    <div className="card bg-gradient-to-br from-primary-50 to-primary-100">
+    <div className="card bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-900/20">
       <h3 className="font-semibold mb-3">💡 Tips for Setting Goals</h3>
-      <ul className="space-y-2 text-sm text-gray-700">
+      <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-200">
         <li>• <strong>Slow & Steady (0.25kg/week):</strong> Best for sustainable weight loss, minimal muscle loss</li>
         <li>• <strong>Moderate (0.5kg/week):</strong> Balanced approach, recommended for most people</li>
         <li>• <strong>Aggressive (0.75-1kg/week):</strong> Faster results but requires strict adherence</li>

@@ -23,7 +23,7 @@ export const MicronutrientTargets = ({ formData, updateField }: MicronutrientTar
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {FIELDS.map(({ field, label }) => (
           <div key={field}>
-            <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">{label}</label>
             <input
               type="number"
               min="0"

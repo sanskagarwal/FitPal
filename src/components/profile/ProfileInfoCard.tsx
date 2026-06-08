@@ -1,8 +1,8 @@
 export const ProfileInfoCard = () => {
   return (
-    <div className="card bg-gradient-to-br from-blue-50 to-blue-100">
-      <h3 className="font-semibold mb-3 text-blue-900">ℹ️ About Your Data</h3>
-      <ul className="space-y-2 text-sm text-blue-800">
+    <div className="card bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20">
+      <h3 className="font-semibold mb-3 text-blue-900 dark:text-blue-200">ℹ️ About Your Data</h3>
+      <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-300">
         <li>• All your data is stored securely on the server</li>
         <li>• Data is saved in JSON files on machine (server/data/ directory)</li>
         <li>• Your privacy is completely protected - no external cloud services</li>

@@ -23,8 +23,8 @@ export const WeightGoalSection = ({
 }: WeightGoalSectionProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="p-4 bg-primary-50 rounded-lg">
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+      <div className="p-4 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           Target Weight (kg)
         </label>
@@ -38,7 +38,7 @@ export const WeightGoalSection = ({
           className="input-field"
           required
         />
-        <p className="text-xs text-gray-600 mt-1">
+        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
           {currentWeight !== null && formData.targetWeight > 0
             ? goalDirection === 'loss'
               ? `Lose ${(currentWeight - formData.targetWeight).toFixed(1)} kg to reach your goal`
@@ -51,8 +51,8 @@ export const WeightGoalSection = ({
 
       {/* Rate selector only applies when actually losing or gaining weight. */}
       {showRateSelector && (
-        <div className="p-4 bg-amber-50 rounded-lg">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="p-4 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             {goalDirection === 'gain' ? 'Weight Gain Rate (kg/week)' : 'Weight Loss Rate (kg/week)'}
           </label>
           <select
@@ -86,7 +86,7 @@ export const WeightGoalSection = ({
               : 'Calculate Goals from Weight Loss Rate'}
           </button>
           {weeksToGoal !== null && (
-            <p className="text-xs text-gray-600 mt-2">
+            <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">
               At this rate, you'll reach your goal in about{' '}
               <span className="font-semibold">
                 {weeksToGoal} {weeksToGoal === 1 ? 'week' : 'weeks'}

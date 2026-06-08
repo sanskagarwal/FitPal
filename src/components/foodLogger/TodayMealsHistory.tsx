@@ -38,14 +38,14 @@ export const TodayMealsHistory = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, height: 0, marginTop: 0, overflow: 'hidden' }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="p-4 bg-gray-50 rounded-lg"
+            className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg"
           >
             <div className="flex items-start justify-between mb-2">
               <div>
-                <h4 className="font-medium text-gray-900 capitalize">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
                   {meal.mealType.replace('-', ' ')}
                 </h4>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {new Date(meal.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
@@ -69,7 +69,7 @@ export const TodayMealsHistory = ({
               </div>
             </div>
 
-            <div className="divide-y divide-gray-200 mb-3">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700 mb-3">
               {meal.foods.map((foodEntry, idx) => {
                 const q = foodEntry.quantity || foodEntry.unitQuantity || 1;
                 const n = foodEntry.food.nutrients;
@@ -78,19 +78,19 @@ export const TodayMealsHistory = ({
                   <div key={idx} className="py-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 capitalize truncate">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 capitalize truncate">
                           {foodEntry.food.name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {foodEntry.unitQuantity} {unitLabel}
                           {foodEntry.food.servingSize ? ` • ${foodEntry.food.servingSize}` : ''}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                         {Math.round(n.calories * q)} cal
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-gray-500">
+                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs text-gray-500 dark:text-gray-400">
                       <span>P {Math.round(n.protein * q)}g</span>
                       <span>C {Math.round(n.carbs * q)}g</span>
                       <span>F {Math.round(n.fats * q)}g</span>
@@ -101,27 +101,27 @@ export const TodayMealsHistory = ({
               })}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm border-t pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm border-t dark:border-gray-700 pt-2">
               <div>
-                <span className="text-gray-600">Calories:</span>
+                <span className="text-gray-600 dark:text-gray-300">Calories:</span>
                 <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.calories)}</span>
               </div>
               <div>
-                <span className="text-gray-600">Protein:</span>
+                <span className="text-gray-600 dark:text-gray-300">Protein:</span>
                 <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.protein)}g</span>
               </div>
               <div>
-                <span className="text-gray-600">Carbs:</span>
+                <span className="text-gray-600 dark:text-gray-300">Carbs:</span>
                 <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.carbs)}g</span>
               </div>
               <div>
-                <span className="text-gray-600">Fats:</span>
+                <span className="text-gray-600 dark:text-gray-300">Fats:</span>
                 <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.fats)}g</span>
               </div>
             </div>
 
             {meal.notes && (
-              <p className="text-sm text-gray-600 mt-2 italic">Note: {meal.notes}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">Note: {meal.notes}</p>
             )}
           </motion.div>
         ))}

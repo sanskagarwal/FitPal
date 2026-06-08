@@ -49,7 +49,7 @@ export const Recipes = () => {
 
       <div className="card">
         <div className="flex items-center gap-3 mb-4">
-          <ChefHat className="w-6 h-6 text-primary-600" />
+          <ChefHat className="w-6 h-6 text-primary-600 dark:text-primary-400" />
           <h2 className="text-xl font-semibold">Get AI-Powered Recipe Ideas</h2>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -82,15 +82,15 @@ export const Recipes = () => {
             {loading ? 'Loading...' : 'Get Recipes'}
           </button>
         </div>
-        <p className="text-sm text-gray-600 mt-2">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
           Get personalized healthy Indian recipes based on your preferences and goals
         </p>
         
         {/* Error Display */}
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-800 font-medium">Error:</p>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
+          <div className="mt-4 p-4 alert-error rounded-lg">
+            <p className="text-sm font-medium">Error:</p>
+            <p className="text-sm mt-1">{error}</p>
           </div>
         )}
       </div>
@@ -100,20 +100,20 @@ export const Recipes = () => {
           {[0, 1, 2].map((i) => (
             <div key={i} className="card animate-pulse">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-8 h-8 rounded bg-gray-200 flex-shrink-0" />
+                <div className="w-8 h-8 rounded bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-full" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full" />
                 </div>
               </div>
               <div className="flex gap-4 mb-4">
-                <div className="h-3 bg-gray-200 rounded w-20" />
-                <div className="h-3 bg-gray-200 rounded w-24" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24" />
               </div>
               <div className="space-y-2">
-                <div className="h-3 bg-gray-200 rounded w-full" />
-                <div className="h-3 bg-gray-200 rounded w-5/6" />
-                <div className="h-3 bg-gray-200 rounded w-4/6" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
               </div>
             </div>
           ))}
@@ -125,14 +125,14 @@ export const Recipes = () => {
           {recipes.map((recipe) => (
             <div key={recipe.id} className="card hover:shadow-lg transition-shadow">
               <div className="flex items-start gap-3 mb-4">
-                <ChefHat className="w-8 h-8 text-primary-600 flex-shrink-0" />
+                <ChefHat className="w-8 h-8 text-primary-600 dark:text-primary-400 flex-shrink-0" />
                 <div>
                   <h3 className="font-bold text-lg">{recipe.name}</h3>
-                  <p className="text-sm text-gray-600">{recipe.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{recipe.description}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 mb-4">
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
                   {recipe.prepTime}
@@ -146,7 +146,7 @@ export const Recipes = () => {
               <div className="space-y-3">
                 <div>
                   <h4 className="font-semibold text-sm mb-2">Ingredients:</h4>
-                  <ul className="text-sm text-gray-700 space-y-1">
+                  <ul className="text-sm text-gray-700 dark:text-gray-200 space-y-1">
                     {recipe.ingredients.map((ingredient, idx) => (
                       <li key={idx}>• {ingredient}</li>
                     ))}
@@ -155,30 +155,30 @@ export const Recipes = () => {
 
                 <div>
                   <h4 className="font-semibold text-sm mb-2">Instructions:</h4>
-                  <ol className="text-sm text-gray-700 space-y-1">
+                  <ol className="text-sm text-gray-700 dark:text-gray-200 space-y-1">
                     {recipe.instructions.map((instruction, idx) => (
                       <li key={idx}>{idx + 1}. {instruction}</li>
                     ))}
                   </ol>
                 </div>
 
-                <div className="pt-3 border-t border-gray-200">
+                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                   <h4 className="font-semibold text-sm mb-2">Nutrition (per serving):</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-gray-600">Calories:</span>
+                      <span className="text-gray-600 dark:text-gray-300">Calories:</span>
                       <span className="font-medium ml-2">{recipe.nutrients.calories}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Protein:</span>
+                      <span className="text-gray-600 dark:text-gray-300">Protein:</span>
                       <span className="font-medium ml-2">{recipe.nutrients.protein}g</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Carbs:</span>
+                      <span className="text-gray-600 dark:text-gray-300">Carbs:</span>
                       <span className="font-medium ml-2">{recipe.nutrients.carbs}g</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Fats:</span>
+                      <span className="text-gray-600 dark:text-gray-300">Fats:</span>
                       <span className="font-medium ml-2">{recipe.nutrients.fats}g</span>
                     </div>
                   </div>
@@ -191,9 +191,9 @@ export const Recipes = () => {
 
       {!loading && hasSearched && recipes.length === 0 && (
         <div className="card text-center py-12">
-          <ChefHat className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <h2 className="text-lg font-semibold text-gray-700">No recipes found</h2>
-          <p className="text-sm text-gray-500">Try different preferences or a broader description.</p>
+          <ChefHat className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">No recipes found</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Try different preferences or a broader description.</p>
         </div>
       )}
     </div>

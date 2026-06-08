@@ -20,19 +20,19 @@ export const DangerZoneCard = () => {
   } = useDeleteAccount();
 
   return (
-    <div className="card border border-red-200">
+    <div className="card border border-red-200 dark:border-red-800">
       <div className="flex items-center gap-3 mb-4">
-        <AlertTriangle className="w-8 h-8 text-red-600" />
+        <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
         <div>
-          <h2 className="text-xl font-semibold text-red-700">Danger Zone</h2>
-          <p className="text-sm text-gray-600">Irreversible actions for your account</p>
+          <h2 className="text-xl font-semibold text-red-700 dark:text-red-400">Danger Zone</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-300">Irreversible actions for your account</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-sm font-medium text-gray-900">Delete account</h3>
-          <p className="text-xs text-gray-500">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Delete account</h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Permanently remove your account and all meals, weights, and settings. This
             cannot be undone. Consider exporting a backup first.
           </p>
@@ -54,15 +54,15 @@ export const DangerZoneCard = () => {
           aria-modal="true"
           aria-labelledby="delete-account-title"
         >
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-6 h-6 text-red-600" />
-              <h3 id="delete-account-title" className="text-lg font-semibold text-gray-900">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <h3 id="delete-account-title" className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Delete your account?
               </h3>
             </div>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
               This permanently deletes your account and all of your data. This action cannot
               be undone.
             </p>
@@ -71,7 +71,7 @@ export const DangerZoneCard = () => {
               <div>
                 <label
                   htmlFor="delete-password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
                 >
                   Current password
                 </label>
@@ -89,7 +89,7 @@ export const DangerZoneCard = () => {
               <div>
                 <label
                   htmlFor="delete-confirm"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1"
                 >
                   Type <span className="font-semibold">{CONFIRM_PHRASE}</span> to confirm
                 </label>
@@ -103,7 +103,7 @@ export const DangerZoneCard = () => {
                 />
               </div>
 
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             </div>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

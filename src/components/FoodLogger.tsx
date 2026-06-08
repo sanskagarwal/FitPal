@@ -47,8 +47,8 @@ export const FoodLogger = () => {
       </div>
 
       {!isToday && (
-        <div className="card bg-amber-50 border border-amber-200 py-3">
-          <p className="text-sm text-amber-800">
+        <div className="card alert-warning py-3">
+          <p className="text-sm">
             You're logging for <span className="font-semibold">{formatDayLabel(selectedDate)}</span>. New meals will be saved to this date.
           </p>
         </div>
@@ -72,14 +72,14 @@ export const FoodLogger = () => {
 
       {/* Divider */}
       <div className="flex items-center gap-3 pt-2">
-        <div className="h-px bg-gray-200 flex-1" />
-        <span className="text-xs font-medium uppercase tracking-wide text-gray-400">Or add manually</span>
-        <div className="h-px bg-gray-200 flex-1" />
+        <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1" />
+        <span className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">Or add manually</span>
+        <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1" />
       </div>
 
       {/* Meal Type Selection */}
       <div className="card">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Meal Type</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Meal Type</label>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
           {MEAL_TYPES.map((type) => (
             <button
@@ -88,7 +88,7 @@ export const FoodLogger = () => {
               className={`py-2 px-4 rounded-lg font-medium transition-colors capitalize ${
                 editor.mealType === type
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               {type.replace('-', ' ')}

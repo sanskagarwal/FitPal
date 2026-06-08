@@ -37,19 +37,19 @@ export const SelectedFoodsList = ({
 
   return (
     <div className="card">
-      <h3 className="font-medium text-gray-700 mb-4">Selected Foods</h3>
+      <h3 className="font-medium text-gray-700 dark:text-gray-200 mb-4">Selected Foods</h3>
       <div className="space-y-3">
         {selectedFoods.map((entry, index) => (
-          <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 bg-gray-50 rounded-lg">
+          <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
             <div className="flex-1 min-w-0">
               <p className="font-medium flex items-center gap-2">
                 <span className="truncate">{entry.food.name}</span>
                 <ConfidenceBadge confidence={entry.food.confidence} />
               </p>
-              <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-sm text-gray-600 mt-0.5">
+              <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-sm text-gray-600 dark:text-gray-300 mt-0.5">
                 <span>{entry.food.servingSize} •</span>
                 {reestimatingIndex === index ? (
-                  <span className="flex items-center gap-1 text-gray-500">
+                  <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                     <Spinner className="w-3.5 h-3.5" /> updating…
                   </span>
                 ) : (
@@ -60,7 +60,7 @@ export const SelectedFoodsList = ({
                       step="10"
                       value={Math.round(entry.food.nutrients.calories)}
                       onChange={(e) => onUpdateFoodCalories(index, parseFloat(e.target.value) || 0)}
-                      className="w-16 px-1.5 py-0.5 border border-gray-300 rounded text-sm"
+                      className="w-16 px-1.5 py-0.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm"
                       title="Calories per unit — edit if the estimate looks off"
                       aria-label={`Calories per unit for ${entry.food.name}`}
                     />
@@ -80,7 +80,7 @@ export const SelectedFoodsList = ({
               />
               <button
                 onClick={() => onRemoveFood(index)}
-                className="text-red-500 hover:text-red-700 p-2"
+                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 p-2"
                 aria-label={`Remove ${entry.food.name}`}
               >
                 <X className="w-5 h-5" />
@@ -91,23 +91,23 @@ export const SelectedFoodsList = ({
       </div>
 
       {/* Totals */}
-      <div className="mt-4 p-4 bg-primary-50 rounded-lg">
+      <div className="mt-4 p-4 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
         <h4 className="font-semibold mb-2">Total Nutrition</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-gray-600">Calories</p>
+            <p className="text-gray-600 dark:text-gray-300">Calories</p>
             <p className="text-lg font-bold">{Math.round(calculateTotalNutrients().calories)}</p>
           </div>
           <div>
-            <p className="text-gray-600">Protein</p>
+            <p className="text-gray-600 dark:text-gray-300">Protein</p>
             <p className="text-lg font-bold">{Math.round(calculateTotalNutrients().protein)}g</p>
           </div>
           <div>
-            <p className="text-gray-600">Carbs</p>
+            <p className="text-gray-600 dark:text-gray-300">Carbs</p>
             <p className="text-lg font-bold">{Math.round(calculateTotalNutrients().carbs)}g</p>
           </div>
           <div>
-            <p className="text-gray-600">Fats</p>
+            <p className="text-gray-600 dark:text-gray-300">Fats</p>
             <p className="text-lg font-bold">{Math.round(calculateTotalNutrients().fats)}g</p>
           </div>
         </div>
@@ -115,7 +115,7 @@ export const SelectedFoodsList = ({
 
       {/* Notes */}
       <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
           Notes (optional)
         </label>
         <textarea

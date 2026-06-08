@@ -46,10 +46,10 @@ export const MealChat = ({
   return (
     <div className="card">
       <div className="flex items-center gap-2 mb-1">
-        <Sparkles className="w-5 h-5 text-primary-600" />
+        <Sparkles className="w-5 h-5 text-primary-600 dark:text-primary-400" />
         <h2 className="text-lg font-semibold">Quick Log with AI</h2>
       </div>
-      <p className="text-sm text-gray-600 mb-4">
+      <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
         Describe your meal in plain language — e.g.{' '}
         <span className="italic">"2 rotis and a katori of dal for lunch at 1pm"</span>. You can also
         edit or remove today's meals, like{' '}
@@ -74,7 +74,7 @@ export const MealChat = ({
                   className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap ${
                     msg.role === 'user'
                       ? 'bg-primary-600 text-white rounded-br-sm'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100 rounded-bl-sm'
                   }`}
                 >
                   {msg.content}
@@ -84,7 +84,7 @@ export const MealChat = ({
           )}
           {chatLoading && chatMessages[chatMessages.length - 1]?.content === '' && (
             <div className="flex justify-start">
-              <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
+              <div className="bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
                 <Spinner className="w-4 h-4" />
                 Thinking…
               </div>
@@ -92,7 +92,7 @@ export const MealChat = ({
           )}
           {chatPreparing && !proposedMeal && (
             <div className="flex justify-start">
-              <div className="bg-gray-100 text-gray-500 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
+              <div className="bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
                 <Spinner className="w-4 h-4" />
                 Preparing your meal…
               </div>

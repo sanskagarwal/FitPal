@@ -33,10 +33,10 @@ export const Goals = () => {
 
       <div className="card">
         <div className="flex items-center gap-3 mb-6">
-          <Target className="w-8 h-8 text-primary-600" />
+          <Target className="w-8 h-8 text-primary-600 dark:text-primary-400" />
           <div>
             <h2 className="text-xl font-semibold">Set Your Nutrition & Fitness Goals</h2>
-            <p className="text-sm text-gray-600">Customize your daily targets to match your objectives</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Customize your daily targets to match your objectives</p>
           </div>
         </div>
 
@@ -63,7 +63,7 @@ export const Goals = () => {
 
           {message && (
             <div className={`p-3 rounded-lg text-sm ${
-              message.includes('success') || message.includes('calculated') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+              message.includes('success') || message.includes('calculated') ? 'alert-success' : 'alert-error'
             }`}>
               {message}
             </div>

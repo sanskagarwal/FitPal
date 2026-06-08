@@ -18,7 +18,7 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
       {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
             <User className="w-4 h-4" />
             Name
           </label>
@@ -26,14 +26,14 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
             type="text"
             value={formData.name}
             disabled
-            className="input-field bg-gray-100"
+            className="input-field bg-gray-100 dark:bg-gray-800"
             title="Name cannot be changed"
           />
-          <p className="text-xs text-gray-500 mt-1">Name cannot be edited</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Name cannot be edited</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
             <Mail className="w-4 h-4" />
             Email
           </label>
@@ -41,17 +41,17 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
             type="email"
             value={formData.email}
             disabled
-            className="input-field bg-gray-100"
+            className="input-field bg-gray-100 dark:bg-gray-800"
             title="Email cannot be changed"
           />
-          <p className="text-xs text-gray-500 mt-1">Email cannot be edited</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be edited</p>
         </div>
       </div>
 
       {/* Physical Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Date of Birth
           </label>
@@ -64,14 +64,14 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
             required
           />
           {formData.dateOfBirth && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Age: {calculateAge(formData.dateOfBirth)} years
             </p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
             <Users className="w-4 h-4" />
             Gender
           </label>
@@ -89,7 +89,7 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
             <Ruler className="w-4 h-4" />
             Height (cm)
           </label>
@@ -108,7 +108,7 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
 
       {/* Current Weight (read-only — managed in the Weight Tracker) */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
           <Scale className="w-4 h-4" />
           Current Weight (kg)
         </label>
@@ -116,10 +116,10 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
           type="text"
           value={currentWeight !== null ? `${currentWeight} kg` : 'No weight logged yet'}
           disabled
-          className="input-field bg-gray-100"
+          className="input-field bg-gray-100 dark:bg-gray-800"
           title="Update your weight in the Weight Tracker"
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           {currentWeight !== null && formData.height > 0
             ? `BMI: ${calculateBMI(currentWeight, formData.height)} — update weight in the Weight Tracker`
             : 'Log your weight in the Weight Tracker'}
@@ -128,7 +128,7 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
 
       {/* Activity Level */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
           <Activity className="w-4 h-4" />
           Activity Level
         </label>
@@ -145,14 +145,14 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
           <option value={ActivityLevel.Active}>Active (Exercise 6-7 days/week)</option>
           <option value={ActivityLevel.VeryActive}>Very Active (Intense exercise daily)</option>
         </select>
-        <p className="text-xs text-gray-600 mt-1">
+        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
           This affects your daily calorie calculations
         </p>
       </div>
 
       {/* Diet Preference */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
           <Salad className="w-4 h-4" />
           Dietary Preference
         </label>
@@ -167,14 +167,14 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
           <option value={DietPreference.Eggetarian}>Eggetarian (vegetarian + eggs)</option>
           <option value={DietPreference.NonVegetarian}>Non-vegetarian (meat, fish, eggs)</option>
         </select>
-        <p className="text-xs text-gray-600 mt-1">
+        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
           Used for AI meal and recipe suggestions
         </p>
       </div>
 
       {message && (
         <div className={`p-3 rounded-lg text-sm ${
-          message.includes('success') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+          message.includes('success') ? 'alert-success' : 'alert-error'
         }`}>
           {message}
         </div>
