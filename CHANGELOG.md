@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-08
+
 ### Added
 
 - Dark mode: every screen now follows your operating system color scheme, with
@@ -45,5 +47,5 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/sanskagarwal/FitPal/releases/tag/v0.1.0
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sanskagarwal/FitPal/compare/v0.1.0...v0.2.0[0.1.0]: https://github.com/sanskagarwal/FitPal/releases/tag/v0.1.0
