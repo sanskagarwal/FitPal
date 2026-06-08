@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserProfile } from '../types';
-import { authLogin, authRegister, authLogout, authMe } from '../utils/db';
+import { authLogin, authRegister, authLogout, authMe, authDeleteAccount } from '../utils/db';
 import { calculateDailyCalories, calculateMacros, calculateAge } from '../utils/helpers';
 
 // Distinguish a successful login from a failed one.
@@ -11,6 +11,10 @@ export type LoginResult = 'ok' | 'invalid';
 // show what actually went wrong instead of a generic message.
 export type RegisterResult = { ok: true; user: User } | { ok: false; error: string };
 
+// Account deletion either succeeds, or fails with a reason (e.g. wrong
+// password) so the UI can tell the user why.
+export type DeleteAccountResult = { ok: true } | { ok: false; error: string };
+
 // Auth-only concerns: who is signed in and how to change that. User
 // preferences (profile/goals) live in PreferencesContext, which updates the
 // cached user via `setUser`.
@@ -20,6 +24,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<LoginResult>;
   register: (name: string, email: string, password: string, profile: UserProfile) => Promise<RegisterResult>;
   logout: () => void;
+  deleteAccount: (password: string) => Promise<DeleteAccountResult>;
   setUser: (user: User) => void;
 }
 
@@ -105,6 +110,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  // Permanently delete the account. On success the session is gone server-side,
+  // so we drop the cached user to return the app to the signed-out state.
+  const deleteAccount = async (password: string): Promise<DeleteAccountResult> => {
+    const result = await authDeleteAccount(password);
+    if (result.ok) {
+      setUser(null);
+      return { ok: true };
+    }
+    return {
+      ok: false,
+      error: result.error || 'Could not delete your account. Please try again.',
+    };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -113,6 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login,
         register,
         logout,
+        deleteAccount,
         setUser,
       }}
     >

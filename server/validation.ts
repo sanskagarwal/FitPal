@@ -51,6 +51,13 @@ export const LoginSchema = z
   })
   .loose();
 
+// Account deletion requires the current password as an explicit confirmation.
+export const DeleteAccountSchema = z
+  .object({
+    password: z.string().min(1),
+  })
+  .loose();
+
 // --- User upsert ----------------------------------------------------------
 
 // Profile/goal updates from the client. The controller merges this into the

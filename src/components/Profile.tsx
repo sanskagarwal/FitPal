@@ -3,6 +3,7 @@ import { useProfileForm } from './profile/useProfileForm';
 import { ProfileForm } from './profile/ProfileForm';
 import { ProfileInfoCard } from './profile/ProfileInfoCard';
 import { DataManagementCard } from './profile/DataManagementCard';
+import { DangerZoneCard } from './profile/DangerZoneCard';
 
 export const Profile = () => {
   const { formData, updateField, loading, message, currentWeight, handleSubmit } = useProfileForm();
@@ -33,6 +34,8 @@ export const Profile = () => {
       <DataManagementCard />
 
       <ProfileInfoCard />
+
+      <DangerZoneCard />
     </div>
   );
 };

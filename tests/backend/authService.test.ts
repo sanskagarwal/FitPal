@@ -6,6 +6,11 @@ import path from 'node:path';
 import { initStorage } from '../../server/storage.js';
 import { closeDatabase } from '../../server/db/database.js';
 import { authService } from '../../server/services/authService.js';
+import { userRepository } from '../../server/repositories/userRepository.js';
+import { mealRepository } from '../../server/repositories/mealRepository.js';
+import { weightRepository } from '../../server/repositories/weightRepository.js';
+import { notificationRepository } from '../../server/repositories/notificationRepository.js';
+import { streakRepository } from '../../server/repositories/streakRepository.js';
 import { ConflictError, AuthError, NotFoundError } from '../../server/errors.js';
 import { validProfile } from './helpers.js';
 
@@ -90,5 +95,52 @@ describe('authService.getMe', () => {
 
   it('throws NotFoundError for an unknown id', () => {
     expect(() => authService.getMe('does-not-exist')).toThrow(NotFoundError);
+  });
+});
+
+describe('authService.deleteAccount', () => {
+  it('removes the user and all their data when the password is correct', async () => {
+    const email = newEmail();
+    const { userId } = await authService.register({
+      name: 'Frank',
+      email,
+      password: 'password123',
+      profile: validProfile(),
+    });
+
+    // Seed owned data across the per-user tables.
+    mealRepository.insert({ id: randomUUID(), userId, mealType: 'breakfast' });
+    weightRepository.insert({ id: randomUUID(), userId, weight: 80 });
+    notificationRepository.upsert({ userId, enabled: true });
+    streakRepository.upsert({ userId, currentStreak: 3 });
+
+    await authService.deleteAccount(userId, 'password123');
+
+    expect(userRepository.findById(userId)).toBeNull();
+    expect(mealRepository.listByUser(userId)).toHaveLength(0);
+    expect(weightRepository.listByUser(userId)).toHaveLength(0);
+    expect(notificationRepository.get(userId)).toBeNull();
+    expect(streakRepository.get(userId)).toBeNull();
+  });
+
+  it('rejects an incorrect password and keeps the account', async () => {
+    const email = newEmail();
+    const { userId } = await authService.register({
+      name: 'Grace',
+      email,
+      password: 'password123',
+      profile: validProfile(),
+    });
+
+    await expect(authService.deleteAccount(userId, 'wrong-password')).rejects.toBeInstanceOf(
+      AuthError
+    );
+    expect(userRepository.findById(userId)).not.toBeNull();
+  });
+
+  it('throws NotFoundError for an unknown user', async () => {
+    await expect(authService.deleteAccount('does-not-exist', 'password123')).rejects.toBeInstanceOf(
+      NotFoundError
+    );
   });
 });

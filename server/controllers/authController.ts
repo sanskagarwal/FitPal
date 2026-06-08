@@ -25,4 +25,12 @@ export const authController = {
   async me(req: Request, res: Response): Promise<void> {
     res.json(authService.getMe(req.userId!));
   },
+
+  // Delete the signed-in user's account, then clear the session cookie so the
+  // now-orphaned token can't be reused.
+  async deleteAccount(req: Request, res: Response): Promise<void> {
+    await authService.deleteAccount(req.userId!, req.body.password);
+    clearAuthCookie(res);
+    res.json({ success: true });
+  },
 };

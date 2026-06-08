@@ -119,6 +119,28 @@ export const authMe = async (): Promise<User | null> => {
   }
 };
 
+// Permanently delete the signed-in user's account and all their data. Requires
+// the current password as a confirmation; the server clears the auth cookie.
+export const authDeleteAccount = async (password: string): Promise<AuthResult> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/account`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    let data: { error?: string } | null = null;
+    try {
+      data = await response.json();
+    } catch {
+      // No/invalid JSON body — leave data null.
+    }
+    return { ok: response.ok, status: response.status, error: data?.error };
+  } catch {
+    return { ok: false, status: 0, error: 'Network error' };
+  }
+};
+
 // User operations
 export const saveUser = async (user: User): Promise<void> => {
   await apiCall(`/users`, 'POST', user);

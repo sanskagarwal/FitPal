@@ -14,6 +14,9 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
   immediately.
 - **Profile in the navbar.** Your name doubles as the profile entry point, right
   beside Logout.
+- **Self-service account deletion.** Permanently delete your account and all of
+  your data from the profile page, gated behind a password and typed
+  confirmation.
 
 ## Agentic AI meal logging
 
@@ -108,6 +111,7 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 - **Local-first storage.** Data lives in a local SQLite database managed by a
   small Express server on your machine.
 - **Export and import.** Back up and restore your data.
+- **Account deletion.** Remove your account and all associated data at any time.
 - **No third-party cloud** beyond the AI provider you choose.
 - **Hashed passwords** and no analytics or tracking.
 

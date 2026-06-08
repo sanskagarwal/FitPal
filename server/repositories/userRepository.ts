@@ -43,6 +43,12 @@ export const userRepository = {
   emailExists(email: string): boolean {
     return Boolean(getDb().prepare('SELECT 1 FROM users WHERE email = ?').get(email));
   },
+
+  // Delete the user row by id. Returns true when a row was removed. Callers are
+  // responsible for also removing the user's other data (meals, weights, etc.).
+  delete(id: string): boolean {
+    return getDb().prepare('DELETE FROM users WHERE id = ?').run(id).changes > 0;
+  },
 };
 
 // Strip sensitive fields before returning a user to the client.

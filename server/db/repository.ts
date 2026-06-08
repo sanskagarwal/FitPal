@@ -45,6 +45,12 @@ export class JsonCollectionRepository<T extends { id: string; userId: string }> 
       .run(id, userId);
     return result.changes > 0;
   }
+
+  // Delete every row owned by `userId`. Returns the number of rows removed.
+  // Used when wiping all of a user's data (e.g. account deletion).
+  deleteByUser(userId: string): number {
+    return getDb().prepare(`DELETE FROM ${this.table} WHERE user_id = ?`).run(userId).changes;
+  }
 }
 
 export class JsonSingletonRepository<T extends { userId: string }> {
@@ -64,5 +70,10 @@ export class JsonSingletonRepository<T extends { userId: string }> {
       .prepare(`SELECT data FROM ${this.table} WHERE user_id = ?`)
       .get(userId) as { data: string } | undefined;
     return row ? (JSON.parse(row.data) as T) : null;
+  }
+
+  // Delete the single row owned by `userId`, if any. Returns true when removed.
+  deleteByUser(userId: string): boolean {
+    return getDb().prepare(`DELETE FROM ${this.table} WHERE user_id = ?`).run(userId).changes > 0;
   }
 }
