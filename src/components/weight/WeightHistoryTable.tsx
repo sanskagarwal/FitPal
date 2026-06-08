@@ -112,7 +112,7 @@ export const WeightHistoryTable = ({
                         <button
                           onClick={() => onSaveEdit(entry.id)}
                           disabled={loading}
-                          className="text-green-600 hover:text-green-800 disabled:opacity-50"
+                          className="inline-flex items-center justify-center min-h-11 min-w-11 text-green-600 hover:text-green-800 disabled:opacity-50"
                           aria-label="Save changes"
                         >
                           <Save className="w-4 h-4" />
@@ -120,7 +120,7 @@ export const WeightHistoryTable = ({
                         <button
                           onClick={onCancelEdit}
                           disabled={loading}
-                          className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                          className="inline-flex items-center justify-center min-h-11 min-w-11 text-gray-600 hover:text-gray-800 disabled:opacity-50"
                           aria-label="Cancel editing"
                         >
                           <X className="w-4 h-4" />
@@ -142,7 +142,7 @@ export const WeightHistoryTable = ({
                         <button
                           onClick={() => onStartEdit(entry)}
                           disabled={loading}
-                          className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                          className="inline-flex items-center justify-center min-h-11 min-w-11 text-blue-600 hover:text-blue-800 disabled:opacity-50"
                           aria-label="Edit weigh-in"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -150,7 +150,7 @@ export const WeightHistoryTable = ({
                         <button
                           onClick={() => onDelete(entry.id)}
                           disabled={loading}
-                          className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                          className="inline-flex items-center justify-center min-h-11 min-w-11 text-red-600 hover:text-red-800 disabled:opacity-50"
                           aria-label="Delete weigh-in"
                         >
                           <Trash2 className="w-4 h-4" />

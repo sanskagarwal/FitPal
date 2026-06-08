@@ -53,7 +53,7 @@ export const TodayMealsHistory = ({
                 <button
                   onClick={() => onStartEdit(meal)}
                   disabled={loading || editingMealId !== null}
-                  className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                  className="inline-flex items-center justify-center min-h-11 min-w-11 text-blue-600 hover:text-blue-800 disabled:opacity-50"
                   aria-label={`Edit ${meal.mealType.replace('-', ' ')}`}
                 >
                   <Edit2 className="w-4 h-4" />
@@ -61,7 +61,7 @@ export const TodayMealsHistory = ({
                 <button
                   onClick={() => onDelete(meal.id)}
                   disabled={loading}
-                  className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                  className="inline-flex items-center justify-center min-h-11 min-w-11 text-red-600 hover:text-red-800 disabled:opacity-50"
                   aria-label={`Delete ${meal.mealType.replace('-', ' ')}`}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -101,7 +101,7 @@ export const TodayMealsHistory = ({
               })}
             </div>
 
-            <div className="grid grid-cols-4 gap-2 text-sm border-t pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm border-t pt-2">
               <div>
                 <span className="text-gray-600">Calories:</span>
                 <span className="ml-1 font-semibold">{Math.round(meal.totalNutrients.calories)}</span>

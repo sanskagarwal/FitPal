@@ -16,7 +16,7 @@ export const DateNavigator = () => {
     <div className="flex items-center justify-center gap-2">
       <button
         onClick={goToPreviousDay}
-        className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+        className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
         aria-label="Previous day"
         title="Previous day"
       >
@@ -49,7 +49,7 @@ export const DateNavigator = () => {
       <button
         onClick={goToNextDay}
         disabled={isToday}
-        className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+        className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
         aria-label="Next day"
         title="Next day"
       >

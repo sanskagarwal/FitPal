@@ -27,7 +27,7 @@ export const MacroDistributionChart = ({ todayStats, isToday, selectedDate }: Pi
             cy="50%"
             labelLine={false}
             label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-            outerRadius={100}
+            outerRadius="70%"
             fill="#8884d8"
             dataKey="value"
           />
@@ -53,10 +53,10 @@ export const WeeklyNutritionTrendsChart = ({ weeklyData }: Pick<ChartSectionProp
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={weeklyChartData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
+          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+          <YAxis width={40} tick={{ fontSize: 12 }} />
           <Tooltip />
-          <Legend />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
           <Line type="monotone" dataKey="calories" stroke="#10b981" name="Calories" />
           <Line type="monotone" dataKey="protein" stroke="#ef4444" name="Protein (g)" />
           <Line type="monotone" dataKey="carbs" stroke="#3b82f6" name="Carbs (g)" />

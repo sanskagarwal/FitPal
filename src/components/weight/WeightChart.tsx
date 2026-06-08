@@ -24,15 +24,15 @@ export const WeightChart = ({ hasWeights, chartData, targetWeight }: WeightChart
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis domain={['auto', 'auto']} unit=" kg" width={70} />
+          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+          <YAxis domain={['auto', 'auto']} unit=" kg" width={48} tick={{ fontSize: 12 }} />
           <Tooltip formatter={(value) => [`${value} kg`, 'Weight']} />
           {targetWeight > 0 && (
             <ReferenceLine
               y={targetWeight}
               stroke="#f59e0b"
               strokeDasharray="6 4"
-              label={{ value: `Target ${targetWeight} kg`, position: 'insideTopRight', fill: '#b45309', fontSize: 12 }}
+              label={{ value: `Target ${targetWeight} kg`, position: 'insideTopRight', fill: '#b45309', fontSize: 11 }}
             />
           )}
           <Line

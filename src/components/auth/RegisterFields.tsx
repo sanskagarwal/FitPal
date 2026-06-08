@@ -10,7 +10,7 @@ interface RegisterFieldsProps {
 export const RegisterFields = ({ formData, updateField }: RegisterFieldsProps) => {
   return (
     <>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Date of Birth</label>
           <input
@@ -39,7 +39,7 @@ export const RegisterFields = ({ formData, updateField }: RegisterFieldsProps) =
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <input
           type="number"
           min="100"

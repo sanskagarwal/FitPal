@@ -66,7 +66,7 @@ export const MicronutrientsPanel = ({
   return (
     <div className="card">
       <h2 className="text-xl font-semibold mb-4">{isToday ? "Today's" : `${formatDayLabel(selectedDate)}'s`} Micronutrients</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {cards.map((c) => (
           <MicronutrientCard
             key={c.label}

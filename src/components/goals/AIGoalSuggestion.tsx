@@ -10,7 +10,7 @@ interface AIGoalSuggestionProps {
 export const AIGoalSuggestion = ({ gettingSuggestion, aiExplanation, onGetSuggestions }: AIGoalSuggestionProps) => {
   return (
     <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-purple-600" />
           <h3 className="font-semibold text-purple-900">AI-Powered Goal Suggestions</h3>
@@ -19,7 +19,7 @@ export const AIGoalSuggestion = ({ gettingSuggestion, aiExplanation, onGetSugges
           type="button"
           onClick={onGetSuggestions}
           disabled={gettingSuggestion}
-          className="btn-primary bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
+          className="btn-primary bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-2"
         >
           {gettingSuggestion && <Spinner className="w-4 h-4" />}
           {gettingSuggestion ? 'Getting Suggestions...' : 'Get AI Suggestions'}

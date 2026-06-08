@@ -42,7 +42,7 @@ export const FoodLogger = () => {
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Log Your Meal</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Log Your Meal</h1>
         <DateNavigator />
       </div>
 
@@ -80,7 +80,7 @@ export const FoodLogger = () => {
       {/* Meal Type Selection */}
       <div className="card">
         <label className="block text-sm font-medium text-gray-700 mb-2">Meal Type</label>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
           {MEAL_TYPES.map((type) => (
             <button
               key={type}

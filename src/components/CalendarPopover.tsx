@@ -85,7 +85,7 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
   return (
     <div
       ref={containerRef}
-      className="absolute left-1/2 top-full z-50 mt-2 w-72 -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 shadow-lg"
+      className="absolute left-1/2 top-full z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-gray-200 bg-white p-3 shadow-lg"
       role="dialog"
       aria-label="Choose a date"
     >
@@ -93,7 +93,7 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
       <div className="mb-2 flex items-center justify-between">
         <button
           onClick={goToPrevMonth}
-          className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
           aria-label="Previous month"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -102,7 +102,7 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
         <button
           onClick={goToNextMonth}
           disabled={nextMonthDisabled}
-          className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
           aria-label="Next month"
         >
           <ChevronRight className="h-4 w-4" />
@@ -142,7 +142,7 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
               aria-label={day.toDateString()}
               aria-current={isToday ? 'date' : undefined}
               title={hasCalories ? `${Math.round(caloriesByDay[toDateInputValue(day)])} kcal logged` : 'No meals logged'}
-              className={`relative flex h-9 items-center justify-center rounded-lg text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-40 ${tone} ${
+              className={`relative flex h-11 items-center justify-center rounded-lg text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 disabled:cursor-not-allowed disabled:opacity-40 ${tone} ${
                 isSelected ? 'ring-2 ring-primary-600 ring-offset-1' : ''
               }`}
             >

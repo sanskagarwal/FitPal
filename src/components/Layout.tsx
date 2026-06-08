@@ -25,7 +25,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="bg-white shadow-sm sticky top-0 z-50 pt-safe px-safe">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🥗</span>
@@ -77,7 +77,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden"
+              className="md:hidden -mr-2 inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -143,7 +143,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {children}
       </main>
 

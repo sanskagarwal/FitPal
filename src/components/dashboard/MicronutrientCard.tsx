@@ -31,7 +31,7 @@ export const MicronutrientCard = ({
       <button
         onClick={onSuggest}
         disabled={suggestDisabled}
-        className="mt-1 text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+        className="mt-1 text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 min-h-11"
       >
         <Lightbulb className="w-3 h-3" />
         Suggest
