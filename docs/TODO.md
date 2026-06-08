@@ -4,7 +4,6 @@ Planned and in-progress work for FitPal, ordered by priority.
 
 | Priority | Task | Notes |
 | --- | --- | --- |
-| Medium | Admin management portal | Introduce an admin role to view/disable/delete users, toggle open registration, and see basic instance stats. |
 | Medium | Barcode / photo-based food logging | Let users log food by scanning a barcode or photo instead of typing, building on the existing AI food analysis. |
 | Medium | Trends & progress charts | Visualize weight and nutrition trends over time to complement the existing daily views. |
 | Medium | Reminders & notifications | Build on the existing notifications module to send meal/weigh-in reminders. |
