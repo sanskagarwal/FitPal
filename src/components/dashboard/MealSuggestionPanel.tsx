@@ -115,7 +115,7 @@ export const MealSuggestionPanel = ({
       </div>
       {suggestingMeal ? (
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-          <LoadingBlock label="Building meals around your remaining goals…" />
+          <LoadingBlock label="Building meals around your remaining goals..." />
         </div>
       ) : mealSuggestions && mealSuggestions.length > 0 && activeSuggestion ? (
         <div className="space-y-3">

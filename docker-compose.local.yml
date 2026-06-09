@@ -1,4 +1,4 @@
-# Local production test — builds the image from the Dockerfile and runs it
+# Local production test - builds the image from the Dockerfile and runs it
 # exactly like the published image would, so you can verify the prod build
 # works before pushing. Nothing here gets published.
 #

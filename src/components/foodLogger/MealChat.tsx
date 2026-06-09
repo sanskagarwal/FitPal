@@ -50,7 +50,7 @@ export const MealChat = ({
         <h2 className="text-lg font-semibold">Quick Log with AI</h2>
       </div>
       <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-        Describe your meal in plain language — e.g.{' '}
+        Describe your meal in plain language - e.g.{' '}
         <span className="italic">"2 rotis and a katori of dal for lunch at 1pm"</span>. You can also
         edit or remove today's meals, like{' '}
         <span className="italic">"add a glass of milk to breakfast"</span> or{' '}
@@ -61,7 +61,7 @@ export const MealChat = ({
         <div ref={chatScrollRef} className="space-y-3 mb-4 max-h-72 overflow-y-auto pr-1">
           {chatMessages.map((msg, i) =>
             // Skip the empty assistant placeholder shown before the first
-            // streamed token (the "Thinking…" indicator covers that gap).
+            // streamed token (the "Thinking..." indicator covers that gap).
             msg.role === 'assistant' && msg.content === '' ? null : (
               <motion.div
                 key={i}
@@ -86,7 +86,7 @@ export const MealChat = ({
             <div className="flex justify-start">
               <div className="bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
                 <Spinner className="w-4 h-4" />
-                Thinking…
+                Thinking...
               </div>
             </div>
           )}
@@ -94,7 +94,7 @@ export const MealChat = ({
             <div className="flex justify-start">
               <div className="bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300 px-3 py-2 rounded-2xl rounded-bl-sm text-sm flex items-center gap-2">
                 <Spinner className="w-4 h-4" />
-                Preparing your meal…
+                Preparing your meal...
               </div>
             </div>
           )}

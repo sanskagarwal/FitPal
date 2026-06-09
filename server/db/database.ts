@@ -30,7 +30,7 @@ export function initDatabase(dataDir: string): Database.Database {
 
 export function getDb(): Database.Database {
   if (!db) {
-    throw new Error('Database not initialised — call initDatabase() first.');
+    throw new Error('Database not initialised - call initDatabase() first.');
   }
   return db;
 }

@@ -31,7 +31,7 @@ async function aiCall<T>(endpoint: string, body: unknown): Promise<T> {
       const data = await response.json();
       if (data?.error) message = data.error;
     } catch {
-      // response had no JSON body — keep the default message
+      // response had no JSON body - keep the default message
     }
     throw new Error(message);
   }
@@ -188,19 +188,19 @@ export async function chatLogMealStream(
   });
 
   if (response.status === 429) {
-    // Rate limited — don't waste another request on the fallback.
+    // Rate limited - don't waste another request on the fallback.
     let message = 'Too many AI requests. Please wait a moment and try again.';
     try {
       const data = await response.json();
       if (data?.error) message = data.error;
     } catch {
-      // no JSON body — keep the default message
+      // no JSON body - keep the default message
     }
     throw new Error(message);
   }
 
   if (!response.ok || !response.body) {
-    // Streaming endpoint failed otherwise — fall back to the buffered call.
+    // Streaming endpoint failed otherwise - fall back to the buffered call.
     return chatLogMeal(history, loggedMeals);
   }
 

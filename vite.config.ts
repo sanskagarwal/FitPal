@@ -21,7 +21,7 @@ export default defineConfig({
       manifest: {
         name: 'FitPal - Indian Nutrition Tracker',
         short_name: 'FitPal',
-        description: 'Track Indian meals, food intake, and weight—smartly and privately',
+        description: 'Track Indian meals, food intake, and weight - smartly and privately',
         theme_color: '#10b981',
         background_color: '#ffffff',
         display: 'standalone',

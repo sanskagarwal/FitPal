@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
-# Stage 1 — build the frontend (Vite) and the server (tsc), and compile native
+# Stage 1 - build the frontend (Vite) and the server (tsc), and compile native
 # deps (better-sqlite3). Debian slim gives reliable prebuilt binaries / a working
 # node-gyp toolchain across amd64 and arm64.
 # ---------------------------------------------------------------------------
@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY package.json ./
 RUN npm install
 
-# Build the frontend. No secrets are needed at build time — the browser talks to
+# Build the frontend. No secrets are needed at build time - the browser talks to
 # the same-origin /api, and the Azure OpenAI key lives only on the server.
 COPY . .
 RUN npm run build
@@ -30,7 +30,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # ---------------------------------------------------------------------------
-# Stage 2 — minimal runtime image (single process serves API + frontend)
+# Stage 2 - minimal runtime image (single process serves API + frontend)
 # ---------------------------------------------------------------------------
 FROM node:24-slim AS runtime
 WORKDIR /app
@@ -47,7 +47,7 @@ COPY --from=builder /app/server/node_modules ./server/node_modules
 COPY --from=builder /app/server/package.json ./server/package.json
 COPY --from=builder /app/dist ./dist
 
-# Persistent storage (SQLite DB) lives here — mount a volume to keep user data.
+# Persistent storage (SQLite DB) lives here - mount a volume to keep user data.
 RUN mkdir -p /app/data
 VOLUME ["/app/data"]
 

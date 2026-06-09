@@ -65,7 +65,7 @@ export const authService = {
   // current password as a confirmation step (defence against an unattended
   // session or CSRF triggering an irreversible wipe). All deletes run in a
   // single SQLite transaction so the account is either fully removed or left
-  // untouched — never half-deleted.
+  // untouched - never half-deleted.
   async deleteAccount(userId: string, password: string): Promise<void> {
     const record = userRepository.findById(userId);
     if (!record) {

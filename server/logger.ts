@@ -6,8 +6,8 @@ import { AsyncLocalStorage } from 'async_hooks';
 // Emits one JSON object per line (newline-delimited JSON) so logs are
 // machine-parseable in production while staying greppable in development. A
 // per-request context (request id + user id) is carried implicitly via
-// AsyncLocalStorage, so any log call inside a request — including from deep in
-// the service layer or the central error handler — is automatically tagged
+// AsyncLocalStorage, so any log call inside a request - including from deep in
+// the service layer or the central error handler - is automatically tagged
 // without threading the id through every function. No external dependency.
 //
 // Configurable via env:

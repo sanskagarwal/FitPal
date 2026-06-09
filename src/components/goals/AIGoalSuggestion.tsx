@@ -27,7 +27,7 @@ export const AIGoalSuggestion = ({ gettingSuggestion, aiExplanation, onGetSugges
       </div>
       {gettingSuggestion ? (
         <div className="bg-white dark:bg-gray-800 p-3 rounded">
-          <LoadingBlock label="Crunching your profile and target to recommend goals…" />
+          <LoadingBlock label="Crunching your profile and target to recommend goals..." />
         </div>
       ) : aiExplanation ? (
         <div className="bg-white dark:bg-gray-800 p-3 rounded text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">

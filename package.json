@@ -1,7 +1,7 @@
 {
   "name": "fitpal",
   "version": "0.2.0",
-  "description": "FitPal: Track Indian meals, food intake, and weight—smartly and privately",
+  "description": "FitPal: Track Indian meals, food intake, and weight - smartly and privately",
   "type": "module",
   "scripts": {
     "dev": "vite",

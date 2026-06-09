@@ -55,8 +55,26 @@ weight. It has three parts:
 - **Mobile/edge-to-edge.** Use the `.pt-safe`, `.pb-safe`, and `.px-safe`
   utilities (`src/index.css`) for safe-area insets on notched devices; the
   viewport meta tag already sets `viewport-fit=cover`.
-- Avoid too many emojis and em-dashes in documentation. Keep it simple, subtle,
-  and professional.
+- Avoid "AI-looking" special characters in code, comments, docs, and
+  user-facing strings. Use plain ASCII instead. Keep writing simple, subtle, and
+  professional. Specifically avoid:
+  - Dashes: em-dash (U+2014), en-dash (U+2013), horizontal bar (U+2015),
+    math minus (U+2212), soft hyphen (U+00AD). Use a plain hyphen `-`.
+  - Quotes/punctuation: curly quotes (U+2018/2019/201C/201D), ellipsis (U+2026),
+    low quotes, prime marks. Use straight quotes and `...`.
+  - Invisible/spacing: non-breaking space (U+00A0), narrow/thin spaces, zero-width
+    characters (U+200B/200C/200D), BOM (U+FEFF). Use a normal space.
+  - Symbols/arrows: arrows (`->` etc.), legal marks (TM/(C)/(R)), and decorative
+    math operators. Spell them out or use ASCII.
+  - Emojis and decorative glyphs (check/cross/warning/star) in code, comments,
+    and docs.
+  Allowed exceptions: the branding salad emoji in the app header; the curated
+  emojis already used in UI copy (the motivational dashboard banner messages,
+  the Goals tips heading, and the Profile data-info heading); functional UI
+  glyphs already in use (the `*` list bullet, the `x` multiplication sign in the
+  meal proposal, the `.` separator); and math symbols inside AI prompt strings
+  under `server/prompts/` and `server/services/aiService.ts`. When adding new
+  user-facing copy, do not introduce new emojis unless asked.
 - Keep changes minimal and focused, and match the surrounding code style.
 
 ## Security

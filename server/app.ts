@@ -22,7 +22,7 @@ export function createApp(): Express {
   // Middleware. `credentials: true` lets the browser send the auth cookie on
   // cross-origin (split-deployment) requests; same-origin works regardless.
   app.use(cors({ origin: true, credentials: true }));
-  // Correlation id + structured request logging — first so every downstream
+  // Correlation id + structured request logging - first so every downstream
   // handler and the error handler share the request id.
   app.use(requestLogger);
   app.use(express.json({ limit: '5mb' }));
@@ -41,7 +41,7 @@ export function createApp(): Express {
     });
   }
 
-  // Central error handler — registered last so it catches everything above.
+  // Central error handler - registered last so it catches everything above.
   app.use(errorHandler);
 
   return app;

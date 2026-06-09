@@ -32,14 +32,14 @@ const EnvSchema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
 
-  // Auth — required. Min length keeps weak secrets out.
+  // Auth - required. Min length keeps weak secrets out.
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
 
   // Storage / static asset locations (optional; sensible defaults at runtime).
   DATA_DIR: z.string().optional(),
   STATIC_DIR: z.string().optional(),
 
-  // AI provider config — optional at boot, validated lazily by the AI service.
+  // AI provider config - optional at boot, validated lazily by the AI service.
   AI_PROVIDER: z
     .enum(['openai-compatible', 'azure', 'anthropic', 'google'])
     .default('openai-compatible'),

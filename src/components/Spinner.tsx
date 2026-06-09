@@ -14,7 +14,7 @@ interface LoadingBlockProps {
 }
 
 // A simple inline loading row with a spinner and a message.
-export const LoadingBlock = ({ label = 'Thinking…', className = '' }: LoadingBlockProps) => (
+export const LoadingBlock = ({ label = 'Thinking...', className = '' }: LoadingBlockProps) => (
   <div className={`flex items-center gap-2 text-gray-500 dark:text-gray-400 ${className}`}>
     <Spinner className="w-4 h-4" />
     <span className="text-sm">{label}</span>

@@ -50,7 +50,7 @@ export const SelectedFoodsList = ({
                 <span>{entry.food.servingSize} •</span>
                 {reestimatingIndex === index ? (
                   <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                    <Spinner className="w-3.5 h-3.5" /> updating…
+                    <Spinner className="w-3.5 h-3.5" /> updating...
                   </span>
                 ) : (
                   <>
@@ -61,7 +61,7 @@ export const SelectedFoodsList = ({
                       value={Math.round(entry.food.nutrients.calories)}
                       onChange={(e) => onUpdateFoodCalories(index, parseFloat(e.target.value) || 0)}
                       className="w-16 px-1.5 py-0.5 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm"
-                      title="Calories per unit — edit if the estimate looks off"
+                      title="Calories per unit - edit if the estimate looks off"
                       aria-label={`Calories per unit for ${entry.food.name}`}
                     />
                     <span>cal each</span>

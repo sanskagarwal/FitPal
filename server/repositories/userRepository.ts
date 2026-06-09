@@ -5,7 +5,7 @@ import { getDb } from '../db/database.js';
 //
 // Users don't fit the generic collection/singleton shapes (they're keyed by id
 // AND indexed by email, and carry the password hash), so this repository is
-// hand-written. The full record — including the bcrypt hash — is server-only;
+// hand-written. The full record - including the bcrypt hash - is server-only;
 // callers must run it through `toPublicUser` before sending it to a client.
 // ---------------------------------------------------------------------------
 

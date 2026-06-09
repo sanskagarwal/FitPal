@@ -23,7 +23,7 @@ async function readErrorMessage(response: Response): Promise<string> {
     const data = await response.json();
     if (data?.error) return data.error;
   } catch {
-    // No/invalid JSON body — fall through to the status text.
+    // No/invalid JSON body - fall through to the status text.
   }
   return response.statusText || 'Request failed';
 }
@@ -77,7 +77,7 @@ async function authRequest(endpoint: string, body?: unknown): Promise<AuthResult
     try {
       data = await response.json();
     } catch {
-      // No/invalid JSON body — leave data null.
+      // No/invalid JSON body - leave data null.
     }
     return {
       ok: response.ok,
@@ -133,7 +133,7 @@ export const authDeleteAccount = async (password: string): Promise<AuthResult> =
     try {
       data = await response.json();
     } catch {
-      // No/invalid JSON body — leave data null.
+      // No/invalid JSON body - leave data null.
     }
     return { ok: response.ok, status: response.status, error: data?.error };
   } catch {

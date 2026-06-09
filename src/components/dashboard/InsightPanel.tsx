@@ -52,13 +52,13 @@ export const InsightPanel = ({
             className="btn-primary flex items-center justify-center gap-2 whitespace-nowrap"
           >
             {loadingInsight && <Spinner className="w-4 h-4" />}
-            {loadingInsight ? 'Thinking…' : insight ? 'Refresh' : 'Get Insights'}
+            {loadingInsight ? 'Thinking...' : insight ? 'Refresh' : 'Get Insights'}
           </button>
         </div>
       </div>
       {loadingInsight ? (
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-          <LoadingBlock label="Analyzing your recent nutrition…" />
+          <LoadingBlock label="Analyzing your recent nutrition..." />
         </div>
       ) : insight ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm">

@@ -106,7 +106,7 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
         </div>
       </div>
 
-      {/* Current Weight (read-only — managed in the Weight Tracker) */}
+      {/* Current Weight (read-only - managed in the Weight Tracker) */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
           <Scale className="w-4 h-4" />
@@ -121,7 +121,7 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
         />
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           {currentWeight !== null && formData.height > 0
-            ? `BMI: ${calculateBMI(currentWeight, formData.height)} — update weight in the Weight Tracker`
+            ? `BMI: ${calculateBMI(currentWeight, formData.height)} - update weight in the Weight Tracker`
             : 'Log your weight in the Weight Tracker'}
         </p>
       </div>

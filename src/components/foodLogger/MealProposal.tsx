@@ -80,7 +80,7 @@ export const MealProposal = ({
                   value={Math.round(f.nutrients.calories)}
                   onChange={(e) => onUpdateProposedFoodCalories(i, parseFloat(e.target.value) || 0)}
                   className="w-16 px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 dark:text-gray-100"
-                  title="Calories per unit — edit if the estimate looks off"
+                  title="Calories per unit - edit if the estimate looks off"
                 />
                 <span>×{f.unitQuantity} = {Math.round(f.nutrients.calories * f.unitQuantity)} cal</span>
               </span>

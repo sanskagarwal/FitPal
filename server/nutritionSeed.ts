@@ -4,7 +4,7 @@
 // Each entry pins the per-ONE-unit macros for a common Indian dish so the chat
 // agent's headline numbers (calories + macros) are consistent across logs
 // instead of being re-hallucinated every time. Micronutrients are intentionally
-// omitted — the model's per-request estimates are merged in for those.
+// omitted - the model's per-request estimates are merged in for those.
 //
 // Values are typical Indian home portions for a single unit (one katori ~150g,
 // one piece, one glass ~200ml). They are deliberately mid-range; the cache also

@@ -86,10 +86,10 @@ export const aiController = {
     run(res, () => chatLogMeal(req.body.history ?? [], req.body.loggedMeals ?? [])),
 
   // Streaming chat endpoint. Responds with newline-delimited JSON (NDJSON):
-  //   {"t":"msg","v":"<assistant message so far>"}  — emitted as the reply streams
-  //   {"t":"msg_done"}                              — reply finished; grounding nutrition next
-  //   {"t":"done","v":<MealChatResult>}             — final, nutrition-grounded result
-  //   {"t":"error","v":"<reason>"}                  — only if both streaming and fallback fail
+  //   {"t":"msg","v":"<assistant message so far>"}  - emitted as the reply streams
+  //   {"t":"msg_done"}                              - reply finished; grounding nutrition next
+  //   {"t":"done","v":<MealChatResult>}             - final, nutrition-grounded result
+  //   {"t":"error","v":"<reason>"}                  - only if both streaming and fallback fail
   // If streaming fails mid-flight, fall back to the non-streaming path (which
   // carries retry/backoff) so the client still gets a usable result.
   async chatMealStream(req: Request, res: Response): Promise<void> {

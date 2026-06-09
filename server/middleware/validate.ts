@@ -17,7 +17,7 @@ export function validateBody<T>(schema: z.ZodType<T>) {
     if (!result.success) {
       const issue = result.error.issues[0];
       const path = issue?.path.join('.') || 'body';
-      throw new ValidationError(`${path} — ${issue?.message ?? 'invalid'}`);
+      throw new ValidationError(`${path} - ${issue?.message ?? 'invalid'}`);
     }
     req.body = result.data;
     next();

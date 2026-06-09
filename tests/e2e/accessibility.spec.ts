@@ -26,7 +26,7 @@ async function expectNoContrastViolations(page: Page, label: string) {
     .filter((v) => v.nodes.length > 0);
 
   const details = violations
-    .flatMap((v) => v.nodes.map((n) => `${label}: ${n.target.join(' ')} — ${n.failureSummary ?? ''}`))
+    .flatMap((v) => v.nodes.map((n) => `${label}: ${n.target.join(' ')} - ${n.failureSummary ?? ''}`))
     .join('\n');
 
   expect(violations, details || `${label}: contrast violations found`).toEqual([]);

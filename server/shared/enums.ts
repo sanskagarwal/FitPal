@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Shared enums — single source of truth for both server and frontend.
+// Shared enums - single source of truth for both server and frontend.
 //
 // These string-valued enums are the contract between the React app, the Express
 // server and persisted data, so the values must never change. They live here,

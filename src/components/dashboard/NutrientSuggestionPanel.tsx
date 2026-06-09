@@ -34,10 +34,10 @@ export const NutrientSuggestionPanel = ({
       <div ref={ref} className="card bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/20 scroll-mt-24">
         <div className="flex items-center gap-2 mb-3">
           <Lightbulb className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-          <h3 className="text-lg font-semibold">Finding food suggestions…</h3>
+          <h3 className="text-lg font-semibold">Finding food suggestions...</h3>
         </div>
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg">
-          <LoadingBlock label="Looking up Indian foods rich in this nutrient…" />
+          <LoadingBlock label="Looking up Indian foods rich in this nutrient..." />
         </div>
       </div>
     );

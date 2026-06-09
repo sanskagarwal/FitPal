@@ -30,7 +30,7 @@ export function errorHandler(
   if (err instanceof ZodError) {
     const issue = err.issues[0];
     const path = issue?.path.join('.') || 'request';
-    res.status(400).json({ error: `Invalid request: ${path} — ${issue?.message ?? 'invalid'}` });
+    res.status(400).json({ error: `Invalid request: ${path} - ${issue?.message ?? 'invalid'}` });
     return;
   }
 

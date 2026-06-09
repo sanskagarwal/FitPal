@@ -201,7 +201,7 @@ export async function analyzeFoodWithAI(foodQuery: string): Promise<Food[]> {
       nutrients: food.nutrients as NutrientInfo,
     }));
   } catch (error) {
-    // No reliable result — return an empty list so the UI shows "no matches"
+    // No reliable result - return an empty list so the UI shows "no matches"
     // rather than surfacing a 500. The user can refine the query and retry.
     logger.error('Error analyzing food', { error: error instanceof Error ? error.message : String(error) });
     return [];
@@ -287,7 +287,7 @@ export async function getRecipeSuggestions(
       nutrients: recipe.nutrients as NutrientInfo,
     }));
   } catch (error) {
-    // No suggestions available — return an empty list rather than a 500.
+    // No suggestions available - return an empty list rather than a 500.
     logger.error('Error getting recipe suggestions', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
@@ -708,7 +708,7 @@ export async function suggestGoals(
       carbs,
       fats,
       fiber,
-      explanation: `- Maintenance (TDEE): ~${maintenanceCalories} kcal/day\n- Target: ${calories} kcal/day — ${adjustmentNote}\n- Macros: ${protein}g protein, ${carbs}g carbs, ${fats}g fats`,
+      explanation: `- Maintenance (TDEE): ~${maintenanceCalories} kcal/day\n- Target: ${calories} kcal/day - ${adjustmentNote}\n- Macros: ${protein}g protein, ${carbs}g carbs, ${fats}g fats`,
     };
   }
 }
@@ -717,7 +717,7 @@ export async function suggestGoals(
 // Agentic, conversational meal logging
 // ---------------------------------------------------------------------------
 
-// Stage 1 — extraction only. The model identifies foods, units, quantities and
+// Stage 1 - extraction only. The model identifies foods, units, quantities and
 // the action; it does NOT estimate nutrition (that is stage 2). Dropping the
 // 14-field nutrients object per food makes this call's output much smaller, so
 // it streams the assistant `message` sooner than the old single-shot schema.

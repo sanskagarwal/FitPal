@@ -6,7 +6,7 @@ import { createApp } from './app.js';
 import { logger } from './logger.js';
 
 // ---------------------------------------------------------------------------
-// Application entry point — process bootstrap only.
+// Application entry point - process bootstrap only.
 //
 // The Express app itself is assembled in app.ts (`createApp`). Here we open the
 // storage layer and bind the port. App construction is deliberately kept out of
