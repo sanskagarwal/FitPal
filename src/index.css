@@ -7,7 +7,7 @@
     sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -191,47 +191,48 @@ button:not(:disabled) {
   animation: slide-in 0.3s ease-out;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f1f1f1;
-    background-color: #1a1a1a;
-  }
+/* Dark mode support. Driven by the `dark` class on <html> (Tailwind
+   `darkMode: 'class'`), set by ThemeContext, so it follows the user's chosen
+   theme (System/Light/Dark) rather than the OS scheme directly. */
+.dark {
+  color: #f1f1f1;
+  background-color: #1a1a1a;
+  color-scheme: dark;
+}
 
-  .card {
-    @apply bg-gray-800 text-white;
-  }
+.dark .card {
+  @apply bg-gray-800 text-white;
+}
 
-  .input-field {
-    @apply bg-gray-700 border-gray-600 text-white;
-  }
+.dark .input-field {
+  @apply bg-gray-700 border-gray-600 text-white;
+}
 
-  .prose {
-    color: #d1d5db;
-  }
+.dark .prose {
+  color: #d1d5db;
+}
 
-  .prose strong {
-    color: #f3f4f6;
-  }
+.dark .prose strong {
+  color: #f3f4f6;
+}
 
-  .prose code {
-    background-color: #374151;
-  }
+.dark .prose code {
+  background-color: #374151;
+}
 
-  ::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
+.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
 
-  ::-webkit-scrollbar-thumb {
-    background: #555;
-  }
+.dark ::-webkit-scrollbar-thumb {
+  background: #555;
+}
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: #777;
-  }
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
 
-  .spinner {
-    border-color: #374151;
-    border-top-color: #10b981;
-  }
+.dark .spinner {
+  border-color: #374151;
+  border-top-color: #10b981;
 }

@@ -8,6 +8,20 @@
     <meta name="theme-color" content="#10b981" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>FitPal - Indian Nutrition Tracker</title>
+    <script>
+      // Apply the persisted theme before React mounts to avoid a flash of the
+      // wrong theme. Keep this in sync with src/context/ThemeContext.tsx.
+      (function () {
+        try {
+          var stored = localStorage.getItem('fitpal-theme');
+          var theme = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+          var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', isDark);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', isDark ? '#111827' : '#10b981');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

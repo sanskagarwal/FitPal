@@ -51,7 +51,11 @@ weight. It has three parts:
 - **Dark mode.** Every component must ship `dark:` variants. Reuse the
   light-to-dark color mapping documented at the top of `src/index.css` and keep
   text contrast at WCAG AA (the Playwright accessibility suite checks both
-  themes). The theme follows the OS color scheme; there is no in-app toggle yet.
+  themes). The theme is chosen via `ThemeContext` (`src/context/ThemeContext.tsx`)
+  with three states - System (follows the OS), Light, and Dark - persisted to
+  `localStorage` and applied by toggling the `dark` class on `<html>` (Tailwind
+  `darkMode: 'class'`). Use `useTheme().isDark` for non-Tailwind surfaces (e.g.
+  chart colors) instead of reading `prefers-color-scheme` directly.
 - **Mobile/edge-to-edge.** Use the `.pt-safe`, `.pb-safe`, and `.px-safe`
   utilities (`src/index.css`) for safe-area insets on notched devices; the
   viewport meta tag already sets `viewport-fit=cover`.

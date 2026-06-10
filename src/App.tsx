@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PreferencesProvider } from './context/PreferencesContext';
 import { DateProvider } from './context/DateContext';
@@ -66,13 +67,15 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <PreferencesProvider>
-        <DateProvider>
-          <AppContent />
-        </DateProvider>
-      </PreferencesProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <PreferencesProvider>
+          <DateProvider>
+            <AppContent />
+          </DateProvider>
+        </PreferencesProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

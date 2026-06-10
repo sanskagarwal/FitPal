@@ -1,10 +1,11 @@
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Palette } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProfileForm } from './profile/useProfileForm';
 import { ProfileForm } from './profile/ProfileForm';
 import { ProfileInfoCard } from './profile/ProfileInfoCard';
 import { DataManagementCard } from './profile/DataManagementCard';
 import { DangerZoneCard } from './profile/DangerZoneCard';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Profile = () => {
   const { logout } = useAuth();
@@ -34,6 +35,17 @@ export const Profile = () => {
       </div>
 
       <DataManagementCard />
+
+      <div className="card">
+        <div className="flex items-center gap-3 mb-6">
+          <Palette className="w-8 h-8 text-primary-600 dark:text-primary-400" />
+          <div>
+            <h2 className="text-xl font-semibold">Appearance</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Choose how FitPal looks on this device</p>
+          </div>
+        </div>
+        <ThemeToggle showLabels />
+      </div>
 
       <ProfileInfoCard />
 

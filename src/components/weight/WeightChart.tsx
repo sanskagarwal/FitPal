@@ -1,6 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { TrendingDown } from 'lucide-react';
-import { usePrefersDark } from '../../utils/usePrefersDark';
+import { useTheme } from '../../context/ThemeContext';
 
 interface WeightChartProps {
   hasWeights: boolean;
@@ -9,7 +9,7 @@ interface WeightChartProps {
 }
 
 export const WeightChart = ({ hasWeights, chartData, targetWeight }: WeightChartProps) => {
-  const dark = usePrefersDark();
+  const { isDark: dark } = useTheme();
   const grid = dark ? '#374151' : '#e5e7eb';
   const axis = dark ? '#9ca3af' : '#6b7280';
   const tooltipStyle = dark

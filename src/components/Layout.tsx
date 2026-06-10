@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, Menu, X, UserCircle } from 'lucide-react';
 import { useState } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface LayoutProps {
   children: ReactNode;
@@ -54,6 +55,9 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
           </nav>
 
           <div className="flex items-center gap-3">
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
             <button
               onClick={() => onNavigate('profile')}
               className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
@@ -136,6 +140,10 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
                 <LogOut className="w-4 h-4" />
                 Logout
               </button>
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Theme</span>
+                <ThemeToggle />
+              </div>
             </nav>
           </motion.div>
         )}

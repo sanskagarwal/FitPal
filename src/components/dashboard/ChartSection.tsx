@@ -1,7 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie } from 'recharts';
 import { DailyStats } from '../../types';
 import { formatDayLabel } from '../../utils/helpers';
-import { usePrefersDark } from '../../utils/usePrefersDark';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ChartSectionProps {
   todayStats: DailyStats | null;
@@ -13,7 +13,7 @@ interface ChartSectionProps {
 // Theme-aware colors for Recharts surfaces, which render via SVG/inline styles
 // and can't use Tailwind `dark:` utilities.
 const useChartTheme = () => {
-  const dark = usePrefersDark();
+  const { isDark: dark } = useTheme();
   return {
     grid: dark ? '#374151' : '#e5e7eb',
     axis: dark ? '#9ca3af' : '#6b7280',
