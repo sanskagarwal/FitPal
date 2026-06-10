@@ -10,6 +10,17 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- Theme toggle: pick System, Light, or Dark from the header or Profile page.
+  Your choice is remembered across sessions; System keeps following your
+  operating system color scheme.
+
+### Changed
+
+- Number fields now bring up numeric and decimal keypads on mobile devices,
+  making it quicker to log weight, quantities, and goal targets.
+
 ## [0.2.0] - 2026-06-08
 
 ### Added
@@ -48,4 +59,5 @@ change between minor releases.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
 [Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/sanskagarwal/FitPal/compare/v0.1.0...v0.2.0[0.1.0]: https://github.com/sanskagarwal/FitPal/releases/tag/v0.1.0
+[0.2.0]: https://github.com/sanskagarwal/FitPal/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/sanskagarwal/FitPal/releases/tag/v0.1.0
