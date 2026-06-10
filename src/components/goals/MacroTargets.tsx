@@ -15,6 +15,7 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
         </label>
         <input
           type="number"
+          inputMode="numeric"
           min="800"
           max="6000"
           value={formData.targetCalories}
@@ -33,6 +34,7 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
           </label>
           <input
             type="number"
+            inputMode="numeric"
             min="0"
             max="500"
             value={formData.targetProtein}
@@ -49,6 +51,7 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
           </label>
           <input
             type="number"
+            inputMode="numeric"
             min="0"
             max="1000"
             value={formData.targetCarbs}
@@ -65,6 +68,7 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
           </label>
           <input
             type="number"
+            inputMode="numeric"
             min="0"
             max="500"
             value={formData.targetFats}

@@ -30,6 +30,7 @@ export const WeightGoalSection = ({
         </label>
         <input
           type="number"
+          inputMode="decimal"
           step="0.1"
           min="20"
           max="500"

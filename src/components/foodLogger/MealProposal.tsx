@@ -75,6 +75,7 @@ export const MealProposal = ({
               <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 shrink-0">
                 <input
                   type="number"
+                  inputMode="numeric"
                   min="0"
                   step="10"
                   value={Math.round(f.nutrients.calories)}

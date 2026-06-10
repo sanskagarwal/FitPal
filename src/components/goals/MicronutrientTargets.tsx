@@ -26,6 +26,7 @@ export const MicronutrientTargets = ({ formData, updateField }: MicronutrientTar
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-200 mb-1">{label}</label>
             <input
               type="number"
+              inputMode="numeric"
               min="0"
               value={formData[field]}
               onChange={(e) => updateField(field, parseInt(e.target.value))}

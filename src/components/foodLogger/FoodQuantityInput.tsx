@@ -23,6 +23,7 @@ export const FoodQuantityInput = ({
     <>
       <input
         type="number"
+        inputMode="decimal"
         min="0.25"
         step="0.25"
         value={unitQuantity}

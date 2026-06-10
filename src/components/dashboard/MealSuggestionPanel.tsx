@@ -92,6 +92,7 @@ export const MealSuggestionPanel = ({
           <input
             id="meal-calorie-cap"
             type="number"
+            inputMode="numeric"
             min={100}
             max={2000}
             step={50}

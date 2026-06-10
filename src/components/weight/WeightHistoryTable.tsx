@@ -68,6 +68,7 @@ export const WeightHistoryTable = ({
                     <td className="px-4 py-3 text-sm">
                       <input
                         type="number"
+                        inputMode="decimal"
                         step="0.1"
                         min="20"
                         max="500"
@@ -85,6 +86,7 @@ export const WeightHistoryTable = ({
                     <td className="px-4 py-3 text-sm">
                       <input
                         type="number"
+                        inputMode="decimal"
                         step="0.1"
                         min="0"
                         max="100"

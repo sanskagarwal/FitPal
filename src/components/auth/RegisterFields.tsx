@@ -42,6 +42,7 @@ export const RegisterFields = ({ formData, updateField }: RegisterFieldsProps) =
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <input
           type="number"
+          inputMode="numeric"
           min="100"
           max="250"
           step="1"
@@ -53,6 +54,7 @@ export const RegisterFields = ({ formData, updateField }: RegisterFieldsProps) =
         />
         <input
           type="number"
+          inputMode="decimal"
           min="20"
           max="500"
           step="0.1"

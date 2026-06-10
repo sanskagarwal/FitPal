@@ -56,6 +56,7 @@ export const SelectedFoodsList = ({
                   <>
                     <input
                       type="number"
+                      inputMode="numeric"
                       min="0"
                       step="10"
                       value={Math.round(entry.food.nutrients.calories)}

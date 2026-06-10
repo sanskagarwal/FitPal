@@ -85,7 +85,7 @@ export const FoodLogger = () => {
             <button
               key={type}
               onClick={() => editor.setMealType(type)}
-              className={`py-2 px-4 rounded-lg font-medium transition-colors capitalize ${
+              className={`py-2 px-4 rounded-lg font-medium transition-colors capitalize active:scale-[0.97] ${
                 editor.mealType === type
                   ? 'bg-primary-700 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'

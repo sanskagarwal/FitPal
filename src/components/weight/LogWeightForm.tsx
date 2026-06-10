@@ -33,6 +33,7 @@ export const LogWeightForm = ({
           </label>
           <input
             type="number"
+            inputMode="decimal"
             step="0.1"
             min="20"
             max="500"
@@ -49,6 +50,7 @@ export const LogWeightForm = ({
           </label>
           <input
             type="number"
+            inputMode="decimal"
             step="0.1"
             min="0"
             max="100"

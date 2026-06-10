@@ -95,6 +95,7 @@ export const ProfileForm = ({ formData, updateField, currentWeight, loading, mes
           </label>
           <input
             type="number"
+            inputMode="numeric"
             value={formData.height}
             onChange={(e) => updateField('height', parseInt(e.target.value))}
             className="input-field"
