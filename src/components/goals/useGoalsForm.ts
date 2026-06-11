@@ -144,7 +144,7 @@ export const useGoalsForm = ({ user, updateGoals }: UseGoalsFormArgs) => {
     setMessage(`Goals calculated for ${label}!`);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');

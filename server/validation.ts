@@ -38,7 +38,7 @@ const ProfileSchema = z
 export const RegisterSchema = z
   .object({
     name: z.string().min(1),
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(8, 'password must be at least 8 characters'),
     profile: ProfileSchema,
   })
@@ -46,7 +46,7 @@ export const RegisterSchema = z
 
 export const LoginSchema = z
   .object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(1),
   })
   .loose();

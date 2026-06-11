@@ -192,7 +192,7 @@ export async function analyzeFoodWithAI(foodQuery: string): Promise<Food[]> {
   try {
     const { foods } = await completeStructured(messages, FoodAnalysisSchema, 'food_analysis', 0.2);
     return foods.map((food) => ({
-      id: `food-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `food-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       name: food.name,
       servingSize: food.servingSize,
       isIndian: food.isIndian ?? true,
@@ -277,7 +277,7 @@ export async function getRecipeSuggestions(
   try {
     const { recipes } = await completeStructured(messages, RecipesSchema, 'recipe_suggestions', 0.6);
     return recipes.map((recipe) => ({
-      id: `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `recipe-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       name: recipe.name,
       description: recipe.description,
       ingredients: recipe.ingredients,

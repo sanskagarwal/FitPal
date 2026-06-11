@@ -9,7 +9,7 @@ interface ProfileFormProps {
   currentWeight: number | null;
   loading: boolean;
   message: string;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.SyntheticEvent) => void;
 }
 
 export const ProfileForm = ({ formData, updateField, currentWeight, loading, message, onSubmit }: ProfileFormProps) => {
