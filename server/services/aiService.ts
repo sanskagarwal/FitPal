@@ -862,6 +862,14 @@ interface GroundedFood {
 // then ONE batched model call for any misses, learning confident results back
 // into the cache. When `useModel` is false (clarifying turns whose proposal is
 // never shown) misses get a zero placeholder so no model call is made at all.
+// Backfill any missing nutrient fields with 0 so grounded foods always carry the
+// full 14-field shape the meal schema requires. Seed/cache entries deliberately
+// omit micronutrients (see nutritionSeed.ts), and model fills can occasionally
+// drop a field; this guarantees a complete, valid object either way.
+function completeNutrients(n: Partial<NutrientInfo> | Record<string, number>): NutrientInfo {
+  return { ...ZERO_NUTRIENTS, ...(n as NutrientInfo) };
+}
+
 async function resolveFoodsNutrition(
   foods: ExtractedFood[],
   useModel: boolean
@@ -880,7 +888,7 @@ async function resolveFoodsNutrition(
         isIndian: f.isIndian,
         category: f.category ?? undefined,
         confidence: 'high',
-        nutrients: cached.nutrients as NutrientInfo,
+        nutrients: completeNutrients(cached.nutrients),
       };
     } else {
       misses.push({ index: i, food: f });
@@ -907,7 +915,7 @@ async function resolveFoodsNutrition(
         isIndian: m.food.isIndian,
         category: m.food.category ?? undefined,
         confidence: fill.confidence,
-        nutrients: fill.nutrients,
+        nutrients: completeNutrients(fill.nutrients),
       };
     });
   }
