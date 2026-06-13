@@ -9,15 +9,14 @@ import {
   getDietaryInsights,
 } from '../services/openai';
 import { useDashboardData } from './dashboard/useDashboardData';
-import { MotivationalBanner } from './dashboard/MotivationalBanner';
-import { OverviewStats } from './dashboard/OverviewStats';
+import { DaySummaryHero } from './dashboard/DaySummaryHero';
 import { MealSuggestionPanel } from './dashboard/MealSuggestionPanel';
 import { InsightPanel } from './dashboard/InsightPanel';
 import { MealBreakdownTable } from './dashboard/MealBreakdownTable';
 import { MicronutrientsPanel } from './dashboard/MicronutrientsPanel';
 import { NutrientSuggestionPanel } from './dashboard/NutrientSuggestionPanel';
 import { WeightProgress } from './dashboard/WeightProgress';
-import { MacroDistributionChart, WeeklyNutritionTrendsChart } from './dashboard/ChartSection';
+import { WeeklyNutritionTrendsChart } from './dashboard/ChartSection';
 
 // Pick a sensible default meal type from the current time of day. The user can
 // override this in the suggestion panel.
@@ -167,17 +166,10 @@ export const Dashboard = () => {
         <DateNavigator />
       </div>
 
-      <MotivationalBanner todayStats={todayStats} targetCalories={goals?.targetCalories || 2000} />
-
       <section className="space-y-4">
         <SectionLabel>Today's progress</SectionLabel>
 
-        <OverviewStats
-          todayStats={todayStats}
-          goals={goals}
-          suggestingNutrient={suggestingNutrient}
-          onNutrientSuggestion={handleNutrientSuggestion}
-        />
+        <DaySummaryHero todayStats={todayStats} goals={goals} />
 
         <MicronutrientsPanel
           micronutrients={micronutrients}
@@ -233,9 +225,7 @@ export const Dashboard = () => {
 
         <WeightProgress recentWeight={recentWeight} goals={goals} />
 
-        <MacroDistributionChart todayStats={todayStats} isToday={isToday} selectedDate={selectedDate} />
-
-        <WeeklyNutritionTrendsChart weeklyData={weeklyData} />
+        <WeeklyNutritionTrendsChart weeklyData={weeklyData} goals={goals} />
       </section>
     </div>
   );
