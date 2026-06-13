@@ -4,7 +4,7 @@ Planned and in-progress work for FitPal, ordered by priority.
 
 | Priority | Task | Notes |
 | --- | --- | --- |
-| Medium | Barcode / photo-based food logging | Let users log food by scanning a barcode or photo instead of typing, building on the existing AI food analysis. |
+| Medium | Barcode-based food logging | Let users log packaged food by scanning a barcode, building on the existing AI food analysis. (Photo-based logging has shipped - see Agentic AI meal logging in FEATURES.) |
 | Medium | Trends & progress charts | Visualize weight and nutrition trends over time to complement the existing daily views. |
 | Medium | Reminders & notifications | Build on the existing notifications module to send meal/weigh-in reminders. |
 | Low | Document instance backup/restore | Document copying `fitpal.db` out of the container (`docker cp`) for self-hosters, ideally with a `scripts/backup.sh` helper. |

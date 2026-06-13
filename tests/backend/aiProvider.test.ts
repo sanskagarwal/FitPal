@@ -15,6 +15,12 @@ async function loadGetModel() {
   return getModel;
 }
 
+async function loadGetVisionModel() {
+  vi.resetModules();
+  const { getVisionModel } = await import('../../server/services/aiService.js');
+  return getVisionModel;
+}
+
 beforeEach(() => {
   process.env.AI_API_KEY = 'k';
   process.env.AI_MODEL = 'test-model';
@@ -82,5 +88,29 @@ describe('getModel provider selection', () => {
     delete process.env.AI_API_KEY;
     const getModel = await loadGetModel();
     expect(() => getModel()).toThrow(/AI_API_KEY/);
+  });
+});
+
+describe('getVisionModel', () => {
+  it('uses AI_VISION_MODEL when set', async () => {
+    process.env.AI_PROVIDER = 'anthropic';
+    process.env.AI_VISION_MODEL = 'vision-model';
+    const model = (await loadGetVisionModel())();
+    expect(model.modelId).toBe('vision-model');
+  });
+
+  it('falls back to AI_MODEL when AI_VISION_MODEL is unset', async () => {
+    process.env.AI_PROVIDER = 'anthropic';
+    delete process.env.AI_VISION_MODEL;
+    const model = (await loadGetVisionModel())();
+    expect(model.modelId).toBe('test-model');
+  });
+
+  it('builds the vision model with the configured provider', async () => {
+    process.env.AI_PROVIDER = 'google';
+    process.env.AI_VISION_MODEL = 'gemini-vision';
+    const model = (await loadGetVisionModel())();
+    expect(model.provider).toBe('google.generative-ai');
+    expect(model.modelId).toBe('gemini-vision');
   });
 });

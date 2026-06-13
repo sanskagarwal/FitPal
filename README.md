@@ -141,6 +141,7 @@ Works with any OpenAI-compatible API. For **Azure OpenAI**, set
 | `AI_API_KEY` | Yes | None | API key for your AI provider (any non-empty value for local Ollama). |
 | `AI_BASE_URL` | If OpenAI-compatible/Azure | None | OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. Optional for `anthropic` and `google`. |
 | `AI_MODEL` | Yes | None | Model id, or the Azure deployment name when `AI_PROVIDER=azure`. |
+| `AI_VISION_MODEL` | No | `AI_MODEL` | Multimodal model for photo-based meal logging. Falls back to `AI_MODEL`; set only if that model is text-only or you prefer a different vision model. |
 | `AI_PROVIDER` | No | `openai-compatible` | AI SDK to use: `openai-compatible`, `azure`, `anthropic`, or `google`. |
 | `AI_API_VERSION` | If Azure | None | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
 | `PORT` | No | `3001` | Port the storage/API server listens on. |

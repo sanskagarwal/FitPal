@@ -22,6 +22,9 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 
 - **Natural language.** Type things like *"2 rotis and a katori of dal for lunch
   at 1pm"* and FitPal builds the meal for you.
+- **Snap a photo.** Attach a picture of your plate (camera or upload) and a
+  vision model identifies the foods and portions, then flows through the same
+  editable proposal before saving. The photo is shown alongside the logged meal.
 - **Log, update, or delete.** The assistant understands follow-ups like *"add a
   glass of milk to breakfast"* or *"delete my lunch"* and acts on today's meals.
 - **Conversational preview.** Proposed actions appear as a confirmable card

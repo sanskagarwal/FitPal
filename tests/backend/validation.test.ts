@@ -125,6 +125,21 @@ describe('MealSchema', () => {
     const bad = { ...base, totalNutrients: { ...goodNutrients, protein: -5 } };
     expect(MealSchema.safeParse(bad).success).toBe(false);
   });
+
+  it('accepts an optional jpeg image data URL', () => {
+    const withImage = { ...base, image: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==' };
+    expect(MealSchema.safeParse(withImage).success).toBe(true);
+  });
+
+  it('rejects a non-image data URL', () => {
+    const bad = { ...base, image: 'data:text/html;base64,PHNjcmlwdD4=' };
+    expect(MealSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('rejects an svg image data URL', () => {
+    const bad = { ...base, image: 'data:image/svg+xml;base64,PHN2Zy8+' };
+    expect(MealSchema.safeParse(bad).success).toBe(false);
+  });
 });
 
 describe('WeightSchema', () => {

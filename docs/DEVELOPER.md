@@ -127,6 +127,7 @@ AI_MODEL=gpt-4o-mini
 | `AI_API_KEY` | Yes | Server | None | API key for the AI provider (any non-empty value for local Ollama). |
 | `AI_BASE_URL` | If OpenAI-compatible/Azure | Server | None | Base URL of the OpenAI-compatible endpoint, or the Azure resource endpoint when `AI_PROVIDER=azure`. Optional for `anthropic` and `google` (defaults to the official endpoint). |
 | `AI_MODEL` | Yes | Server | None | Model id, or the deployment name when `AI_PROVIDER=azure`. |
+| `AI_VISION_MODEL` | No | Server | `AI_MODEL` | Multimodal model for photo-based meal logging. Falls back to `AI_MODEL`; set only if that model is text-only or you prefer a different vision model. Must support image input. |
 | `AI_PROVIDER` | No | Server | `openai-compatible` | AI SDK to use: `openai-compatible`, `azure`, `anthropic`, or `google`. |
 | `AI_API_VERSION` | If Azure | Server | None | Azure OpenAI API version (required when `AI_PROVIDER=azure`). |
 | `PORT` | No | Server | `3001` | Port the storage/API server listens on. |
@@ -261,6 +262,7 @@ FitPal/
 
 - Express 5 + TypeScript
 - `better-sqlite3` (SQLite)
+- `sharp` (server-side image normalization for photo-based meal logging)
 - `jsonwebtoken` + `bcryptjs` (auth), `cookie-parser`, `cors`
 - tsx (dev execution)
 

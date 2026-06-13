@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   clampNumber,
+  compressImage,
   describeChatError,
   formatUnit,
   toHHmm,
   sumNutrients,
+  MAX_IMAGE_FILE_BYTES,
   MAX_QUANTITY,
 } from '../../src/components/foodLogger/foodLoggerUtils';
 import type { NutrientInfo } from '../../src/types';
@@ -100,5 +102,30 @@ describe('sumNutrients', () => {
     expect(total.carbs).toBe(60);
     expect(total.fats).toBe(15);
     expect(total.fiber).toBe(6);
+  });
+});
+
+describe('compressImage', () => {
+  // jsdom has no real canvas/createImageBitmap, so these cover the guard and
+  // error paths that run before any pixel work; the happy path is exercised
+  // end-to-end in the browser/e2e.
+  it('rejects a file over the size cap before decoding', async () => {
+    const huge = new File([new Uint8Array(MAX_IMAGE_FILE_BYTES + 1)], 'big.jpg', {
+      type: 'image/jpeg',
+    });
+    await expect(compressImage(huge)).rejects.toThrow(/too large/i);
+  });
+
+  it('surfaces a friendly error when the image cannot be decoded', async () => {
+    const original = globalThis.createImageBitmap;
+    // jsdom does not implement createImageBitmap; force the decode to fail.
+    globalThis.createImageBitmap = (() =>
+      Promise.reject(new Error('decode failed'))) as typeof createImageBitmap;
+    try {
+      const file = new File([new Uint8Array([1, 2, 3])], 'photo.heic', { type: 'image/heic' });
+      await expect(compressImage(file)).rejects.toThrow(/couldn't read that image/i);
+    } finally {
+      globalThis.createImageBitmap = original;
+    }
   });
 });
