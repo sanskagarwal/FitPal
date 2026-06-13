@@ -4,12 +4,13 @@ import { getMealsByDateRange, getWeightsByUser } from '../../utils/db';
 import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange } from '../../utils/helpers';
 
 export interface MealTypeStats {
-  mealType: string;
+  mealType: MealType;
   calories: number;
   protein: number;
   carbs: number;
   fats: number;
   fiber: number;
+  isLogged: boolean;
 }
 
 const calculateTotals = (meals: MealEntry[]) =>
@@ -87,26 +88,28 @@ export const useDashboardData = (user: User | null, selectedDate: Date) => {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  const mealTypeStats: MealTypeStats[] = Object.values(MealType)
-    .map((mealType) => {
-      const mealsOfType = todayMeals.filter((m) => m.mealType === mealType);
-      const totals = mealsOfType.reduce(
-        (acc, meal) => ({
-          calories: acc.calories + meal.totalNutrients.calories,
-          protein: acc.protein + meal.totalNutrients.protein,
-          carbs: acc.carbs + meal.totalNutrients.carbs,
-          fats: acc.fats + meal.totalNutrients.fats,
-          fiber: acc.fiber + (meal.totalNutrients.fiber || 0),
-        }),
-        { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
-      );
+  // One entry per meal type (in enum order), whether or not it has logged meals.
+  // The breakdown UI shows every meal against its target, with unlogged meals
+  // rendered muted.
+  const mealTypeStats: MealTypeStats[] = Object.values(MealType).map((mealType) => {
+    const mealsOfType = todayMeals.filter((m) => m.mealType === mealType);
+    const totals = mealsOfType.reduce(
+      (acc, meal) => ({
+        calories: acc.calories + meal.totalNutrients.calories,
+        protein: acc.protein + meal.totalNutrients.protein,
+        carbs: acc.carbs + meal.totalNutrients.carbs,
+        fats: acc.fats + meal.totalNutrients.fats,
+        fiber: acc.fiber + (meal.totalNutrients.fiber || 0),
+      }),
+      { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
+    );
 
-      return {
-        mealType: mealType.replace('-', ' '),
-        ...totals,
-      };
-    })
-    .filter((stat) => stat.calories > 0);
+    return {
+      mealType,
+      ...totals,
+      isLogged: mealsOfType.length > 0,
+    };
+  });
 
   const micronutrients: Partial<NutrientInfo> = todayMeals.reduce<Partial<NutrientInfo>>(
     (acc, meal) => ({

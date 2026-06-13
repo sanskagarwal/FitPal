@@ -57,6 +57,19 @@ export interface UserGoals {
   customNutrients?: Record<string, number>;
 }
 
+/**
+ * Recommended calorie + macro targets for a single meal type, derived by
+ * splitting the user's daily goal across meals using the MEAL_CALORIE_CAPS
+ * proportions. Energy in kcal, macros in grams.
+ */
+export interface MealTarget {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+}
+
 // Food and Nutrition Types
 export interface Food {
   id: string;
@@ -218,6 +231,27 @@ export interface MealSuggestion {
   ingredients: { item: string; portion: string }[];
   nutrition: { calories: number; protein: number; carbs: number; fats: number; fiber: number };
   reason: string;
+}
+
+export type MealInsightNutrient = 'calories' | 'protein' | 'carbs' | 'fats' | 'fiber';
+
+export interface MealInsightShortfall {
+  nutrient: MealInsightNutrient;
+  note: string;
+}
+
+export interface MealInsightMakeUp {
+  mealType: string;
+  suggestion: string;
+}
+
+// AI insight for a single logged meal: how it did against its target, what it
+// lacked, how to improve the meal itself, and how to make up gaps in later meals.
+export interface MealInsight {
+  assessment: string;
+  shortfalls: MealInsightShortfall[];
+  improveThisMeal: string[];
+  makeUp: MealInsightMakeUp[];
 }
 
 export interface NutrientFoodItem {

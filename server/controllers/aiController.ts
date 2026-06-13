@@ -5,6 +5,7 @@ import {
   getRecipeSuggestions,
   getDietaryInsights,
   suggestMeal,
+  getMealInsight,
   suggestFoodForNutrient,
   suggestGoals,
   chatLogMeal,
@@ -64,6 +65,17 @@ export const aiController = {
         req.body.mealType,
         req.body.dietPreference,
         req.body.calorieCap
+      )
+    ),
+
+  mealInsight: (req: Request, res: Response) =>
+    run(res, () =>
+      getMealInsight(
+        req.body.mealType,
+        req.body.consumed,
+        req.body.target,
+        req.body.laterMealTypes ?? [],
+        req.body.dietPreference
       )
     ),
 

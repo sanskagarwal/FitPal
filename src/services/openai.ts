@@ -5,6 +5,7 @@ import {
   DietPreference,
   DietaryInsight,
   MealSuggestion,
+  MealInsight,
   NutrientSuggestion,
   MealChatResult,
   LoggedMealSummary,
@@ -118,6 +119,30 @@ export async function suggestMeal(
     mealType,
     dietPreference,
     calorieCap,
+  });
+}
+
+interface MealMacros {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+}
+
+export async function getMealInsight(
+  mealType: string,
+  consumed: MealMacros,
+  target: MealMacros,
+  laterMealTypes: string[],
+  dietPreference?: DietPreference
+): Promise<MealInsight> {
+  return aiCall<MealInsight>('meal-insight', {
+    mealType,
+    consumed,
+    target,
+    laterMealTypes,
+    dietPreference,
   });
 }
 

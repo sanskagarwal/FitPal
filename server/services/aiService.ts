@@ -23,6 +23,7 @@ import {
   recipesPrompt,
   insightsPrompt,
   mealSuggestionPrompt,
+  mealInsightPrompt,
   nutrientSuggestionPrompt,
   goalsPrompt,
   nutritionFillPrompt,
@@ -393,6 +394,74 @@ export async function getDietaryInsights(
   } catch (error) {
     logger.error('Error getting insights', { error: error instanceof Error ? error.message : String(error) });
     return INSIGHTS_FALLBACK;
+  }
+}
+
+// Per-meal insight
+export interface MealMacros {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+}
+
+const MEAL_INSIGHT_NUTRIENTS = ['calories', 'protein', 'carbs', 'fats', 'fiber'] as const;
+
+const MealInsightSchema = z.object({
+  assessment: z.string(),
+  shortfalls: z.array(
+    z.object({
+      nutrient: z.enum(MEAL_INSIGHT_NUTRIENTS),
+      note: z.string(),
+    })
+  ),
+  improveThisMeal: z.array(z.string()),
+  makeUp: z
+    .array(
+      z.object({
+        mealType: z.string(),
+        suggestion: z.string(),
+      })
+    )
+    .min(1),
+});
+
+type MealInsight = z.infer<typeof MealInsightSchema>;
+
+const MEAL_INSIGHT_FALLBACK: MealInsight = {
+  assessment: 'A reasonable meal - aim to balance protein and fibre across the day.',
+  shortfalls: [],
+  improveThisMeal: [
+    'Add a protein source like dal, paneer, curd or eggs to round out the meal.',
+  ],
+  makeUp: [
+    {
+      mealType: 'later meals',
+      suggestion: 'Add a protein and fibre source like dal, curd, paneer, sprouts or a vegetable side.',
+    },
+  ],
+};
+
+export async function getMealInsight(
+  mealType: string,
+  consumed: MealMacros,
+  target: MealMacros,
+  laterMealTypes: string[],
+  dietPreference?: DietPreference
+): Promise<MealInsight> {
+  const messages: ChatMessage[] = [
+    {
+      role: 'user',
+      content: mealInsightPrompt({ mealType, consumed, target, laterMealTypes, dietPreference }),
+    },
+  ];
+
+  try {
+    return await completeStructured(messages, MealInsightSchema, 'meal_insight', 0.5);
+  } catch (error) {
+    logger.error('Error getting meal insight', { error: error instanceof Error ? error.message : String(error) });
+    return MEAL_INSIGHT_FALLBACK;
   }
 }
 

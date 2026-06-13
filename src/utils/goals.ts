@@ -1,4 +1,4 @@
-import { UserProfile } from '../types';
+import { MealTarget, MealType, MEAL_CALORIE_CAPS, UserGoals, UserProfile } from '../types';
 import { calculateAge } from './helpers';
 
 export type GoalDirection = 'loss' | 'gain' | 'maintain';
@@ -108,4 +108,26 @@ export const calculateRegistrationGoals = (
   const fats = Math.round((maintenanceCalories * 0.25) / 9); // 25% of calories from fats
   const carbs = Math.round((maintenanceCalories - protein * 4 - fats * 9) / 4);
   return { maintenanceCalories, protein, carbs, fats };
+};
+
+// Total of the per-meal calorie caps, used as the denominator when splitting the
+// daily goal into per-meal-type targets.
+const MEAL_CAP_TOTAL = Object.values(MEAL_CALORIE_CAPS).reduce((sum, cap) => sum + cap, 0);
+
+// Default daily fiber target when the user's goal does not specify one.
+const DEFAULT_FIBER_TARGET = 30;
+
+// Split the user's daily calorie + macro goal into a target for a single meal
+// type, weighted by that meal's share of MEAL_CALORIE_CAPS. The per-meal targets
+// across all meal types sum back to the daily goal.
+export const getMealTargets = (mealType: MealType, goals: UserGoals): MealTarget => {
+  const weight = MEAL_CALORIE_CAPS[mealType] / MEAL_CAP_TOTAL;
+  const fiberGoal = goals.targetFiber || DEFAULT_FIBER_TARGET;
+  return {
+    calories: Math.round(weight * goals.targetCalories),
+    protein: Math.round(weight * goals.targetProtein),
+    carbs: Math.round(weight * goals.targetCarbs),
+    fats: Math.round(weight * goals.targetFats),
+    fiber: Math.round(weight * fiberGoal),
+  };
 };

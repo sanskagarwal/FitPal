@@ -155,3 +155,23 @@ export const ChatMealStreamSchema = z
     image: ImageDataUrlSchema.optional(),
   })
   .loose();
+
+// Per-meal insight request. The macro bundles are bounded; meal types are
+// validated against the enum so the prompt only ever sees known meal labels.
+const MealMacrosSchema = z.object({
+  calories: amount(100000),
+  protein: amount(100000),
+  carbs: amount(100000),
+  fats: amount(100000),
+  fiber: amount(100000),
+});
+
+export const MealInsightRequestSchema = z
+  .object({
+    mealType: z.enum(MealType),
+    consumed: MealMacrosSchema,
+    target: MealMacrosSchema,
+    laterMealTypes: z.array(z.enum(MealType)).optional(),
+    dietPreference: z.string().optional(),
+  })
+  .loose();

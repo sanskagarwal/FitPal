@@ -129,6 +129,30 @@ ${portionLine}
 ${accuracyLine}`;
 }
 
+// Per-meal insight: assess one logged meal against its target, suggest how to
+// improve the meal itself, and how to make up any gaps in the remaining meals.
+export function mealInsightPrompt(args: {
+  mealType: string;
+  consumed: { calories: number; protein: number; carbs: number; fats: number; fiber: number };
+  target: { calories: number; protein: number; carbs: number; fats: number; fiber: number };
+  laterMealTypes: string[];
+  dietPreference?: DietPreference;
+}): string {
+  const mealLabel = args.mealType.replace(/-/g, ' ');
+  const laterLabels = args.laterMealTypes.map((m) => m.replace(/-/g, ' '));
+  const laterLine = laterLabels.length
+    ? `Remaining meals today the user can still use to make up gaps: ${laterLabels.join(', ')}.`
+    : `This is the last meal of the day, so frame make-up suggestions for tomorrow's meals.`;
+
+  return `Analyse this logged ${mealLabel} against its recommended target for that meal.
+
+Consumed: ${args.consumed.calories} kcal, ${args.consumed.protein}g protein, ${args.consumed.carbs}g carbs, ${args.consumed.fats}g fats, ${args.consumed.fiber}g fiber
+Target for this meal: ${args.target.calories} kcal, ${args.target.protein}g protein, ${args.target.carbs}g carbs, ${args.target.fats}g fats, ${args.target.fiber}g fiber
+${laterLine}${dietLine(args.dietPreference, 'foods')}
+
+Give a one-line "assessment" of how this meal did against its target. List "shortfalls": for each nutrient that fell meaningfully short (or ran notably high), set "nutrient" to one of calories, protein, carbs, fats, fiber and a short plain-language "note"; return an empty list if the meal was well balanced. Give "improveThisMeal": 1-3 practical ways to make THIS meal better next time (e.g. add, swap or adjust a specific Indian food or portion to fix its shortfalls without changing what it fundamentally is); return an empty list only if the meal already hits its target well. Then give "makeUp": 1-3 concrete suggestions for later meals, each with a "mealType" (use one of the remaining meals named above when possible) and a "suggestion" naming specific Indian foods to close the gaps. Keep everything practical and specific to Indian cuisine.`;
+}
+
 export function nutrientSuggestionPrompt(
   nutrientName: string,
   currentAmount: number,

@@ -204,7 +204,7 @@ export const Dashboard = () => {
         onDismiss={() => setInsight(null)}
       />
 
-      <MealBreakdownTable mealTypeStats={mealTypeStats} isToday={isToday} selectedDate={selectedDate} />
+      <MealBreakdownTable mealTypeStats={mealTypeStats} goals={goals} dietPreference={dietPreference} isToday={isToday} selectedDate={selectedDate} />
 
       <WeightProgress recentWeight={recentWeight} goals={goals} />
 
