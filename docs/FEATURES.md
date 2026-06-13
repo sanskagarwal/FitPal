@@ -120,6 +120,9 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 - **Installable** on phone, tablet, and desktop (custom icons, maskable-safe).
 - **Offline support** via service worker precaching.
 - **Responsive** layouts tuned for small screens and touch targets.
+- **Bottom navigation bar** on phones for thumb-friendly switching between
+  pages, with a More sheet for secondary actions; the bar tucks away as you
+  scroll down and returns as you scroll up.
 
 ## Interface and polish
 

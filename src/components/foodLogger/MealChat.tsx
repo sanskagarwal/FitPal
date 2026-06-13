@@ -37,6 +37,9 @@ export const MealChat = ({
 }: MealChatProps) => {
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
+  const autoFocusInput =
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
+
   // Auto-scroll the chat to the latest message.
   useEffect(() => {
     const el = chatScrollRef.current;
@@ -124,7 +127,7 @@ export const MealChat = ({
           placeholder="What did you eat?"
           className="input-field flex-1"
           disabled={chatLoading}
-          autoFocus
+          autoFocus={autoFocusInput}
         />
         <button onClick={onSend} disabled={chatLoading || !chatInput.trim()} className="btn-primary flex items-center gap-1">
           <Send className="w-4 h-4" />

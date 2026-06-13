@@ -1,9 +1,8 @@
 import { ReactNode } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
-import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, Menu, X, UserCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, UserCircle } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { BottomNav } from './BottomNav';
 
 interface LayoutProps {
   children: ReactNode;
@@ -13,7 +12,6 @@ interface LayoutProps {
 
 export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
   const { user, logout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -77,91 +75,25 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
               <LogOut className="w-4 h-4" />
               Logout
             </button>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden -mr-2 inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="md:hidden border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 overflow-hidden"
-          >
-            <nav className="p-4 space-y-2">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onNavigate(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
-                      currentPage === item.id
-                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
-                        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => {
-                  onNavigate('profile');
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
-                  currentPage === 'profile'
-                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                <UserCircle className="w-4 h-4" />
-                {user?.name || 'Profile'}
-              </button>
-              <button
-                onClick={logout}
-                className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Theme</span>
-                <ThemeToggle />
-              </div>
-            </nav>
-          </motion.div>
-        )}
-        </AnimatePresence>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 mt-12">
+      <footer className="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 mt-12 pb-24 md:pb-0">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>FitPal - Track Indian meals smartly & privately</p>
           <p className="mt-1">All data stored locally on your device</p>
         </div>
       </footer>
+
+      {/* Mobile bottom navigation (replaces the hamburger menu on small screens) */}
+      <BottomNav currentPage={currentPage} onNavigate={onNavigate} />
     </div>
   );
 };

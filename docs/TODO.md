@@ -18,4 +18,3 @@ service worker with offline caching) already exists via `vite-plugin-pwa` in
 | Priority | Task | Notes |
 | --- | --- | --- |
 | High | Push notifications | Use the Web Push API on top of the existing service worker to deliver reminders even when the app is closed; ties into the reminders & notifications work above. |
-| Low | Mobile UX polish | Add pull-to-refresh and a bottom navigation bar for thumb-friendly access. |
