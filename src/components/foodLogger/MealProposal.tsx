@@ -3,6 +3,15 @@ import { Check, AlertCircle } from 'lucide-react';
 import { MealEntry, MealChatResult } from '../../types';
 import { ConfidenceBadge } from './ConfidenceBadge';
 
+// Title-case a meal type for display, e.g. "evening-snack" -> "Evening Snack".
+// Done in JS rather than CSS `capitalize` so it stays correct even when wrapped
+// in parentheses (CSS capitalize mis-handles a word glued to a leading "(").
+const formatMealType = (mealType: string): string =>
+  mealType
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
 interface MealProposalProps {
   proposedMeal: MealChatResult;
   todayMeals: MealEntry[];
@@ -42,9 +51,8 @@ export const MealProposal = ({
             ? 'Ready to update'
             : 'Ready to log'}
           {proposedMeal.mealType && proposedMeal.action !== 'delete' && (
-            <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-300 capitalize">
-              ({proposedMeal.mealType.replace('-', ' ')}
-              {proposedMeal.time ? ` • ${proposedMeal.time}` : ''})
+            <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-300">
+              ({formatMealType(proposedMeal.mealType)})
             </span>
           )}
         </h3>

@@ -1,13 +1,16 @@
 import { X } from 'lucide-react';
-import { FoodEntry, MealUnit, NutrientInfo } from '../../types';
+import { FoodEntry, MealType, MealUnit, NutrientInfo } from '../../types';
 import { Spinner } from '../Spinner';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { FoodQuantityInput } from './FoodQuantityInput';
+import { MEAL_TYPES } from './foodLoggerUtils';
 
 interface SelectedFoodsListProps {
   selectedFoods: FoodEntry[];
   reestimatingIndex: number | null;
   editingMealId: string | null;
+  mealType: MealType;
+  setMealType: (type: MealType) => void;
   notes: string;
   setNotes: (value: string) => void;
   calculateTotalNutrients: () => NutrientInfo;
@@ -23,6 +26,8 @@ export const SelectedFoodsList = ({
   selectedFoods,
   reestimatingIndex,
   editingMealId,
+  mealType,
+  setMealType,
   notes,
   setNotes,
   calculateTotalNutrients,
@@ -33,7 +38,13 @@ export const SelectedFoodsList = ({
   onSave,
   onCancelEdit,
 }: SelectedFoodsListProps) => {
-  if (selectedFoods.length === 0) return null;
+  // Hide the card when there is nothing to show, but keep it visible while
+  // editing even if every food was removed - otherwise the Cancel Edit button
+  // disappears and the meal stays stuck in edit mode (its row's Edit button
+  // disabled with no way out).
+  if (selectedFoods.length === 0 && !editingMealId) return null;
+
+  const isEmpty = selectedFoods.length === 0;
 
   return (
     <div className="card">
@@ -117,6 +128,27 @@ export const SelectedFoodsList = ({
       {/* Notes */}
       <div className="mt-4">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+          Meal Type
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          {MEAL_TYPES.map((type) => (
+            <button
+              key={type}
+              onClick={() => setMealType(type)}
+              className={`py-2 px-4 rounded-lg font-medium transition-colors capitalize active:scale-[0.97] ${
+                mealType === type
+                  ? 'bg-primary-700 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              {type.replace('-', ' ')}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
           Notes (optional)
         </label>
         <textarea
@@ -129,7 +161,12 @@ export const SelectedFoodsList = ({
       </div>
 
       {/* Save Button */}
-      <button onClick={onSave} className="btn-primary w-full mt-4">
+      {isEmpty && (
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          Add at least one food, or cancel the edit.
+        </p>
+      )}
+      <button onClick={onSave} disabled={isEmpty} className="btn-primary w-full mt-4 disabled:opacity-50">
         {editingMealId ? 'Update Meal' : 'Log Meal'}
       </button>
       {editingMealId && (

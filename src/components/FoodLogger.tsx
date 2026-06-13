@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
 import { Food } from '../types';
 import { Toast, ToastType } from './Toast';
-import { MEAL_TYPES } from './foodLogger/foodLoggerUtils';
 import { useTodayMeals } from './foodLogger/useTodayMeals';
 import { useFoodSearch } from './foodLogger/useFoodSearch';
 import { useMealEditor } from './foodLogger/useMealEditor';
@@ -25,6 +24,15 @@ export const FoodLogger = () => {
   const search = useFoodSearch();
   const editor = useMealEditor({ user, selectedDate, loadTodayMeals, todayMeals, setToast: showToast });
   const chat = useMealChat({ user, selectedDate, todayMeals, loadTodayMeals, setToast: showToast });
+
+  // When an edit starts, scroll the editor card into view so the user isn't left
+  // looking at the meal row further down the page.
+  const editorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (editor.editingMealId) {
+      editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [editor.editingMealId]);
 
   const handleAddFood = (food: Food) => {
     editor.addFood(food);
@@ -81,26 +89,6 @@ export const FoodLogger = () => {
         <div className="h-px bg-gray-200 dark:bg-gray-700 flex-1" />
       </div>
 
-      {/* Meal Type Selection */}
-      <div className="card">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Meal Type</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-          {MEAL_TYPES.map((type) => (
-            <button
-              key={type}
-              onClick={() => editor.setMealType(type)}
-              className={`py-2 px-4 rounded-lg font-medium transition-colors capitalize active:scale-[0.97] ${
-                editor.mealType === type
-                  ? 'bg-primary-700 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              {type.replace('-', ' ')}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Food Search */}
       <FoodSearch
         searchQuery={search.searchQuery}
@@ -114,20 +102,24 @@ export const FoodLogger = () => {
       />
 
       {/* Selected Foods */}
-      <SelectedFoodsList
-        selectedFoods={editor.selectedFoods}
-        reestimatingIndex={editor.reestimatingIndex}
-        editingMealId={editor.editingMealId}
-        notes={editor.notes}
-        setNotes={editor.setNotes}
-        calculateTotalNutrients={editor.calculateTotalNutrients}
-        onUpdateFoodCalories={editor.updateFoodCalories}
-        onUpdateQuantity={editor.updateQuantity}
-        onChangeFoodUnit={editor.changeFoodUnit}
-        onRemoveFood={editor.removeFood}
-        onSave={editor.editingMealId ? editor.saveEditedMeal : editor.saveMealEntry}
-        onCancelEdit={editor.cancelEditMeal}
-      />
+      <div ref={editorRef} className="scroll-mt-4">
+        <SelectedFoodsList
+          selectedFoods={editor.selectedFoods}
+          reestimatingIndex={editor.reestimatingIndex}
+          editingMealId={editor.editingMealId}
+          mealType={editor.mealType}
+          setMealType={editor.setMealType}
+          notes={editor.notes}
+          setNotes={editor.setNotes}
+          calculateTotalNutrients={editor.calculateTotalNutrients}
+          onUpdateFoodCalories={editor.updateFoodCalories}
+          onUpdateQuantity={editor.updateQuantity}
+          onChangeFoodUnit={editor.changeFoodUnit}
+          onRemoveFood={editor.removeFood}
+          onSave={editor.editingMealId ? editor.saveEditedMeal : editor.saveMealEntry}
+          onCancelEdit={editor.cancelEditMeal}
+        />
+      </div>
 
       {/* Today's Meals History */}
       <TodayMealsHistory
