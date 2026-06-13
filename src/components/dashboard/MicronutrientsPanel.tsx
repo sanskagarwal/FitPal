@@ -27,48 +27,48 @@ export const MicronutrientsPanel = ({
 }: MicronutrientsPanelProps) => {
   const [expanded, setExpanded] = useState(false);
 
-  // Each tile: current value source, target with default, and colour theme.
+  // Each row: current value source, target with default, and colour accent.
   // Ordered so the first four (Fiber, Iron, Calcium, Vitamin D) show by default.
   const cards: {
     label: string;
     value: number;
     unit: string;
     target: number;
-    bgClassName: string;
+    barClassName: string;
     valueClassName: string;
     suggestName: string;
   }[] = [
     {
       label: 'Fiber', value: micronutrients.fiber || 0, unit: 'g', target: goals?.targetFiber || 30,
-      bgClassName: 'bg-purple-50 dark:bg-purple-900/30', valueClassName: 'text-purple-600 dark:text-purple-300', suggestName: 'Fiber',
+      barClassName: 'bg-purple-500', valueClassName: 'text-purple-600 dark:text-purple-300', suggestName: 'Fiber',
     },
     {
       label: 'Iron', value: micronutrients.iron || 0, unit: 'mg', target: goals?.targetIron || 18,
-      bgClassName: 'bg-red-50 dark:bg-red-900/30', valueClassName: 'text-red-600 dark:text-red-300', suggestName: 'Iron',
+      barClassName: 'bg-red-500', valueClassName: 'text-red-600 dark:text-red-300', suggestName: 'Iron',
     },
     {
       label: 'Calcium', value: micronutrients.calcium || 0, unit: 'mg', target: goals?.targetCalcium || 1000,
-      bgClassName: 'bg-blue-50 dark:bg-blue-900/30', valueClassName: 'text-blue-600 dark:text-blue-300', suggestName: 'Calcium',
+      barClassName: 'bg-blue-500', valueClassName: 'text-blue-600 dark:text-blue-300', suggestName: 'Calcium',
     },
     {
       label: 'Vitamin D', value: micronutrients.vitaminD || 0, unit: 'mcg', target: goals?.targetVitaminD || 15,
-      bgClassName: 'bg-yellow-50 dark:bg-yellow-900/30', valueClassName: 'text-yellow-700 dark:text-yellow-300', suggestName: 'Vitamin D',
+      barClassName: 'bg-yellow-500', valueClassName: 'text-yellow-700 dark:text-yellow-300', suggestName: 'Vitamin D',
     },
     {
       label: 'Vitamin A', value: micronutrients.vitaminA || 0, unit: 'mcg', target: goals?.targetVitaminA || 900,
-      bgClassName: 'bg-orange-50 dark:bg-orange-900/30', valueClassName: 'text-orange-600 dark:text-orange-300', suggestName: 'Vitamin A',
+      barClassName: 'bg-orange-500', valueClassName: 'text-orange-600 dark:text-orange-300', suggestName: 'Vitamin A',
     },
     {
       label: 'Vitamin C', value: micronutrients.vitaminC || 0, unit: 'mg', target: goals?.targetVitaminC || 90,
-      bgClassName: 'bg-green-50 dark:bg-green-900/30', valueClassName: 'text-green-600 dark:text-green-300', suggestName: 'Vitamin C',
+      barClassName: 'bg-green-500', valueClassName: 'text-green-600 dark:text-green-300', suggestName: 'Vitamin C',
     },
     {
       label: 'Magnesium', value: micronutrients.magnesium || 0, unit: 'mg', target: goals?.targetMagnesium || 400,
-      bgClassName: 'bg-indigo-50 dark:bg-indigo-900/30', valueClassName: 'text-indigo-600 dark:text-indigo-300', suggestName: 'Magnesium',
+      barClassName: 'bg-indigo-500', valueClassName: 'text-indigo-600 dark:text-indigo-300', suggestName: 'Magnesium',
     },
     {
       label: 'Potassium', value: micronutrients.potassium || 0, unit: 'mg', target: goals?.targetPotassium || 3500,
-      bgClassName: 'bg-pink-50 dark:bg-pink-900/30', valueClassName: 'text-pink-600 dark:text-pink-300', suggestName: 'Potassium',
+      barClassName: 'bg-pink-500', valueClassName: 'text-pink-600 dark:text-pink-300', suggestName: 'Potassium',
     },
   ];
 
@@ -78,7 +78,7 @@ export const MicronutrientsPanel = ({
   return (
     <div className="card">
       <h2 className="text-xl font-semibold mb-4">{isToday ? "Today's" : `${formatDayLabel(selectedDate)}'s`} Micronutrients</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
         {visibleCards.map((c) => (
           <MicronutrientCard
             key={c.label}
@@ -86,7 +86,7 @@ export const MicronutrientsPanel = ({
             value={c.value}
             unit={c.unit}
             target={c.target}
-            bgClassName={c.bgClassName}
+            barClassName={c.barClassName}
             valueClassName={c.valueClassName}
             suggestDisabled={suggestingNutrient}
             onSuggest={() => onNutrientSuggestion(c.suggestName, c.value, c.target)}

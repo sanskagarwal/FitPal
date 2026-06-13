@@ -66,16 +66,17 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 - **Day-at-a-glance hero.** A calorie ring shows how much you have eaten versus
   your target, the calories left for the day (or how far over), a short status
   line, and compact protein/carbs/fats pills color-coded by progress.
-- **Per-meal breakdown.** Each meal type (breakfast, morning snack, lunch,
-  evening snack, dinner) shown against its own recommended calorie and macro
-  targets, split from your daily goal. Calorie progress bars, macro-vs-target
-  chips, and "low protein"/"low fiber" badges flag where a logged meal fell
-  short; meals you have not logged yet appear as muted target rows.
+- **Per-meal breakdown.** A clean list of each meal type (breakfast, morning
+  snack, lunch, evening snack, dinner) against its own recommended calorie and
+  macro targets, split from your daily goal. Each logged meal shows a calorie
+  progress bar and color-coded protein/carbs/fats/fiber numbers versus their
+  targets; meals you have not logged yet appear as slim target-only rows.
 - **Per-meal AI insight.** On any logged meal, get an on-demand AI review of how
   it did against its target, what it lacked, how to improve that meal, and how
   to make up the gap in your later meals.
-- **Micronutrients.** A focused set of key micros up front, with "View all" to
-  expand the rest. Each tile offers one-click AI food ideas to close the gap.
+- **Micronutrients.** A focused set of key micros up front as compact rows, with
+  "View all" to expand the rest. Each row offers one-click AI food ideas to close
+  the gap.
 - **Weekly calorie trend.** A clean line chart of the week's calories with your
   target marked.
 - **AI meal suggestion.** A structured "what to eat next" card based on your day.
