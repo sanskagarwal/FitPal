@@ -10,6 +10,28 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- Log a meal from a photo: in Quick Log with AI, snap or upload a picture of
+  your plate and the assistant identifies the foods and portions for you. You
+  review and edit the proposal as usual before saving, and the photo is kept
+  with the meal and shown on the Food Logger. Self-hosters can point an optional
+  `AI_VISION_MODEL` at a dedicated vision model; it falls back to `AI_MODEL`.
+
+### Changed
+
+- The meal-type picker now lives next to the foods you are logging (inside the
+  Selected Foods card), and editing a meal scrolls straight to the editor.
+
+### Fixed
+
+- Saving an AI-logged meal could fail for common foods that were missing some
+  micronutrient values; those are now filled in automatically.
+- Removing every food while editing a meal no longer leaves it stuck in edit
+  mode with no way to cancel.
+- Tidied the AI meal proposal summary (odd capitalization and a stray time
+  value).
+
 ## [0.3.0] - 2026-06-10
 
 ### Added
