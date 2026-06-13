@@ -4,6 +4,7 @@ import {
   LoginSchema,
   MealSchema,
   WeightSchema,
+  MealInsightRequestSchema,
 } from '../../server/validation.js';
 
 const goodNutrients = {
@@ -164,5 +165,50 @@ describe('WeightSchema', () => {
 
   it('rejects a missing id', () => {
     expect(WeightSchema.safeParse({ ...base, id: '' }).success).toBe(false);
+  });
+});
+
+describe('MealInsightRequestSchema', () => {
+  const macros = { calories: 500, protein: 25, carbs: 60, fats: 15, fiber: 6 };
+  const base = {
+    mealType: 'lunch',
+    consumed: macros,
+    target: macros,
+    laterMealTypes: ['evening-snack', 'dinner'],
+    dietPreference: 'vegetarian',
+  };
+
+  it('accepts a valid request', () => {
+    expect(MealInsightRequestSchema.safeParse(base).success).toBe(true);
+  });
+
+  it('accepts a request without optional fields', () => {
+    expect(
+      MealInsightRequestSchema.safeParse({
+        mealType: 'breakfast',
+        consumed: macros,
+        target: macros,
+      }).success
+    ).toBe(true);
+  });
+
+  it('rejects an unknown meal type', () => {
+    expect(MealInsightRequestSchema.safeParse({ ...base, mealType: 'brunch' }).success).toBe(false);
+  });
+
+  it('rejects an unknown meal type inside laterMealTypes', () => {
+    expect(
+      MealInsightRequestSchema.safeParse({ ...base, laterMealTypes: ['brunch'] }).success
+    ).toBe(false);
+  });
+
+  it('rejects negative macro values', () => {
+    const bad = { ...base, consumed: { ...macros, protein: -1 } };
+    expect(MealInsightRequestSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('rejects a non-finite macro value', () => {
+    const bad = { ...base, target: { ...macros, calories: Infinity } };
+    expect(MealInsightRequestSchema.safeParse(bad).success).toBe(false);
   });
 });

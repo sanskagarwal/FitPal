@@ -4,8 +4,9 @@ import {
   getWeeksToGoal,
   calculateMacroGoalsFromRate,
   calculateRegistrationGoals,
+  getMealTargets,
 } from '../../src/utils/goals';
-import { Gender, ActivityLevel, type UserProfile } from '../../src/types';
+import { Gender, ActivityLevel, MealType, MEAL_CALORIE_CAPS, type UserGoals, type UserProfile } from '../../src/types';
 
 const profile: UserProfile = {
   dateOfBirth: '1996-06-05',
@@ -88,5 +89,58 @@ describe('calculateRegistrationGoals', () => {
     const goals = calculateRegistrationGoals('female', 165, 60, 28, 'unknown-level');
     // multiplier defaults to 1.55
     expect(goals.maintenanceCalories).toBeGreaterThan(0);
+  });
+});
+
+describe('getMealTargets', () => {
+  const goals: UserGoals = {
+    targetWeight: 75,
+    targetCalories: 2650, // equals the sum of MEAL_CALORIE_CAPS for clean ratios
+    targetProtein: 159,
+    targetCarbs: 265,
+    targetFats: 53,
+    targetFiber: 30,
+  };
+
+  it('splits the daily goal by each meal\'s share of MEAL_CALORIE_CAPS', () => {
+    // Lunch cap is 750 of 2650 total. With targetCalories == total, lunch
+    // calories equal the lunch cap.
+    const lunch = getMealTargets(MealType.Lunch, goals);
+    expect(lunch.calories).toBe(MEAL_CALORIE_CAPS[MealType.Lunch]);
+
+    const breakfast = getMealTargets(MealType.Breakfast, goals);
+    expect(breakfast.calories).toBe(MEAL_CALORIE_CAPS[MealType.Breakfast]);
+  });
+
+  it('weights all macros by the same per-meal share', () => {
+    const total = Object.values(MEAL_CALORIE_CAPS).reduce((sum, cap) => sum + cap, 0);
+    const share = MEAL_CALORIE_CAPS[MealType.Lunch] / total;
+    const lunch = getMealTargets(MealType.Lunch, goals);
+    expect(lunch.protein).toBe(Math.round(share * goals.targetProtein));
+    expect(lunch.carbs).toBe(Math.round(share * goals.targetCarbs));
+    expect(lunch.fats).toBe(Math.round(share * goals.targetFats));
+    expect(lunch.fiber).toBe(Math.round(share * goals.targetFiber));
+  });
+
+  it('per-meal calorie targets sum back to the daily goal', () => {
+    const sum = Object.values(MealType)
+      .map((type) => getMealTargets(type, goals).calories)
+      .reduce((a, b) => a + b, 0);
+    expect(sum).toBe(goals.targetCalories);
+  });
+
+  it('gives snacks a smaller target than main meals', () => {
+    const snack = getMealTargets(MealType.MorningSnack, goals);
+    const dinner = getMealTargets(MealType.Dinner, goals);
+    expect(snack.calories).toBeLessThan(dinner.calories);
+  });
+
+  it('falls back to a default fiber target when the goal has none', () => {
+    const noFiber = { ...goals, targetFiber: 0 };
+    const total = Object.values(MEAL_CALORIE_CAPS).reduce((sum, cap) => sum + cap, 0);
+    const share = MEAL_CALORIE_CAPS[MealType.Lunch] / total;
+    const lunch = getMealTargets(MealType.Lunch, noFiber);
+    // Default daily fiber target is 30g.
+    expect(lunch.fiber).toBe(Math.round(share * 30));
   });
 });

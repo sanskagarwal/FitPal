@@ -4,7 +4,6 @@ Planned and in-progress work for FitPal, ordered by priority.
 
 | Priority | Task | Notes |
 | --- | --- | --- |
-| High | Per-meal-type recommendations & insights | Give each logged meal type (breakfast, snacks, lunch, dinner) its own recommended calorie and macro targets, and surface AI insights on what a logged meal lacked (e.g. low protein/fiber) plus how to make it up in later meals. Revamp the meal breakdown UI (`src/components/dashboard/MealBreakdownTable.tsx`) to show each meal type against its target, reusing the existing `MEAL_CALORIE_CAPS` and extending it with per-meal macro targets in `src/types/index.ts`. Move the existing AI meal suggestion and dietary insight panels (`MealSuggestionPanel`, `InsightPanel`) further down the Dashboard so the per-meal breakdown is more prominent. |
 | Medium | Barcode-based food logging | Let users log packaged food by scanning a barcode, building on the existing AI food analysis. (Photo-based logging has shipped - see Agentic AI meal logging in FEATURES.) |
 | Medium | Trends & progress charts | Visualize weight and nutrition trends over time to complement the existing daily views. |
 | Medium | Reminders & notifications | Build on the existing notifications module to send meal/weigh-in reminders. |

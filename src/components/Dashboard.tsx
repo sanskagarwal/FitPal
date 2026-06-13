@@ -30,6 +30,14 @@ const defaultMealTypeForNow = (): MealType => {
   return MealType.Dinner;
 };
 
+// Small eyebrow label used to group the dashboard into visual sections. Kept as
+// a paragraph (not a heading) so it doesn't disturb the card heading hierarchy.
+const SectionLabel = ({ children }: { children: string }) => (
+  <p className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+    {children}
+  </p>
+);
+
 export const Dashboard = () => {
   const { user } = useAuth();
   const { selectedDate, isToday } = useSelectedDate();
@@ -153,7 +161,7 @@ export const Dashboard = () => {
   const goals = user?.profile.goals;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
         <DateNavigator />
@@ -161,60 +169,74 @@ export const Dashboard = () => {
 
       <MotivationalBanner todayStats={todayStats} targetCalories={goals?.targetCalories || 2000} />
 
-      <OverviewStats
-        todayStats={todayStats}
-        goals={goals}
-        suggestingNutrient={suggestingNutrient}
-        onNutrientSuggestion={handleNutrientSuggestion}
-      />
+      <section className="space-y-4">
+        <SectionLabel>Today's progress</SectionLabel>
 
-      <MicronutrientsPanel
-        micronutrients={micronutrients}
-        goals={goals}
-        suggestingNutrient={suggestingNutrient}
-        onNutrientSuggestion={handleNutrientSuggestion}
-        isToday={isToday}
-        selectedDate={selectedDate}
-      />
+        <OverviewStats
+          todayStats={todayStats}
+          goals={goals}
+          suggestingNutrient={suggestingNutrient}
+          onNutrientSuggestion={handleNutrientSuggestion}
+        />
 
-      <NutrientSuggestionPanel
-        suggestingNutrient={suggestingNutrient}
-        nutrientSuggestion={nutrientSuggestion}
-        onDismiss={() => setNutrientSuggestion(null)}
-      />
+        <MicronutrientsPanel
+          micronutrients={micronutrients}
+          goals={goals}
+          suggestingNutrient={suggestingNutrient}
+          onNutrientSuggestion={handleNutrientSuggestion}
+          isToday={isToday}
+          selectedDate={selectedDate}
+        />
 
-      <MealSuggestionPanel
-        dietPreference={dietPreference}
-        setDietPreference={setDietPreference}
-        mealType={mealType}
-        setMealType={handleMealTypeChange}
-        calorieCap={calorieCap}
-        setCalorieCap={setCalorieCap}
-        suggestingMeal={suggestingMeal}
-        mealSuggestions={mealSuggestions}
-        onSuggest={handleMealSuggestion}
-        onDismiss={() => setMealSuggestions(null)}
-      />
+        <NutrientSuggestionPanel
+          suggestingNutrient={suggestingNutrient}
+          nutrientSuggestion={nutrientSuggestion}
+          onDismiss={() => setNutrientSuggestion(null)}
+        />
 
-      <InsightPanel
-        insight={insight}
-        loadingInsight={loadingInsight}
-        canGetInsights={!!todayStats}
-        onGetInsights={handleGetInsights}
-        onDismiss={() => setInsight(null)}
-      />
+        <MealBreakdownTable
+          mealTypeStats={mealTypeStats}
+          goals={goals}
+          dietPreference={dietPreference}
+          isToday={isToday}
+          selectedDate={selectedDate}
+        />
+      </section>
 
-      <MealBreakdownTable mealTypeStats={mealTypeStats} goals={goals} dietPreference={dietPreference} isToday={isToday} selectedDate={selectedDate} />
+      <section className="space-y-4">
+        <SectionLabel>AI coach</SectionLabel>
 
-      <WeightProgress recentWeight={recentWeight} goals={goals} />
+        <MealSuggestionPanel
+          dietPreference={dietPreference}
+          setDietPreference={setDietPreference}
+          mealType={mealType}
+          setMealType={handleMealTypeChange}
+          calorieCap={calorieCap}
+          setCalorieCap={setCalorieCap}
+          suggestingMeal={suggestingMeal}
+          mealSuggestions={mealSuggestions}
+          onSuggest={handleMealSuggestion}
+          onDismiss={() => setMealSuggestions(null)}
+        />
 
-      <MacroDistributionChart
-        todayStats={todayStats}
-        isToday={isToday}
-        selectedDate={selectedDate}
-      />
+        <InsightPanel
+          insight={insight}
+          loadingInsight={loadingInsight}
+          canGetInsights={!!todayStats}
+          onGetInsights={handleGetInsights}
+          onDismiss={() => setInsight(null)}
+        />
+      </section>
 
-      <WeeklyNutritionTrendsChart weeklyData={weeklyData} />
+      <section className="space-y-4">
+        <SectionLabel>Trends &amp; progress</SectionLabel>
+
+        <WeightProgress recentWeight={recentWeight} goals={goals} />
+
+        <MacroDistributionChart todayStats={todayStats} isToday={isToday} selectedDate={selectedDate} />
+
+        <WeeklyNutritionTrendsChart weeklyData={weeklyData} />
+      </section>
     </div>
   );
 };
