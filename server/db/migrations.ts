@@ -71,6 +71,27 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 2,
+    name: 'meal images',
+    up: (db) => {
+      // Binary store for photo-based meal logging. Kept in its own table (not in
+      // the meal's JSON `data`) so the whole-history meal fetch never carries
+      // image bytes; the image is loaded lazily by its own endpoint. The FK with
+      // ON DELETE CASCADE removes the image automatically when its meal is
+      // deleted (single delete or account-wide wipe), since foreign_keys is ON.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS meal_images (
+          meal_id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          mime    TEXT NOT NULL,
+          image   BLOB NOT NULL,
+          FOREIGN KEY (meal_id) REFERENCES meals(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_meal_images_user ON meal_images(user_id);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

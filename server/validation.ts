@@ -94,6 +94,18 @@ const FoodEntrySchema = z
   })
   .loose();
 
+// A base64 image data URL for photo-based meal logging. This is a cheap
+// boundary guard (allowed type + size bound to reject obvious abuse early); the
+// authoritative decode/normalize lives in services/imageService.ts, which
+// enforces the matching 3 MB decoded-bytes cap. The whole request body must fit
+// the 5 MB express.json limit, and base64 inflates bytes by ~4/3, so 3 MB of
+// image is ~4 MB of data-URL chars, leaving headroom for the other fields.
+const MAX_IMAGE_DATAURL_CHARS = 4_300_000; // ~3 MB of image once base64-decoded
+export const ImageDataUrlSchema = z
+  .string()
+  .max(MAX_IMAGE_DATAURL_CHARS, 'image is too large')
+  .regex(/^data:image\/(jpeg|png|webp);base64,/i, 'image must be a jpeg, png or webp data URL');
+
 export const MealSchema = z
   .object({
     id: z.string().min(1),
@@ -104,6 +116,7 @@ export const MealSchema = z
     foods: z.array(FoodEntrySchema).min(1),
     totalNutrients: BoundedNutrients,
     notes: z.string().optional(),
+    image: ImageDataUrlSchema.optional(),
   })
   .loose();
 
@@ -136,20 +149,9 @@ export const StreakSchema = z
 
 // --- AI / images ----------------------------------------------------------
 
-// A base64 image data URL for photo-based meal logging. This is a cheap
-// boundary guard (allowed type + size bound to reject obvious abuse early); the
-// authoritative decode/normalize lives in services/imageService.ts, which
-// enforces the matching 3 MB decoded-bytes cap. The whole request body must fit
-// the 5 MB express.json limit, and base64 inflates bytes by ~4/3, so 3 MB of
-// image is ~4 MB of data-URL chars, leaving headroom for the other fields.
-const MAX_IMAGE_DATAURL_CHARS = 4_300_000; // ~3 MB of image once base64-decoded
-export const ImageDataUrlSchema = z
-  .string()
-  .max(MAX_IMAGE_DATAURL_CHARS, 'image is too large')
-  .regex(/^data:image\/(jpeg|png|webp);base64,/i, 'image must be a jpeg, png or webp data URL');
-
 // Streaming meal-chat body. history/loggedMeals pass through loosely (their
 // shapes are owned by the AI service); only the optional image is bounded here.
+// ImageDataUrlSchema is defined above (next to MealSchema, which also uses it).
 export const ChatMealStreamSchema = z
   .object({
     history: z.array(z.object({}).loose()).optional(),

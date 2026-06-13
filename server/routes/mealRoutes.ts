@@ -16,6 +16,11 @@ mealRoutes.post(
   asyncHandler(mealController.create)
 );
 mealRoutes.get('/:userId', requireOwnParam('userId'), asyncHandler(mealController.list));
+mealRoutes.get(
+  '/:userId/:id/image',
+  requireOwnParam('userId'),
+  asyncHandler(mealController.getImage)
+);
 mealRoutes.put(
   '/:id',
   validateBody(MealSchema),
