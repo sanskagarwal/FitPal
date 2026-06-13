@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-13
+
 ### Added
 
 - Log a meal from a photo: in Quick Log with AI, snap or upload a picture of
@@ -82,7 +84,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/sanskagarwal/FitPal/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/sanskagarwal/FitPal/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/sanskagarwal/FitPal/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sanskagarwal/FitPal/releases/tag/v0.1.0
