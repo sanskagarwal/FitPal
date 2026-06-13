@@ -13,7 +13,15 @@ import { saveMeal, updateMeal, deleteMeal } from '../../utils/db';
 import { chatLogMealStream } from '../../services/openai';
 import { generateId, combineDateWithCurrentTime } from '../../utils/helpers';
 import { ToastType } from '../Toast';
-import { ChatMessage, clampNumber, describeChatError, sumNutrients, toHHmm, MAX_CALORIES } from './foodLoggerUtils';
+import {
+  ChatMessage,
+  clampNumber,
+  compressImage,
+  describeChatError,
+  sumNutrients,
+  toHHmm,
+  MAX_CALORIES,
+} from './foodLoggerUtils';
 
 type SetToast = (toast: { message: string; type: ToastType }) => void;
 
@@ -34,6 +42,30 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   const [chatLoading, setChatLoading] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
   const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(null);
+  // A compressed photo (data URL) attached to the next message, with a flag while
+  // it is being read/compressed so the UI can show a spinner.
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+
+  // Compress and stage a photo for the next send. Surfaces a toast on failure
+  // (unreadable/oversized) and leaves any previously staged image cleared.
+  const attachImage = async (file: File) => {
+    setImageLoading(true);
+    try {
+      const dataUrl = await compressImage(file);
+      setPendingImage(dataUrl);
+    } catch (err) {
+      setPendingImage(null);
+      setToast({
+        message: err instanceof Error ? err.message : 'Could not read that image.',
+        type: 'error',
+      });
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  const clearImage = () => setPendingImage(null);
 
   const buildMealFromParsed = (result: MealChatResult, existing?: MealEntry): MealEntry | null => {
     if (!user || result.foods.length === 0) return null;
@@ -74,16 +106,26 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
       foods,
       totalNutrients,
       notes: existing?.notes,
+      // Carry the photo only when logging a new meal from a picture; the server
+      // stores it and strips the field. Updates do not change the photo.
+      ...(result.image && !existing ? { image: result.image } : {}),
     };
   };
 
   const sendChat = async () => {
-    if (!chatInput.trim() || chatLoading) return;
+    // Allow sending with text, a photo, or both - but never an empty turn.
+    if ((!chatInput.trim() && !pendingImage) || chatLoading || imageLoading) return;
 
-    const userMessage: ChatMessage = { role: 'user', content: chatInput.trim() };
+    const image = pendingImage ?? undefined;
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: chatInput.trim(),
+      ...(image ? { image } : {}),
+    };
     const newHistory = [...chatMessages, userMessage];
     setChatMessages(newHistory);
     setChatInput('');
+    setPendingImage(null);
     setChatLoading(true);
     setChatPreparing(false);
     setProposedMeal(null);
@@ -103,13 +145,20 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
           unit: fe.unit,
         })),
       }));
+      // The history sent to the server is text-only; the photo travels as a
+      // separate `image` argument (and only on the turn it was attached).
+      const apiHistory = newHistory.map(({ role, content }) => ({ role, content }));
       // Add an empty assistant bubble that fills in as the reply streams.
       setChatMessages([...newHistory, { role: 'assistant', content: '' }]);
       const updateAssistant = (text: string) =>
         setChatMessages([...newHistory, { role: 'assistant', content: text }]);
 
-      const result = await chatLogMealStream(newHistory, loggedMeals, updateAssistant, () =>
-        setChatPreparing(true)
+      const result = await chatLogMealStream(
+        apiHistory,
+        loggedMeals,
+        updateAssistant,
+        () => setChatPreparing(true),
+        image
       );
       // Ensure the final message is shown even if no stream chunks arrived.
       setChatMessages([...newHistory, { role: 'assistant', content: result.message }]);
@@ -167,6 +216,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     setChatInput('');
     setChatPreparing(false);
     setProposedMeal(null);
+    setPendingImage(null);
   };
 
   // Override the per-unit calories of a food in the AI chat proposal before confirming.
@@ -190,6 +240,10 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     chatLoading,
     chatPreparing,
     proposedMeal,
+    pendingImage,
+    imageLoading,
+    attachImage,
+    clearImage,
     sendChat,
     confirmChatMeal,
     resetChat,

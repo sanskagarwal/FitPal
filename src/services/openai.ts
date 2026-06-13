@@ -174,17 +174,21 @@ export async function chatLogMeal(
 // back to the non-streaming endpoint if streaming is unavailable. `onMessageDone`
 // fires once the reply has fully streamed but the server is still grounding the
 // meal's nutrition, so the UI can show a "preparing" indicator for that gap.
+// An optional compressed image (data URL) attaches a photo to this turn; the
+// server analyzes it with the vision model and echoes the normalized image back
+// on the final result so it can be persisted on confirm.
 export async function chatLogMealStream(
   history: MealChatMessage[],
   loggedMeals: LoggedMealSummary[],
   onMessage: (text: string) => void,
-  onMessageDone?: () => void
+  onMessageDone?: () => void,
+  image?: string
 ): Promise<MealChatResult> {
   const response = await fetch(`${API_BASE_URL}/ai/chat-meal-stream`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ history, loggedMeals }),
+    body: JSON.stringify({ history, loggedMeals, ...(image ? { image } : {}) }),
   });
 
   if (response.status === 429) {
@@ -200,6 +204,11 @@ export async function chatLogMealStream(
   }
 
   if (!response.ok || !response.body) {
+    // The non-streaming fallback endpoint cannot analyze a photo, so when an
+    // image is attached we surface the error instead of silently dropping it.
+    if (image) {
+      throw new Error('Could not analyze the photo. Please try again.');
+    }
     // Streaming endpoint failed otherwise - fall back to the buffered call.
     return chatLogMeal(history, loggedMeals);
   }

@@ -97,6 +97,12 @@ export interface MealEntry {
   foods: FoodEntry[];
   totalNutrients: NutrientInfo;
   notes?: string;
+  // True when a photo is stored for this meal (fetched lazily from the image
+  // endpoint - the bytes are never inlined in the meal record).
+  hasImage?: boolean;
+  // Transient: a compressed photo data URL sent once on create. The server moves
+  // it into the image store and strips it; it is never persisted on the meal.
+  image?: string;
 }
 
 export interface FoodEntry {
@@ -248,6 +254,9 @@ export interface MealChatResult {
   mealType?: MealType;
   time?: string | null; // HH:mm if known
   foods: ParsedMealFood[];
+  // Normalized photo (data URL) echoed back by the server when the meal was
+  // logged from a picture, so it can be persisted on confirm.
+  image?: string;
 }
 
 // Compact summary of an already-logged meal, given to the assistant so it can

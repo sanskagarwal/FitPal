@@ -3,7 +3,7 @@ import { MealType, MealUnit, NutrientInfo } from '../../types';
 export const MEAL_TYPES = Object.values(MealType);
 export const QUANTITY_UNITS = Object.values(MealUnit);
 
-export type ChatMessage = { role: 'user' | 'assistant'; content: string };
+export type ChatMessage = { role: 'user' | 'assistant'; content: string; image?: string };
 
 // Upper bounds mirror the server's meal validation so the UI never produces a
 // value the backend will reject. They are deliberately generous.
@@ -91,3 +91,60 @@ export const sumNutrients = (
     magnesium: (acc.magnesium || 0) + (n.magnesium || 0) * q,
     potassium: (acc.potassium || 0) + (n.potassium || 0) * q,
   }), { ...EMPTY_NUTRIENTS });
+
+// Largest photo we accept before compressing, as a friendly guard against a
+// user picking, say, a huge raw file. The server enforces the real bounds.
+export const MAX_IMAGE_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
+
+// Downscale + re-encode an image File to a JPEG data URL for upload. This only
+// trims upload bandwidth (the server re-normalizes authoritatively): we cap the
+// longest edge at `maxEdge` and encode at `quality`. Orientation is honoured via
+// createImageBitmap so portrait photos are not rotated. Throws a friendly error
+// if the file cannot be decoded (e.g. an unsupported HEIC on some browsers).
+export const compressImage = async (
+  file: File,
+  maxEdge = 2048,
+  quality = 0.8
+): Promise<string> => {
+  if (file.size > MAX_IMAGE_FILE_BYTES) {
+    throw new Error('That image is too large. Please pick a smaller photo.');
+  }
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    throw new Error("Sorry, I couldn't read that image. Try a JPEG or PNG photo.");
+  }
+
+  try {
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('canvas unavailable');
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, 'image/jpeg', quality)
+    );
+    if (!blob) throw new Error('encode failed');
+    return await blobToDataUrl(blob);
+  } catch {
+    throw new Error("Sorry, I couldn't process that image. Please try another photo.");
+  } finally {
+    bitmap.close();
+  }
+};
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.readAsDataURL(blob);
+  });

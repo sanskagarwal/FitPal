@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Edit2, Trash2 } from 'lucide-react';
 import { MealEntry } from '../../types';
 import { formatDayLabel } from '../../utils/helpers';
+import { getMealImageUrl } from '../../utils/db';
 import { formatUnit } from './foodLoggerUtils';
 
 interface TodayMealsHistoryProps {
@@ -68,6 +69,15 @@ export const TodayMealsHistory = ({
                 </button>
               </div>
             </div>
+
+            {meal.hasImage && (
+              <img
+                src={getMealImageUrl(meal.userId, meal.id)}
+                alt={`Photo of ${meal.mealType.replace('-', ' ')}`}
+                loading="lazy"
+                className="mb-3 max-h-48 w-full rounded-lg object-cover"
+              />
+            )}
 
             <div className="divide-y divide-gray-200 dark:divide-gray-700 mb-3">
               {meal.foods.map((foodEntry, idx) => {

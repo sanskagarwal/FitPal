@@ -203,6 +203,11 @@ export const deleteMeal = async (id: string, userId: string): Promise<void> => {
   await apiCall(`/meals/${userId}/${id}`, 'DELETE');
 };
 
+// URL of a meal's stored photo. The browser fetches it lazily (with the auth
+// cookie) only when an <img> using this src is rendered.
+export const getMealImageUrl = (userId: string, mealId: string): string =>
+  `${API_BASE_URL}/meals/${userId}/${mealId}/image`;
+
 // Weight operations
 export const saveWeight = async (weight: WeightEntry): Promise<void> => {
   await apiCall(`/weights`, 'POST', weight);
