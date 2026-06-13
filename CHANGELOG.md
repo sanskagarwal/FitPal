@@ -10,6 +10,28 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- Per-meal targets: the dashboard meal breakdown now shows each meal type
+  against its own calorie and macro targets, split from your daily goal. Logged
+  meals get a calorie progress bar and color-coded protein/carbs/fats/fiber
+  versus their targets, and meals you have not logged yet appear as slim
+  target-only rows.
+- Per-meal AI insight: on any logged meal, get an on-demand AI review of how it
+  did against its target, what it lacked, how to improve that meal, and how to
+  make up the gap in your later meals.
+- Trends range selector: the dashboard and weight pages can now switch their
+  trend charts between the last 7, 30, or 90 days, or all time.
+
+### Changed
+
+- Redesigned dashboard: it now opens with a day-at-a-glance hero - a calorie
+  ring showing how much you have eaten versus your target, the calories left for
+  the day (or how far over), a short status line, and compact protein/carbs/fats
+  pills - replacing the old overview cards and motivational banner.
+- The micronutrients panel now leads with a focused set of key micros as compact
+  rows, with "View all" to expand the rest.
+
 ## [0.4.0] - 2026-06-13
 
 ### Added

@@ -13,7 +13,13 @@ const browser = await chromium.launch();
 const context = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 2,
+  colorScheme: 'dark',
 });
+
+await context.addInitScript(() => {
+  window.localStorage.setItem('fitpal-theme', 'dark');
+});
+
 const page = await context.newPage();
 
 await page.goto(BASE, { waitUntil: 'networkidle' });
