@@ -92,6 +92,23 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 3,
+    name: 'trend date indexes',
+    up: (db) => {
+      // Expression indexes over the JSON `date` field so date-range trend
+      // queries (recent N days of meals/weights) can seek by (user_id, date)
+      // instead of scanning every row. ISO 8601 date strings sort
+      // chronologically, so a plain string index gives correct range order.
+      // No schema column is added; inserts/updates are unchanged.
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_meals_user_date
+          ON meals(user_id, json_extract(data, '$.date'));
+        CREATE INDEX IF NOT EXISTS idx_weights_user_date
+          ON weights(user_id, json_extract(data, '$.date'));
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

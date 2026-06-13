@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MealEntry, DailyStats, WeightEntry, NutrientInfo, MealType, User } from '../../types';
 import { getMealsByDateRange, getWeightsByUser } from '../../utils/db';
-import { getStartOfDay, getEndOfDay, getStartOfWeek, getDaysInRange } from '../../utils/helpers';
+import { getStartOfDay, getEndOfDay } from '../../utils/helpers';
 
 export interface MealTypeStats {
   mealType: MealType;
@@ -30,7 +30,6 @@ const calculateTotals = (meals: MealEntry[]) =>
 export const useDashboardData = (user: User | null, selectedDate: Date) => {
   const [todayStats, setTodayStats] = useState<DailyStats | null>(null);
   const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
-  const [weeklyData, setWeeklyData] = useState<DailyStats[]>([]);
   const [recentWeight, setRecentWeight] = useState<WeightEntry | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +41,6 @@ export const useDashboardData = (user: User | null, selectedDate: Date) => {
       const day = selectedDate;
       const startOfToday = getStartOfDay(day);
       const endOfToday = getEndOfDay(day);
-      const startOfWeek = getStartOfWeek(day);
 
       // Load the selected day's meals
       const meals = await getMealsByDateRange(user.id, startOfToday, endOfToday);
@@ -53,23 +51,6 @@ export const useDashboardData = (user: User | null, selectedDate: Date) => {
         ...todayTotals,
         mealsLogged: meals.length,
       });
-
-      // Load the week containing the selected day (week start through selected day)
-      const weekDays = getDaysInRange(startOfWeek, day);
-      const weeklyStats: DailyStats[] = [];
-
-      for (const day of weekDays) {
-        const dayStart = getStartOfDay(day);
-        const dayEnd = getEndOfDay(day);
-        const dayMeals = await getMealsByDateRange(user.id, dayStart, dayEnd);
-        const dayTotals = calculateTotals(dayMeals);
-        weeklyStats.push({
-          date: day,
-          ...dayTotals,
-          mealsLogged: dayMeals.length,
-        });
-      }
-      setWeeklyData(weeklyStats);
 
       // Load recent weight
       const weights = await getWeightsByUser(user.id);
@@ -129,7 +110,6 @@ export const useDashboardData = (user: User | null, selectedDate: Date) => {
     loading,
     todayStats,
     todayMeals,
-    weeklyData,
     recentWeight,
     mealTypeStats,
     micronutrients,

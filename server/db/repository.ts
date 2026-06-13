@@ -30,6 +30,18 @@ export class JsonCollectionRepository<T extends { id: string; userId: string }> 
     return rows.map((r) => JSON.parse(r.data) as T);
   }
 
+  // List rows owned by `userId` whose JSON `date` falls within [start, end]
+  // (inclusive). `start` and `end` are ISO 8601 strings, which sort
+  // chronologically, so the (user_id, date) expression index drives the range.
+  listByUserInRange(userId: string, start: string, end: string): T[] {
+    const rows = getDb()
+      .prepare(
+        `SELECT data FROM ${this.table} WHERE user_id = ? AND json_extract(data, '$.date') BETWEEN ? AND ?`
+      )
+      .all(userId, start, end) as { data: string }[];
+    return rows.map((r) => JSON.parse(r.data) as T);
+  }
+
   // Update only when the row belongs to `userId`. Returns false if no such row.
   update(id: string, userId: string, entity: T): boolean {
     const result = getDb()

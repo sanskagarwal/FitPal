@@ -77,8 +77,11 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 - **Micronutrients.** A focused set of key micros up front as compact rows, with
   "View all" to expand the rest. Each row offers one-click AI food ideas to close
   the gap.
-- **Weekly calorie trend.** A clean line chart of the week's calories with your
-  target marked.
+- **Trends and progress.** A range selector (7 / 30 / 90 days or All, anchored to
+  today) drives the trends view: a weight timeline with a target line, daily
+  calories versus your goal, daily protein/carbs/fats with target reference
+  lines, and a logging-adherence summary (days logged, adherence percentage, and
+  current streak).
 - **AI meal suggestion.** A structured "what to eat next" card based on your day.
 
 **Tracked nutrients**
@@ -96,7 +99,8 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 - **Streaks.** Current and longest streak to encourage consistency.
 - **History table.** Recent entries with inline edit (Enter to save, Esc to
   cancel) and delete.
-- **Progress chart.** Weight timeline with a target reference line.
+- **Progress chart.** Weight timeline with a target reference line and the same
+  7 / 30 / 90 / All range selector used on the dashboard.
 
 ## Goals
 
@@ -104,10 +108,11 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 - **Weight goal** with selectable weekly loss rate (0.25 to 1 kg/week).
 - **Calorie and macro targets** with sensible input bounds.
 - **Micronutrient targets** for fiber, vitamins, and minerals.
-- **AI goal suggestions.** Let the assistant recommend goals with an
-  explanation.
-- **Calculate from weight-loss rate.** Derive calorie and macro targets from
-  your chosen pace.
+- **Set targets automatically.** One panel groups the weight goal with two
+  actions - calculate from your chosen pace, or get an AI suggestion (with an
+  explanation) - that fill the editable targets below.
+- **Sticky save bar.** A persistent bar shows whether you have unsaved changes
+  and keeps Save and Reset always within reach.
 
 ## Recipe suggestions
 

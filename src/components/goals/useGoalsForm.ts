@@ -53,11 +53,16 @@ interface UseGoalsFormArgs {
 // existing db + AI calls only.
 export const useGoalsForm = ({ user, updateGoals }: UseGoalsFormArgs) => {
   const [formData, setFormData] = useState<GoalsFormData>(buildInitialForm(user?.profile.goals));
+  // Baseline the form is compared against to detect unsaved changes. Refreshed
+  // after a successful save so the save bar disables again.
+  const [savedData, setSavedData] = useState<GoalsFormData>(buildInitialForm(user?.profile.goals));
   const [loading, setLoading] = useState(false);
   const [gettingSuggestion, setGettingSuggestion] = useState(false);
   const [message, setMessage] = useState('');
   const [aiExplanation, setAiExplanation] = useState('');
   const [currentWeight, setCurrentWeight] = useState<number | null>(null);
+
+  const isDirty = JSON.stringify(formData) !== JSON.stringify(savedData);
 
   useEffect(() => {
     if (!user) return;
@@ -146,11 +151,16 @@ export const useGoalsForm = ({ user, updateGoals }: UseGoalsFormArgs) => {
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
+    await saveGoals();
+  };
+
+  const saveGoals = async () => {
     setLoading(true);
     setMessage('');
 
     try {
       await updateGoals(formData);
+      setSavedData(formData);
       setMessage('Goals updated successfully!');
     } catch (error) {
       console.error('Error updating goals:', error);
@@ -158,6 +168,13 @@ export const useGoalsForm = ({ user, updateGoals }: UseGoalsFormArgs) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Discard unsaved edits back to the last saved targets.
+  const resetForm = () => {
+    setFormData(savedData);
+    setMessage('');
+    setAiExplanation('');
   };
 
   // Which way the user is headed, based on target vs. current weight. Drives
@@ -180,6 +197,7 @@ export const useGoalsForm = ({ user, updateGoals }: UseGoalsFormArgs) => {
     formData,
     updateField,
     loading,
+    isDirty,
     gettingSuggestion,
     message,
     aiExplanation,
@@ -190,5 +208,7 @@ export const useGoalsForm = ({ user, updateGoals }: UseGoalsFormArgs) => {
     handleGetAISuggestions,
     calculateCaloriesFromWeightLoss,
     handleSubmit,
+    saveGoals,
+    resetForm,
   };
 };

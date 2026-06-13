@@ -22,7 +22,7 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 pt-safe px-safe">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -80,12 +80,12 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8">
+      <main className="w-full max-w-7xl mx-auto flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 mt-12 pb-24 md:pb-0">
+      <footer className="bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700 pb-24 md:pb-0">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>FitPal - Track Indian meals smartly & privately</p>
           <p className="mt-1">All data stored locally on your device</p>

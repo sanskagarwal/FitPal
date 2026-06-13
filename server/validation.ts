@@ -129,6 +129,23 @@ export const WeightSchema = z
   })
   .loose();
 
+// Date-range query for trend endpoints (recent N days of meals/weights). Both
+// bounds are ISO 8601 strings; `end` must be on or after `start`.
+const isoDateString = z
+  .string()
+  .min(1)
+  .refine((s) => !Number.isNaN(Date.parse(s)), 'must be a valid date');
+
+export const DateRangeQuerySchema = z
+  .object({
+    start: isoDateString,
+    end: isoDateString,
+  })
+  .refine((q) => Date.parse(q.end) >= Date.parse(q.start), {
+    message: 'end must be on or after start',
+    path: ['end'],
+  });
+
 // Notifications & streaks (one row per user)
 
 export const NotificationSchema = z

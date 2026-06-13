@@ -1,8 +1,9 @@
 import { useAuth } from '../context/AuthContext';
 import { useWeightTracker } from './weight/useWeightTracker';
-import { WeightStats } from './weight/WeightStats';
+import { WeightKpiGrid } from './weight/WeightKpiGrid';
 import { LogWeightForm } from './weight/LogWeightForm';
-import { WeightChart } from './weight/WeightChart';
+import { WeightTrendChart } from './dashboard/trends/WeightTrendChart';
+import { RangeSelector } from './dashboard/trends/RangeSelector';
 import { WeightHistoryTable } from './weight/WeightHistoryTable';
 
 export const WeightTracker = () => {
@@ -13,7 +14,8 @@ export const WeightTracker = () => {
     <div className="space-y-6">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Weight Tracker</h1>
 
-      <WeightStats
+      <WeightKpiGrid
+        variant="full"
         latestWeight={wt.latestWeight}
         weightChange={wt.weightChange}
         targetWeight={wt.targetWeight}
@@ -32,10 +34,10 @@ export const WeightTracker = () => {
         onLog={wt.logWeight}
       />
 
-      <WeightChart
-        hasWeights={wt.weights.length > 0}
+      <WeightTrendChart
         chartData={wt.chartData}
         targetWeight={wt.targetWeight}
+        headerRight={<RangeSelector range={wt.range} onChange={wt.setRange} />}
       />
 
       <WeightHistoryTable

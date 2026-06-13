@@ -188,11 +188,15 @@ export const getMealsByDateRange = async (
   startDate: Date,
   endDate: Date
 ): Promise<MealEntry[]> => {
-  const meals = await getMealsByUser(userId);
-  return meals.filter(meal => {
-    const mealDate = new Date(meal.date);
-    return mealDate >= startDate && mealDate <= endDate;
-  });
+  try {
+    const query = `start=${encodeURIComponent(startDate.toISOString())}&end=${encodeURIComponent(
+      endDate.toISOString()
+    )}`;
+    return await apiCall(`/meals/${userId}/range?${query}`);
+  } catch (error) {
+    console.error(`Failed to get meals in range for user ${userId}:`, error);
+    return [];
+  }
 };
 
 export const updateMeal = async (meal: MealEntry): Promise<void> => {
@@ -221,6 +225,25 @@ export const getWeightsByUser = async (userId: string): Promise<WeightEntry[]> =
     );
   } catch (error) {
     console.error(`Failed to get weights for user ${userId}:`, error);
+    return [];
+  }
+};
+
+export const getWeightsByDateRange = async (
+  userId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<WeightEntry[]> => {
+  try {
+    const query = `start=${encodeURIComponent(startDate.toISOString())}&end=${encodeURIComponent(
+      endDate.toISOString()
+    )}`;
+    const weights = await apiCall(`/weights/${userId}/range?${query}`);
+    return weights.sort(
+      (a: WeightEntry, b: WeightEntry) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  } catch (error) {
+    console.error(`Failed to get weights in range for user ${userId}:`, error);
     return [];
   }
 };

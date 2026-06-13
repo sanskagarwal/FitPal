@@ -67,6 +67,36 @@ describe('GET /api/meals/:userId', () => {
   });
 });
 
+describe('GET /api/meals/:userId/range', () => {
+  it('returns only meals whose date falls within the range', async () => {
+    const inRange = buildMeal(alice.userId, { date: new Date('2026-03-15T08:00:00.000Z').toISOString() });
+    const outOfRange = buildMeal(alice.userId, { date: new Date('2025-01-01T08:00:00.000Z').toISOString() });
+    await alice.agent.post('/api/meals').send(inRange);
+    await alice.agent.post('/api/meals').send(outOfRange);
+
+    const start = new Date('2026-03-01T00:00:00.000Z').toISOString();
+    const end = new Date('2026-03-31T23:59:59.999Z').toISOString();
+    const res = await alice.agent.get(`/api/meals/${alice.userId}/range?start=${start}&end=${end}`);
+
+    expect(res.status).toBe(200);
+    const ids = res.body.map((m: { id: string }) => m.id);
+    expect(ids).toContain(inRange.id);
+    expect(ids).not.toContain(outOfRange.id);
+  });
+
+  it('rejects an invalid date range with 400', async () => {
+    const res = await alice.agent.get(`/api/meals/${alice.userId}/range?start=nope&end=nope`);
+    expect(res.status).toBe(400);
+  });
+
+  it('forbids ranging another user\u2019s meals (403)', async () => {
+    const start = new Date('2026-01-01T00:00:00.000Z').toISOString();
+    const end = new Date('2026-12-31T23:59:59.999Z').toISOString();
+    const res = await alice.agent.get(`/api/meals/${bob.userId}/range?start=${start}&end=${end}`);
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('PUT /api/meals/:id', () => {
   it('updates an owned meal', async () => {
     const meal = buildMeal(alice.userId, { mealType: 'lunch' });

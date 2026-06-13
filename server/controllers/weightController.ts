@@ -11,6 +11,11 @@ export const weightController = {
     res.json(weightService.listByUser(String(req.params.userId)));
   },
 
+  async listRange(req: Request, res: Response): Promise<void> {
+    const { start, end } = res.locals.query as { start: string; end: string };
+    res.json(weightService.listByUserInRange(String(req.params.userId), start, end));
+  },
+
   async update(req: Request, res: Response): Promise<void> {
     const weight = weightService.update(String(req.params.id), req.userId!, req.body);
     res.json({ success: true, weight });

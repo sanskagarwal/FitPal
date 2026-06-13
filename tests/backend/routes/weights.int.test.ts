@@ -66,6 +66,42 @@ describe('GET /api/weights/:userId', () => {
   });
 });
 
+describe('GET /api/weights/:userId/range', () => {
+  it('returns only weights whose date falls within the range', async () => {
+    const inRange = buildWeight(alice.userId, { date: new Date('2026-03-15T08:00:00.000Z').toISOString() });
+    const outOfRange = buildWeight(alice.userId, { date: new Date('2025-01-01T08:00:00.000Z').toISOString() });
+    await alice.agent.post('/api/weights').send(inRange);
+    await alice.agent.post('/api/weights').send(outOfRange);
+
+    const start = new Date('2026-03-01T00:00:00.000Z').toISOString();
+    const end = new Date('2026-03-31T23:59:59.999Z').toISOString();
+    const res = await alice.agent.get(`/api/weights/${alice.userId}/range?start=${start}&end=${end}`);
+
+    expect(res.status).toBe(200);
+    const ids = res.body.map((w: { id: string }) => w.id);
+    expect(ids).toContain(inRange.id);
+    expect(ids).not.toContain(outOfRange.id);
+  });
+
+  it('rejects an invalid date range with 400', async () => {
+    const res = await alice.agent.get(`/api/weights/${alice.userId}/range?start=nope&end=nope`);
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a missing bound with 400', async () => {
+    const start = new Date().toISOString();
+    const res = await alice.agent.get(`/api/weights/${alice.userId}/range?start=${start}`);
+    expect(res.status).toBe(400);
+  });
+
+  it('forbids ranging another user\u2019s weights (403)', async () => {
+    const start = new Date('2026-01-01T00:00:00.000Z').toISOString();
+    const end = new Date('2026-12-31T23:59:59.999Z').toISOString();
+    const res = await alice.agent.get(`/api/weights/${bob.userId}/range?start=${start}&end=${end}`);
+    expect(res.status).toBe(403);
+  });
+});
+
 describe('PUT /api/weights/:id', () => {
   it('updates an owned weight', async () => {
     const weight = buildWeight(alice.userId, { weight: 80 });

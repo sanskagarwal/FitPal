@@ -11,6 +11,10 @@ export const weightService = {
     return weightRepository.listByUser(userId);
   },
 
+  listByUserInRange(userId: string, start: string, end: string): WeightRecord[] {
+    return weightRepository.listByUserInRange(userId, start, end);
+  },
+
   update(id: string, userId: string, weight: WeightRecord): WeightRecord {
     const found = weightRepository.update(id, userId, weight);
     if (!found) {

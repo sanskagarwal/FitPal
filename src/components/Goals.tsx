@@ -2,11 +2,11 @@ import { useAuth } from '../context/AuthContext';
 import { usePreferences } from '../context/PreferencesContext';
 import { Target } from 'lucide-react';
 import { useGoalsForm } from './goals/useGoalsForm';
-import { WeightGoalSection } from './goals/WeightGoalSection';
-import { AIGoalSuggestion } from './goals/AIGoalSuggestion';
+import { AutoCalcPanel } from './goals/AutoCalcPanel';
 import { MacroTargets } from './goals/MacroTargets';
 import { MicronutrientTargets } from './goals/MicronutrientTargets';
 import { GoalsTips } from './goals/GoalsTips';
+import { GoalsSaveBar } from './goals/GoalsSaveBar';
 
 export const Goals = () => {
   const { user } = useAuth();
@@ -15,6 +15,7 @@ export const Goals = () => {
     formData,
     updateField,
     loading,
+    isDirty,
     gettingSuggestion,
     message,
     aiExplanation,
@@ -25,10 +26,12 @@ export const Goals = () => {
     handleGetAISuggestions,
     calculateCaloriesFromWeightLoss,
     handleSubmit,
+    saveGoals,
+    resetForm,
   } = useGoalsForm({ user, updateGoals });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 md:pb-24">
       <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Your Goals</h1>
 
       <div className="card">
@@ -41,7 +44,7 @@ export const Goals = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <WeightGoalSection
+          <AutoCalcPanel
             formData={formData}
             updateField={updateField}
             currentWeight={currentWeight}
@@ -49,9 +52,6 @@ export const Goals = () => {
             showRateSelector={showRateSelector}
             weeksToGoal={weeksToGoal}
             onCalculate={calculateCaloriesFromWeightLoss}
-          />
-
-          <AIGoalSuggestion
             gettingSuggestion={gettingSuggestion}
             aiExplanation={aiExplanation}
             onGetSuggestions={handleGetAISuggestions}
@@ -69,17 +69,17 @@ export const Goals = () => {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full"
-          >
-            {loading ? 'Updating...' : 'Update Goals'}
+          {/* Submitting the form (Enter key) saves; the visible action lives in
+              the sticky GoalsSaveBar so it is always reachable. */}
+          <button type="submit" className="sr-only" aria-hidden="true" tabIndex={-1}>
+            Update Goals
           </button>
         </form>
       </div>
 
       <GoalsTips />
+
+      <GoalsSaveBar isDirty={isDirty} loading={loading} onSave={saveGoals} onReset={resetForm} />
     </div>
   );
 };

@@ -28,6 +28,11 @@ export const mealController = {
     res.json(mealService.listByUser(String(req.params.userId)));
   },
 
+  async listRange(req: Request, res: Response): Promise<void> {
+    const { start, end } = res.locals.query as { start: string; end: string };
+    res.json(mealService.listByUserInRange(String(req.params.userId), start, end));
+  },
+
   async getImage(req: Request, res: Response): Promise<void> {
     const found = mealService.getImage(String(req.params.id), String(req.params.userId));
     if (!found) {

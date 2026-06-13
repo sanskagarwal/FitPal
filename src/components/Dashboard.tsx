@@ -15,8 +15,7 @@ import { InsightPanel } from './dashboard/InsightPanel';
 import { MealBreakdownTable } from './dashboard/MealBreakdownTable';
 import { MicronutrientsPanel } from './dashboard/MicronutrientsPanel';
 import { NutrientSuggestionPanel } from './dashboard/NutrientSuggestionPanel';
-import { WeightProgress } from './dashboard/WeightProgress';
-import { WeeklyNutritionTrendsChart } from './dashboard/ChartSection';
+import { TrendsSection } from './dashboard/trends/TrendsSection';
 
 // Pick a sensible default meal type from the current time of day. The user can
 // override this in the suggestion panel.
@@ -40,7 +39,7 @@ const SectionLabel = ({ children }: { children: string }) => (
 export const Dashboard = () => {
   const { user } = useAuth();
   const { selectedDate, isToday } = useSelectedDate();
-  const { loading, todayStats, weeklyData, recentWeight, mealTypeStats, micronutrients } =
+  const { loading, todayStats, recentWeight, mealTypeStats, micronutrients } =
     useDashboardData(user, selectedDate);
 
   const [mealSuggestions, setMealSuggestions] = useState<MealSuggestion[] | null>(null);
@@ -223,9 +222,7 @@ export const Dashboard = () => {
       <section className="space-y-4">
         <SectionLabel>Trends &amp; progress</SectionLabel>
 
-        <WeightProgress recentWeight={recentWeight} goals={goals} />
-
-        <WeeklyNutritionTrendsChart weeklyData={weeklyData} goals={goals} />
+        <TrendsSection user={user} goals={goals} />
       </section>
     </div>
   );

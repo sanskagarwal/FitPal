@@ -27,6 +27,10 @@ export const mealService = {
     return mealRepository.listByUser(userId);
   },
 
+  listByUserInRange(userId: string, start: string, end: string): MealRecord[] {
+    return mealRepository.listByUserInRange(userId, start, end);
+  },
+
   // Fetch a meal's photo, scoped to its owner. Null when the meal has no image.
   getImage(mealId: string, userId: string): MealImage | null {
     return mealImageRepository.get(mealId, userId);

@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { WeightEntry, Streak, User } from '../../types';
 import { saveWeight, getWeightsByUser, saveStreak, getStreak, updateWeight, deleteWeight } from '../../utils/db';
-import { generateId, calculateBMI, calculateStreak } from '../../utils/helpers';
+import { generateId, calculateBMI, calculateStreak, getStartOfDay } from '../../utils/helpers';
 import { calculateGoalProgress } from '../../utils/weight';
+import { TrendRange } from '../dashboard/trends/useTrendsData';
+
+const MS_PER_DAY = 86_400_000;
 
 // Owns weight history, the log form, inline editing, and the logging streak.
 // Wraps the existing db calls only.
 export const useWeightTracker = (user: User | null) => {
   const [weights, setWeights] = useState<WeightEntry[]>([]);
   const [streak, setStreakData] = useState<Streak | null>(null);
+  const [range, setRange] = useState<TrendRange>(30);
   const [newWeight, setNewWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
   const [notes, setNotes] = useState('');
@@ -17,6 +21,7 @@ export const useWeightTracker = (user: User | null) => {
   const [editWeight, setEditWeight] = useState('');
   const [editBodyFat, setEditBodyFat] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [chartData, setChartData] = useState<{ date: string; weight: number; bmi: number }[]>([]);
 
   const loadWeightData = useCallback(async () => {
     if (!user) return;
@@ -167,14 +172,24 @@ export const useWeightTracker = (user: User | null) => {
     }
   };
 
-  const chartData = weights
-    .slice(0, 30)
-    .reverse()
-    .map((entry) => ({
-      date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      weight: entry.weight,
-      bmi: entry.bmi,
-    }));
+  // Chart points for the selected range, oldest-first. `weights` is sorted
+  // newest-first, so filter to the window then reverse to chronological order.
+  // Computed in an effect because the range cutoff reads the current time.
+  useEffect(() => {
+    const rangeStart =
+      range === 'all' ? null : getStartOfDay(new Date(Date.now() - (range - 1) * MS_PER_DAY));
+    const points = weights
+      .filter((entry) => rangeStart === null || new Date(entry.date) >= rangeStart)
+      .slice()
+      .reverse()
+      .map((entry) => ({
+        date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        weight: entry.weight,
+        bmi: entry.bmi,
+      }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setChartData(points);
+  }, [weights, range]);
 
   const latestWeight = weights[0];
   const previousWeight = weights[1];
@@ -193,6 +208,8 @@ export const useWeightTracker = (user: User | null) => {
     weights,
     streak,
     loading,
+    range,
+    setRange,
     newWeight,
     setNewWeight,
     bodyFat,

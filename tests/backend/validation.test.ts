@@ -5,6 +5,7 @@ import {
   MealSchema,
   WeightSchema,
   MealInsightRequestSchema,
+  DateRangeQuerySchema,
 } from '../../server/validation.js';
 
 const goodNutrients = {
@@ -165,6 +166,27 @@ describe('WeightSchema', () => {
 
   it('rejects a missing id', () => {
     expect(WeightSchema.safeParse({ ...base, id: '' }).success).toBe(false);
+  });
+});
+
+describe('DateRangeQuerySchema', () => {
+  const start = new Date('2026-01-01T00:00:00.000Z').toISOString();
+  const end = new Date('2026-01-31T23:59:59.999Z').toISOString();
+
+  it('accepts a valid start/end range', () => {
+    expect(DateRangeQuerySchema.safeParse({ start, end }).success).toBe(true);
+  });
+
+  it('rejects when end is before start', () => {
+    expect(DateRangeQuerySchema.safeParse({ start: end, end: start }).success).toBe(false);
+  });
+
+  it('rejects a non-date string', () => {
+    expect(DateRangeQuerySchema.safeParse({ start: 'not-a-date', end }).success).toBe(false);
+  });
+
+  it('rejects when a bound is missing', () => {
+    expect(DateRangeQuerySchema.safeParse({ start }).success).toBe(false);
   });
 });
 
