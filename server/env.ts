@@ -46,6 +46,8 @@ const EnvSchema = z.object({
   AI_API_KEY: z.string().optional(),
   AI_BASE_URL: z.string().optional(),
   AI_MODEL: z.string().optional(),
+  // Optional multimodal model for photo-based logging; falls back to AI_MODEL.
+  AI_VISION_MODEL: z.string().optional(),
   AI_API_VERSION: z.string().optional(),
 });
 

@@ -9,7 +9,9 @@ import {
   suggestGoals,
   chatLogMeal,
   chatLogMealStream,
+  type VisionImage,
 } from '../services/aiService.js';
+import { normalizeImageDataUrl } from '../services/imageService.js';
 import { AIError } from '../errors.js';
 import { logger } from '../logger.js';
 
@@ -96,26 +98,42 @@ export const aiController = {
     const history = req.body?.history ?? [];
     const loggedMeals = req.body?.loggedMeals ?? [];
 
+    // Optional photo: normalize (validate + decode + re-encode) up front so a
+    // bad image fails as a 400 before we open the NDJSON stream. The normalized
+    // data URL is echoed back in the final result so the client can persist
+    // exactly what the model saw without re-uploading the original.
+    const imageDataUrl: string | undefined = req.body?.image;
+    let image: VisionImage | undefined;
+    let normalizedImageDataUrl: string | undefined;
+    if (imageDataUrl) {
+      const normalized = await normalizeImageDataUrl(imageDataUrl);
+      image = { data: new Uint8Array(normalized.buffer), mediaType: normalized.mime };
+      normalizedImageDataUrl = normalized.dataUrl;
+    }
+
     res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('X-Accel-Buffering', 'no'); // disable proxy buffering for live streaming
     const write = (obj: unknown) => res.write(`${JSON.stringify(obj)}\n`);
+    const withImage = (final: unknown) =>
+      normalizedImageDataUrl ? { ...(final as object), image: normalizedImageDataUrl } : final;
 
     try {
       const final = await chatLogMealStream(
         history,
         loggedMeals,
         (text) => write({ t: 'msg', v: text }),
-        () => write({ t: 'msg_done' })
+        () => write({ t: 'msg_done' }),
+        image
       );
-      write({ t: 'done', v: final });
+      write({ t: 'done', v: withImage(final) });
     } catch (error: unknown) {
       logger.error('Streaming chat failed, falling back to non-streaming', {
         error: error instanceof Error ? error.message : String(error),
       });
       try {
-        const final = await chatLogMeal(history, loggedMeals);
-        write({ t: 'done', v: final });
+        const final = await chatLogMeal(history, loggedMeals, image);
+        write({ t: 'done', v: withImage(final) });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'AI request failed';
         write({ t: 'error', v: message });

@@ -52,45 +52,90 @@ export interface Recipe {
 
 type ChatMessage = ModelMessage;
 
+// A normalized image (raw bytes + media type) to attach to a user turn for
+// vision-based meal logging. Produced by the image service.
+export interface VisionImage {
+  data: Uint8Array;
+  mediaType: string;
+}
+
+// Attach an image to the latest user turn as multimodal content. Replaces that
+// turn's plain string with `[text?, image]` parts; if no user turn exists, adds
+// an image-only one. Used so the model sees the photo alongside the request.
+function attachImageToHistory(
+  history: { role: 'user' | 'assistant'; content: string }[],
+  image: VisionImage
+): ChatMessage[] {
+  const messages = [...history] as ChatMessage[];
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') {
+      const text = typeof messages[i].content === 'string' ? (messages[i].content as string) : '';
+      messages[i] = {
+        role: 'user',
+        content: [
+          ...(text ? [{ type: 'text' as const, text }] : []),
+          { type: 'image' as const, image: image.data, mediaType: image.mediaType },
+        ],
+      };
+      return messages;
+    }
+  }
+  messages.push({
+    role: 'user',
+    content: [{ type: 'image', image: image.data, mediaType: image.mediaType }],
+  });
+  return messages;
+}
+
 // Lazily-created language model, configured entirely from generic env vars via
 // the Vercel AI SDK.
 let aiModel: LanguageModel | null = null;
 export function getModel(): LanguageModel {
   if (aiModel) return aiModel;
+  aiModel = createModel(requireEnv('AI_MODEL'));
+  return aiModel;
+}
 
+// Lazily-created vision model for photo-based logging. Uses AI_VISION_MODEL when
+// set, otherwise falls back to AI_MODEL (assumed multimodal). Cached separately
+// so a text-only and a vision model can coexist.
+let visionModel: LanguageModel | null = null;
+export function getVisionModel(): LanguageModel {
+  if (visionModel) return visionModel;
+  visionModel = createModel(process.env.AI_VISION_MODEL || requireEnv('AI_MODEL'));
+  return visionModel;
+}
+
+// Build a language model for the configured provider by name. Shared by the
+// text and vision model factories so provider wiring lives in one place.
+function createModel(model: string): LanguageModel {
   const apiKey = requireEnv('AI_API_KEY');
-  const model = requireEnv('AI_MODEL');
   const baseURL = process.env.AI_BASE_URL;
   const provider = (process.env.AI_PROVIDER || 'openai-compatible').toLowerCase();
 
   switch (provider) {
     case 'openai-compatible':
-      aiModel = createOpenAICompatible({
+      return createOpenAICompatible({
         name: 'fitpal-ai',
         baseURL: requireEnv('AI_BASE_URL'),
         apiKey,
       })(model);
-      break;
     case 'azure':
-      aiModel = createAzure({
+      return createAzure({
         baseURL: `${requireEnv('AI_BASE_URL').replace(/\/+$/, '')}/openai`,
         apiKey,
         apiVersion: requireEnv('AI_API_VERSION'),
         useDeploymentBasedUrls: true,
       }).chat(model);
-      break;
     case 'anthropic':
-      aiModel = createAnthropic({ apiKey, ...(baseURL ? { baseURL } : {}) })(model);
-      break;
+      return createAnthropic({ apiKey, ...(baseURL ? { baseURL } : {}) })(model);
     case 'google':
-      aiModel = createGoogleGenerativeAI({ apiKey, ...(baseURL ? { baseURL } : {}) })(model);
-      break;
+      return createGoogleGenerativeAI({ apiKey, ...(baseURL ? { baseURL } : {}) })(model);
     default:
       throw new Error(
         `Unsupported AI_PROVIDER "${provider}". Use "openai-compatible" (default), "azure", "anthropic", or "google".`
       );
   }
-  return aiModel;
 }
 
 function requireEnv(name: string): string {
@@ -152,11 +197,12 @@ async function completeStructured<T>(
   schema: z.ZodType<T>,
   schemaName: string,
   temperature = 0.7,
-  system = SYSTEM_PROMPT
+  system = SYSTEM_PROMPT,
+  model: LanguageModel = getModel()
 ): Promise<T> {
   const { output } = await withRetry(() =>
     generateText({
-      model: getModel(),
+      model,
       system,
       messages,
       temperature,
@@ -894,15 +940,18 @@ export interface LoggedMealSummary {
 
 export async function chatLogMeal(
   history: { role: 'user' | 'assistant'; content: string }[],
-  loggedMeals: LoggedMealSummary[] = []
+  loggedMeals: LoggedMealSummary[] = [],
+  image?: VisionImage
 ) {
   const system = mealChatSystemPrompt(loggedMeals);
+  const messages = image ? attachImageToHistory(history, image) : ([...history] as ChatMessage[]);
   const extracted = await completeStructured(
-    [...history] as ChatMessage[],
+    messages,
     MealExtractSchema,
     'meal_extract',
     0.2,
-    system
+    system,
+    image ? getVisionModel() : getModel()
   );
   return assembleChatResult(extracted);
 }
@@ -914,13 +963,15 @@ export async function chatLogMealStream(
   history: { role: 'user' | 'assistant'; content: string }[],
   loggedMeals: LoggedMealSummary[],
   onMessage: (text: string) => void,
-  onMessageDone?: () => void
+  onMessageDone?: () => void,
+  image?: VisionImage
 ) {
   const system = mealChatSystemPrompt(loggedMeals);
+  const messages = image ? attachImageToHistory(history, image) : ([...history] as ChatMessage[]);
   const result = streamText({
-    model: getModel(),
+    model: image ? getVisionModel() : getModel(),
     system,
-    messages: [...history] as ChatMessage[],
+    messages,
     temperature: 0.2,
     output: Output.object({ schema: MealExtractSchema, name: 'meal_extract' }),
   });

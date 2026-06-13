@@ -133,3 +133,27 @@ export const StreakSchema = z
     userId: z.string().min(1),
   })
   .loose();
+
+// --- AI / images ----------------------------------------------------------
+
+// A base64 image data URL for photo-based meal logging. This is a cheap
+// boundary guard (allowed type + size bound to reject obvious abuse early); the
+// authoritative decode/normalize lives in services/imageService.ts, which
+// enforces the matching 3 MB decoded-bytes cap. The whole request body must fit
+// the 5 MB express.json limit, and base64 inflates bytes by ~4/3, so 3 MB of
+// image is ~4 MB of data-URL chars, leaving headroom for the other fields.
+const MAX_IMAGE_DATAURL_CHARS = 4_300_000; // ~3 MB of image once base64-decoded
+export const ImageDataUrlSchema = z
+  .string()
+  .max(MAX_IMAGE_DATAURL_CHARS, 'image is too large')
+  .regex(/^data:image\/(jpeg|png|webp);base64,/i, 'image must be a jpeg, png or webp data URL');
+
+// Streaming meal-chat body. history/loggedMeals pass through loosely (their
+// shapes are owned by the AI service); only the optional image is bounded here.
+export const ChatMealStreamSchema = z
+  .object({
+    history: z.array(z.object({}).loose()).optional(),
+    loggedMeals: z.array(z.object({}).loose()).optional(),
+    image: ImageDataUrlSchema.optional(),
+  })
+  .loose();
