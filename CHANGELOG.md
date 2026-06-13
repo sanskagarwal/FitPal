@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-13
+
 ### Added
 
 - Per-meal targets: the dashboard meal breakdown now shows each meal type
@@ -106,7 +108,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/sanskagarwal/FitPal/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/sanskagarwal/FitPal/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/sanskagarwal/FitPal/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/sanskagarwal/FitPal/compare/v0.1.0...v0.2.0
