@@ -152,16 +152,10 @@ Works with any OpenAI-compatible API. For **Azure OpenAI**, set
 
 ## Usage
 
-1. **Register** with your basics (DOB, height, activity level) and FitPal
-   estimates your starting goals.
-2. **Set goals.** Tweak target weight, calories, and macros, or let AI suggest
-   them.
-3. **Log meals.** Use the natural-language quick-log, or search foods and add
-   them manually.
-4. **Track weight.** Log regularly to build a streak and watch goal progress.
-5. **Review the dashboard** for daily totals, the macro split, and weekly
-   trends.
-6. **Discover recipes** and **nutrient suggestions** to hit your targets.
+Register with your basics, set goals (or let AI suggest them), then log meals in
+plain language or via search. Track weight to build a streak, and review the
+dashboard for daily totals, the macro split, and weekly trends. See
+[FEATURES.md](docs/FEATURES.md) for the full walkthrough.
 
 ---
 

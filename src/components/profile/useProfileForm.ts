@@ -32,10 +32,8 @@ export const useProfileForm = () => {
   const [message, setMessage] = useState('');
   const [currentWeight, setCurrentWeight] = useState<number | null>(null);
 
-  // Re-sync the form when the signed-in user changes (logout/login), so it
-  // never shows a previous user's stale data. Keyed on the user id so it only
-  // resets on an actual user switch, not while editing or after a save (which
-  // keeps the same id). React's recommended "adjust state during render".
+  // Re-sync the form on an actual user switch (keyed on id so edits/saves, which
+  // keep the same id, are preserved). Adjust state during render.
   const [prevUserId, setPrevUserId] = useState(user?.id);
   if (user?.id !== prevUserId) {
     setPrevUserId(user?.id);

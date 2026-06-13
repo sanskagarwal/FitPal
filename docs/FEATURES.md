@@ -12,8 +12,6 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
   Mifflin-St Jeor BMR formula and your activity level.
 - **Starting weight** is captured at registration so progress tracking begins
   immediately.
-- **Profile in the navbar.** Your name doubles as the profile entry point, right
-  beside Logout.
 - **Self-service account deletion.** Permanently delete your account and all of
   your data from the profile page, gated behind a password and typed
   confirmation.
@@ -23,7 +21,7 @@ Everything FitPal can do, your AI-powered Indian nutrition tracker.
 - **Natural language.** Type things like *"2 rotis and a katori of dal for lunch
   at 1pm"* and FitPal builds the meal for you.
 - **Snap a photo.** Attach a picture of your plate (camera or upload) and a
-  vision model identifies the foods and portions, then flows through the same
+  vision model identifies the foods and portions, flowing through the same
   editable proposal before saving. The photo is shown alongside the logged meal.
 - **Log, update, or delete.** The assistant understands follow-ups like *"add a
   glass of milk to breakfast"* or *"delete my lunch"* and acts on today's meals.

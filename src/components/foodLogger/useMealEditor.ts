@@ -24,7 +24,7 @@ export const useMealEditor = ({ user, selectedDate, loadTodayMeals, todayMeals, 
   const [notes, setNotes] = useState('');
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // Index of the selected food whose nutrition is being re-estimated after a unit change.
+  // Index of the food being re-estimated after a unit change.
   const [reestimatingIndex, setReestimatingIndex] = useState<number | null>(null);
 
   const calculateTotalNutrients = (): NutrientInfo =>
@@ -48,14 +48,12 @@ export const useMealEditor = ({ user, selectedDate, loadTodayMeals, todayMeals, 
     const updated = [...selectedFoods];
     updated[index].unitQuantity = safeQuantity;
     updated[index].unit = unit;
-    // Calculate multiplier based on unit (for now, use unitQuantity as multiplier)
-    // In a real app, you'd convert units to servings properly
     updated[index].quantity = safeQuantity;
     setSelectedFoods(updated);
   };
 
-  // Changing the unit changes what "one unit" means, so ask the AI to re-estimate
-  // the per-unit nutrition for the new unit.
+  // Changing the unit changes what "one unit" means, so re-estimate the
+  // per-unit nutrition for the new unit.
   const changeFoodUnit = async (index: number, unit: MealUnit) => {
     const entry = selectedFoods[index];
     if (!entry || entry.unit === unit) return;

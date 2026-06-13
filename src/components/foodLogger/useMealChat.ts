@@ -42,8 +42,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   const [chatLoading, setChatLoading] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
   const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(null);
-  // A compressed photo (data URL) attached to the next message, with a flag while
-  // it is being read/compressed so the UI can show a spinner.
+  // Compressed photo (data URL) staged for the next message; loading flag drives the spinner.
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
 

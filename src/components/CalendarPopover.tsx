@@ -18,12 +18,10 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
   const { user } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewMonth, setViewMonth] = useState(() => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
-  // Map of YYYY-MM-DD -> total calories logged that day.
   const [caloriesByDay, setCaloriesByDay] = useState<Record<string, number>>({});
 
   const today = getStartOfDay(new Date());
 
-  // Load meals once and aggregate calories per day.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -75,7 +73,6 @@ export const CalendarPopover = ({ selectedDate, onSelect, onClose }: CalendarPop
   const goToPrevMonth = () => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1));
   const goToNextMonth = () => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1));
 
-  // Disable navigating to months entirely in the future.
   const nextMonthDisabled =
     viewMonth.getFullYear() > today.getFullYear() ||
     (viewMonth.getFullYear() === today.getFullYear() && viewMonth.getMonth() >= today.getMonth());

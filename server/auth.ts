@@ -3,14 +3,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from './env.js';
 
-// ---------------------------------------------------------------------------
-// Authentication primitives (crypto, tokens, cookies).
-//
-// Passwords are hashed with bcrypt server-side (the client never hashes). A
-// signed JWT is issued in an httpOnly cookie so it is inaccessible to JS and
-// can't be exfiltrated by XSS. Request-time guards (requireAuth, ownership)
-// live in middleware/auth.ts and build on `verifyAuthToken` here.
-// ---------------------------------------------------------------------------
+// Authentication primitives (crypto, tokens, cookies). Passwords are hashed with
+// bcrypt server-side; a signed JWT is issued in an httpOnly cookie so XSS can't
+// read it. Request-time guards live in middleware/auth.ts.
 
 export const AUTH_COOKIE_NAME = 'fitpal-token';
 const TOKEN_TTL = '30d';

@@ -217,9 +217,7 @@ const ZERO_NUTRIENTS: NutrientInfo = {
   vitaminA: 0, vitaminC: 0, vitaminD: 0, calcium: 0, iron: 0, magnesium: 0, potassium: 0,
 };
 
-// ---------------------------------------------------------------------------
 // Food analysis
-// ---------------------------------------------------------------------------
 const FoodAnalysisSchema = z.object({
   foods: z.array(
     z.object({
@@ -247,16 +245,13 @@ export async function analyzeFoodWithAI(foodQuery: string): Promise<Food[]> {
       nutrients: food.nutrients as NutrientInfo,
     }));
   } catch (error) {
-    // No reliable result - return an empty list so the UI shows "no matches"
-    // rather than surfacing a 500. The user can refine the query and retry.
+    // Return an empty list so the UI shows "no matches" instead of a 500.
     logger.error('Error analyzing food', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 }
 
-// ---------------------------------------------------------------------------
 // Re-estimate per-unit nutrition
-// ---------------------------------------------------------------------------
 const ReestimateSchema = z.object({
   servingSize: z.string(),
   confidence: z.enum(['high', 'medium', 'low']),
@@ -282,16 +277,13 @@ export async function reestimateNutrientsForUnit(
       nutrients: result.nutrients as NutrientInfo,
     };
   } catch (error) {
-    // Fallback: a safe zero-nutrition, low-confidence estimate so callers always
-    // get a usable shape (the UI flags low confidence for the user to adjust).
+    // Safe zero-nutrition, low-confidence fallback so callers always get a usable shape.
     logger.error('Error re-estimating unit nutrition', { error: error instanceof Error ? error.message : String(error) });
     return { servingSize: `1 ${unit}`, confidence: 'low', nutrients: { ...ZERO_NUTRIENTS } };
   }
 }
 
-// ---------------------------------------------------------------------------
 // Recipe suggestions
-// ---------------------------------------------------------------------------
 const RecipesSchema = z.object({
   recipes: z.array(
     z.object({
@@ -339,9 +331,7 @@ export async function getRecipeSuggestions(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Dietary insights
-// ---------------------------------------------------------------------------
 const INSIGHT_CATEGORIES = [
   'calories',
   'protein',
@@ -406,9 +396,7 @@ export async function getDietaryInsights(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Meal suggestion
-// ---------------------------------------------------------------------------
 const MealSuggestionItemSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -645,9 +633,7 @@ export async function suggestMeal(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Nutrient food suggestion
-// ---------------------------------------------------------------------------
 const NutrientSuggestionSchema = z.object({
   foods: z.array(z.object({ name: z.string(), content: z.string(), portion: z.string() })),
   tips: z.array(z.string()),
@@ -683,9 +669,7 @@ export async function suggestFoodForNutrient(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Goal suggestions
-// ---------------------------------------------------------------------------
 const GoalsSchema = z.object({
   calories: z.number(),
   protein: z.number(),
@@ -759,9 +743,7 @@ export async function suggestGoals(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Agentic, conversational meal logging
-// ---------------------------------------------------------------------------
 
 // Stage 1 - extraction only. The model identifies foods, units, quantities and
 // the action; it does NOT estimate nutrition (that is stage 2). Dropping the

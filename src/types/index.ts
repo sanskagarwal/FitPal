@@ -24,36 +24,37 @@ export interface User {
 }
 
 export interface UserProfile {
-  dateOfBirth: string; // ISO date string (YYYY-MM-DD)
+  dateOfBirth: string; // YYYY-MM-DD
   gender: Gender;
-  height: number; // in cm
+  height: number; // cm
   activityLevel: ActivityLevel;
   dietPreference?: DietPreference;
   goals: UserGoals;
 }
 
+/**
+ * Daily nutrition and weight targets. Weight in kg, energy in kcal, macros in
+ * grams, vitamins/minerals in mg or mcg.
+ */
 export interface UserGoals {
-  targetWeight: number; // in kg
+  targetWeight: number;
   weightLossRate?: number; // kg per week (0.25, 0.5, 1)
   targetCalories: number;
-  targetProtein: number; // in grams
-  targetCarbs: number; // in grams
-  targetFats: number; // in grams
-  targetFiber: number; // in grams
-  // Micronutrient targets
-  targetVitaminA?: number; // mcg
-  targetVitaminC?: number; // mg
-  targetVitaminD?: number; // mcg
-  targetVitaminE?: number; // mg
-  targetVitaminB12?: number; // mcg
-  targetCalcium?: number; // mg
-  targetIron?: number; // mg
-  targetMagnesium?: number; // mg
-  targetPotassium?: number; // mg
-  targetZinc?: number; // mg
-  customNutrients?: {
-    [key: string]: number; // e.g., 'fiber': 30, 'iron': 18
-  };
+  targetProtein: number;
+  targetCarbs: number;
+  targetFats: number;
+  targetFiber: number;
+  targetVitaminA?: number;
+  targetVitaminC?: number;
+  targetVitaminD?: number;
+  targetVitaminE?: number;
+  targetVitaminB12?: number;
+  targetCalcium?: number;
+  targetIron?: number;
+  targetMagnesium?: number;
+  targetPotassium?: number;
+  targetZinc?: number;
+  customNutrients?: Record<string, number>;
 }
 
 // Food and Nutrition Types
@@ -67,25 +68,25 @@ export interface Food {
   confidence?: 'high' | 'medium' | 'low'; // AI's confidence in the nutrition values
 }
 
+/** Per-serving nutrients. Energy in kcal, macros in grams, micros in mg or mcg. */
 export interface NutrientInfo {
   calories: number;
-  protein: number; // grams
-  carbs: number; // grams
-  fats: number; // grams
-  fiber?: number; // grams
-  sugar?: number; // grams
-  sodium?: number; // mg
-  // Micronutrients
-  vitaminA?: number; // mcg
-  vitaminC?: number; // mg
-  vitaminD?: number; // mcg
-  vitaminE?: number; // mg
-  vitaminB12?: number; // mcg
-  calcium?: number; // mg
-  iron?: number; // mg
-  magnesium?: number; // mg
-  potassium?: number; // mg
-  zinc?: number; // mg
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminE?: number;
+  vitaminB12?: number;
+  calcium?: number;
+  iron?: number;
+  magnesium?: number;
+  potassium?: number;
+  zinc?: number;
 }
 
 // Meal Logging Types
@@ -118,7 +119,7 @@ export interface WeightEntry {
   userId: string;
   date: Date;
   weight: number; // kg
-  bodyFat?: number; // percentage
+  bodyFat?: number; // %
   bmi: number;
   notes?: string;
 }

@@ -135,10 +135,6 @@ AI_MODEL=gpt-4o-mini
 | `STATIC_DIR` | No | Server | `../../dist` | Directory of the built frontend to serve. |
 | `VITE_API_URL` | No | Frontend (build-time) | `/api` | Base URL the frontend calls. Inlined at build time. Only needed for split deployments where the frontend and server are on different origins. |
 
-### Storage server port
-
-The server defaults to port `3001`. Override with the `PORT` env var.
-
 ---
 
 ## Running the App

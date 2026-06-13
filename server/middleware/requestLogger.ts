@@ -2,15 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { logger, runWithContext } from '../logger.js';
 
-// ---------------------------------------------------------------------------
-// Request logging + correlation id.
-//
-// Generates (or honours an inbound `x-request-id`) a correlation id for every
-// request, binds it into the async-local logging context, echoes it back on the
-// response header, and logs a structured line when the response finishes
-// (method, path, status, duration, user). Mounted first so the id is available
-// to every downstream handler and to the central error handler.
-// ---------------------------------------------------------------------------
+// Per-request correlation id: generates (or honours an inbound `x-request-id`),
+// binds it into the async-local logging context, echoes it back on the response
+// header, and logs a structured line when the response finishes. Mounted first.
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

@@ -1,14 +1,10 @@
 import { z } from 'zod';
 import { MealType, MealUnit, NutrientsSchema } from './domain.js';
 
-// ---------------------------------------------------------------------------
-// Request validation schemas (zod) for every write route.
-//
-// Used via the `validateBody` middleware. Schemas use `.loose()` so unknown
-// fields pass through and the persisted shape stays byte-for-byte unchanged,
-// while still guarding the boundary against malformed data (NaN/Infinity,
+// Request validation schemas (zod) for write routes, applied via `validateBody`.
+// Schemas use `.loose()` so unknown fields pass through and the persisted shape
+// is unchanged, while still guarding against malformed data (NaN/Infinity,
 // negatives, absurd magnitudes, missing fields).
-// ---------------------------------------------------------------------------
 
 // A non-negative quantity with a generous upper bound. z.number() already
 // rejects NaN/Infinity in Zod v4, so no .finite() is needed.
@@ -21,7 +17,7 @@ const BoundedNutrients = NutrientsSchema.refine(
   { message: 'nutrient values must be finite, non-negative and within range' }
 );
 
-// --- Auth -----------------------------------------------------------------
+// Auth
 
 // Profile is a rich nested object; validate the load-bearing fields and let the
 // rest pass through so the client can evolve it without breaking the contract.
@@ -58,7 +54,7 @@ export const DeleteAccountSchema = z
   })
   .loose();
 
-// --- User upsert ----------------------------------------------------------
+// User upsert
 
 // Profile/goal updates from the client. The controller merges this into the
 // stored record (preserving id/email/password server-side), so we only require
@@ -71,7 +67,7 @@ export const UserUpsertSchema = z
   })
   .loose();
 
-// --- Meals ----------------------------------------------------------------
+// Meals
 
 const FoodSchema = z
   .object({
@@ -120,7 +116,7 @@ export const MealSchema = z
   })
   .loose();
 
-// --- Weights --------------------------------------------------------------
+// Weights
 
 export const WeightSchema = z
   .object({
@@ -133,7 +129,7 @@ export const WeightSchema = z
   })
   .loose();
 
-// --- Notifications & streaks (one row per user) ---------------------------
+// Notifications & streaks (one row per user)
 
 export const NotificationSchema = z
   .object({
@@ -147,7 +143,7 @@ export const StreakSchema = z
   })
   .loose();
 
-// --- AI / images ----------------------------------------------------------
+// AI / images
 
 // Streaming meal-chat body. history/loggedMeals pass through loosely (their
 // shapes are owned by the AI service); only the optional image is bounded here.

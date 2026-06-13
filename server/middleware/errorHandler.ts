@@ -3,14 +3,9 @@ import { ZodError } from 'zod';
 import { AppError } from '../errors.js';
 import { logger } from '../logger.js';
 
-// ---------------------------------------------------------------------------
-// Central error-handling middleware.
-//
-// The single place that turns thrown errors into HTTP responses. Typed
-// `AppError`s carry their own status/code; zod errors become 400s with the
-// first failing field; anything else is an opaque 500 (details logged, not
-// leaked). Registered last, after all routes.
-// ---------------------------------------------------------------------------
+// Central error handler: turns thrown errors into HTTP responses. `AppError`s
+// carry their own status/code; zod errors become 400s; anything else is an
+// opaque 500 (details logged, not leaked). Registered last, after all routes.
 export function errorHandler(
   err: unknown,
   _req: Request,

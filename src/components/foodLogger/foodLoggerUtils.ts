@@ -10,8 +10,7 @@ export type ChatMessage = { role: 'user' | 'assistant'; content: string; image?:
 export const MAX_CALORIES = 100000;
 export const MAX_QUANTITY = 10000;
 
-// Clamp a possibly-NaN/Infinity/out-of-range number into [min, max], falling
-// back to `fallback` when the value isn't a finite number.
+// Clamp into [min, max], returning `fallback` when the value isn't finite.
 export const clampNumber = (value: number, min: number, max: number, fallback: number): number => {
   if (!Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, value));
@@ -70,8 +69,7 @@ const EMPTY_NUTRIENTS: NutrientInfo = {
   potassium: 0,
 };
 
-// Sum per-unit nutrients across a list of items, each scaled by its quantity.
-// Used for both the manual "Selected Foods" totals and AI-proposed meals.
+// Sum per-unit nutrients across items, each scaled by its quantity.
 export const sumNutrients = (
   items: { nutrients: NutrientInfo; quantity: number }[]
 ): NutrientInfo =>

@@ -60,25 +60,21 @@ weight. It has three parts:
   utilities (`src/index.css`) for safe-area insets on notched devices; the
   viewport meta tag already sets `viewport-fit=cover`.
 - Avoid "AI-looking" special characters in code, comments, docs, and
-  user-facing strings. Use plain ASCII instead. Keep writing simple, subtle, and
-  professional. Specifically avoid:
-  - Dashes: em-dash (U+2014), en-dash (U+2013), horizontal bar (U+2015),
-    math minus (U+2212), soft hyphen (U+00AD). Use a plain hyphen `-`.
-  - Quotes/punctuation: curly quotes (U+2018/2019/201C/201D), ellipsis (U+2026),
-    low quotes, prime marks. Use straight quotes and `...`.
-  - Invisible/spacing: non-breaking space (U+00A0), narrow/thin spaces, zero-width
-    characters (U+200B/200C/200D), BOM (U+FEFF). Use a normal space.
-  - Symbols/arrows: arrows (`->` etc.), legal marks (TM/(C)/(R)), and decorative
-    math operators. Spell them out or use ASCII.
-  - Emojis and decorative glyphs (check/cross/warning/star) in code, comments,
-    and docs.
+  user-facing strings; use plain ASCII and keep writing simple. Specifically avoid:
+  - Dashes (em U+2014, en U+2013, bar U+2015, minus U+2212, soft hyphen U+00AD):
+    use a plain hyphen `-`.
+  - Curly quotes (U+2018/2019/201C/201D), ellipsis (U+2026), low quotes, primes:
+    use straight quotes and `...`.
+  - Invisible/spacing chars (NBSP U+00A0, narrow/thin spaces, zero-width
+    U+200B/200C/200D, BOM U+FEFF): use a normal space.
+  - Arrows (`->` etc.), legal marks (TM/(C)/(R)), decorative math operators, and
+    emojis/decorative glyphs: spell them out or use ASCII.
   Allowed exceptions: the branding salad emoji in the app header; the curated
-  emojis already used in UI copy (the motivational dashboard banner messages,
-  the Goals tips heading, and the Profile data-info heading); functional UI
-  glyphs already in use (the `*` list bullet, the `x` multiplication sign in the
-  meal proposal, the `.` separator); and math symbols inside AI prompt strings
-  under `server/prompts/` and `server/services/aiService.ts`. When adding new
-  user-facing copy, do not introduce new emojis unless asked.
+  emojis already in UI copy (dashboard banner messages, Goals tips heading,
+  Profile data-info heading); functional glyphs already in use (`*` bullet, `x`
+  multiplication in the meal proposal, `.` separator); and math symbols in AI
+  prompt strings under `server/prompts/` and `server/services/aiService.ts`. Do
+  not introduce new emojis in new copy unless asked.
 - Keep changes minimal and focused, and match the surrounding code style.
 
 ## Security

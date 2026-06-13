@@ -116,7 +116,7 @@ changelog = changelog
   )
   .replace(
     /(\[Unreleased\]:.*\n)/,
-    `$1[${next}]: https://github.com/${REPO}/compare/v${current}...${tag}`,
+    `$1[${next}]: https://github.com/${REPO}/compare/v${current}...${tag}\n`,
   );
 
 writeFileSync(changelogPath, changelog);

@@ -3,14 +3,9 @@ import { AUTH_COOKIE_NAME, verifyAuthToken } from '../auth.js';
 import { AuthError, ForbiddenError } from '../errors.js';
 import { setContext } from '../logger.js';
 
-// ---------------------------------------------------------------------------
-// Request-time auth guards.
-//
-// `requireAuth` reads the JWT from the httpOnly cookie and populates
-// `req.userId`. The ownership guards then ensure a user can only read/write
-// their own records, closing IDOR holes. All guards throw typed errors so the
-// central error handler renders consistent 401/403 responses.
-// ---------------------------------------------------------------------------
+// Request-time auth guards. `requireAuth` reads the JWT from the httpOnly cookie
+// and sets `req.userId`; the ownership guards ensure users only access their own
+// records (closing IDOR holes). All throw typed errors for the central handler.
 
 // Augment Express's Request so `req.userId` is typed everywhere.
 declare global {

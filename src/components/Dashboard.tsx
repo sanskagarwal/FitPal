@@ -55,9 +55,7 @@ export const Dashboard = () => {
     setCalorieCap(MEAL_CALORIE_CAPS[value]);
   };
 
-  // Re-sync the diet preference when the signed-in user's preference changes
-  // (e.g. after re-login), so meal suggestions don't use a previous user's
-  // value. React's recommended "adjust state during render" pattern.
+  // Re-sync the diet preference on user switch (adjust state during render).
   const [prevDietPreference, setPrevDietPreference] = useState(user?.profile.dietPreference);
   if (user?.profile.dietPreference !== prevDietPreference) {
     setPrevDietPreference(user?.profile.dietPreference);
