@@ -10,6 +10,18 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- Self-hosting security guide ([docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)).
+
+### Fixed
+
+- Dashboard color contrast now meets WCAG AA in light and dark themes.
+
+### Security
+
+- AI endpoints validate request bodies and guard user text against prompt injection.
+
 ## [0.5.0] - 2026-06-13
 
 ### Added

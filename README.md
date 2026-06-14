@@ -103,6 +103,10 @@ docker compose up -d
 > Image: `ghcr.io/sanskagarwal/fitpal`. To build locally, swap `image:` for
 > `build: .` in `docker-compose.yml` and run `docker compose up -d --build`.
 
+> Running this beyond your local network? See
+> [SELF_HOSTING.md](docs/SELF_HOSTING.md) for hardening and operations:
+> TLS/reverse proxy, a strong `JWT_SECRET`, backups, and public-exposure notes.
+
 ### Run the container directly (without compose)
 
 ```bash
@@ -174,6 +178,7 @@ dashboard for daily totals, the macro split, and weekly trends. See
 ## More docs
 
 - [FEATURES.md](docs/FEATURES.md): complete feature list.
+- [SELF_HOSTING.md](docs/SELF_HOSTING.md): secure self-hosting and operations.
 - [DEVELOPER.md](docs/DEVELOPER.md): architecture, API reference, data models,
   and contribution guide.
 - [TODO.md](docs/TODO.md): roadmap.
