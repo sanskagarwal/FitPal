@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 # Install frontend dependencies first (better layer caching).
-COPY package.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Build the frontend. No secrets are needed at build time - the browser talks to
 # the same-origin /api, and the Azure OpenAI key lives only on the server.
@@ -25,7 +25,7 @@ RUN npm run build
 # Build the server and install its production dependencies (compiles
 # better-sqlite3). Pruning dev deps afterwards keeps the compiled binary.
 WORKDIR /app/server
-RUN npm install
+RUN npm ci
 RUN npm run build
 RUN npm prune --omit=dev
 

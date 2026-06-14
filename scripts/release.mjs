@@ -23,6 +23,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const REPO = 'sanskagarwal/FitPal';
 const PKG_FILES = ['package.json', 'server/package.json'];
+const LOCK_DIRS = ['.', 'server'];
+const LOCK_FILES = ['package-lock.json', 'server/package-lock.json'];
 const CHANGELOG = 'CHANGELOG.md';
 
 function fail(message) {
@@ -30,8 +32,8 @@ function fail(message) {
   process.exit(1);
 }
 
-function run(cmd) {
-  return execSync(cmd, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] })
+function run(cmd, cwd = '.') {
+  return execSync(cmd, { cwd: join(root, cwd), stdio: ['ignore', 'pipe', 'pipe'] })
     .toString()
     .trim();
 }
@@ -95,6 +97,13 @@ for (const file of PKG_FILES) {
   console.log(`  updated ${file}`);
 }
 
+// 1b. Sync the lockfiles to the new version (lockfile-only, no node_modules
+// changes) so package.json and package-lock.json stay in sync for `npm ci`.
+for (const dir of LOCK_DIRS) {
+  run('npm install --package-lock-only', dir);
+  console.log(`  synced ${join(dir === '.' ? '' : dir, 'package-lock.json')}`);
+}
+
 // 2. Update the changelog.
 const changelogPath = join(root, CHANGELOG);
 let changelog = readFileSync(changelogPath, 'utf8');
@@ -123,7 +132,7 @@ writeFileSync(changelogPath, changelog);
 console.log(`  updated ${CHANGELOG}`);
 
 // 3. Commit and tag.
-run(`git add ${PKG_FILES.join(' ')} ${CHANGELOG}`);
+run(`git add ${PKG_FILES.join(' ')} ${LOCK_FILES.join(' ')} ${CHANGELOG}`);
 run(`git commit -m "chore(release): ${tag}"`);
 run(`git tag -a ${tag} -m "Release ${tag}"`);
 

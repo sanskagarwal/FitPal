@@ -11,7 +11,13 @@ permissions:
   packages: write
 
 jobs:
+  # Run the full CI suite (lint, unit/integration, e2e) first. The image is only
+  # built and published if this passes, so we never ship a failing build.
+  verify:
+    uses: ./.github/workflows/ci.yml
+
   docker:
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

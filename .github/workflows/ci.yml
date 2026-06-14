@@ -5,6 +5,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Allow other workflows (e.g. Release) to require this CI as a gate.
+  workflow_call:
 
 # Cancel superseded runs on the same ref so rapid pushes don't stack.
 concurrency:
