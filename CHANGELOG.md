@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-14
+
 ### Added
 
 - Self-hosting security guide ([docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)).
@@ -120,7 +122,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/sanskagarwal/FitPal/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/sanskagarwal/FitPal/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/sanskagarwal/FitPal/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/sanskagarwal/FitPal/compare/v0.2.0...v0.3.0
