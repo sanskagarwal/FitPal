@@ -39,7 +39,7 @@ export const aiController = {
       getRecipeSuggestions(
         req.body.preferences,
         req.body.goals,
-        req.body.recentFoods ?? [],
+        req.body.recentFoods,
         req.body.dietPreference
       )
     ),
@@ -74,7 +74,7 @@ export const aiController = {
         req.body.mealType,
         req.body.consumed,
         req.body.target,
-        req.body.laterMealTypes ?? [],
+        req.body.laterMealTypes,
         req.body.dietPreference
       )
     ),
@@ -97,7 +97,7 @@ export const aiController = {
     ),
 
   chatMeal: (req: Request, res: Response) =>
-    run(res, () => chatLogMeal(req.body.history ?? [], req.body.loggedMeals ?? [])),
+    run(res, () => chatLogMeal(req.body.history, req.body.loggedMeals)),
 
   // Streaming chat endpoint. Responds with newline-delimited JSON (NDJSON):
   //   {"t":"msg","v":"<assistant message so far>"}  - emitted as the reply streams
@@ -107,14 +107,14 @@ export const aiController = {
   // If streaming fails mid-flight, fall back to the non-streaming path (which
   // carries retry/backoff) so the client still gets a usable result.
   async chatMealStream(req: Request, res: Response): Promise<void> {
-    const history = req.body?.history ?? [];
-    const loggedMeals = req.body?.loggedMeals ?? [];
+    const history = req.body.history;
+    const loggedMeals = req.body.loggedMeals;
 
     // Optional photo: normalize (validate + decode + re-encode) up front so a
     // bad image fails as a 400 before we open the NDJSON stream. The normalized
     // data URL is echoed back in the final result so the client can persist
     // exactly what the model saw without re-uploading the original.
-    const imageDataUrl: string | undefined = req.body?.image;
+    const imageDataUrl: string | undefined = req.body.image;
     let image: VisionImage | undefined;
     let normalizedImageDataUrl: string | undefined;
     if (imageDataUrl) {

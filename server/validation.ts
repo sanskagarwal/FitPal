@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MealType, MealUnit, NutrientsSchema } from './domain.js';
+import { DietPreference, MealType, MealUnit, NutrientsSchema } from './domain.js';
 
 // Request validation schemas (zod) for write routes, applied via `validateBody`.
 // Schemas use `.loose()` so unknown fields pass through and the persisted shape
@@ -162,13 +162,93 @@ export const StreakSchema = z
 
 // AI / images
 
-// Streaming meal-chat body. history/loggedMeals pass through loosely (their
-// shapes are owned by the AI service); only the optional image is bounded here.
-// ImageDataUrlSchema is defined above (next to MealSchema, which also uses it).
+// AI request schemas validate the SHAPE of each request (types, enums,
+// required fields) so malformed input fails as a clean 400 at the boundary
+// instead of surfacing as a confusing error deep in the AI service.
+
+export const AnalyzeFoodSchema = z
+  .object({
+    foodQuery: z.string(),
+  })
+  .loose();
+
+export const ReestimateUnitSchema = z
+  .object({
+    foodName: z.string(),
+    unit: z.enum(MealUnit),
+  })
+  .loose();
+
+export const RecipesRequestSchema = z
+  .object({
+    preferences: z.string().optional(),
+    goals: z.string().optional(),
+    recentFoods: z.array(z.string()).default([]),
+    dietPreference: z.enum(DietPreference).optional(),
+  })
+  .loose();
+
+export const InsightsRequestSchema = z
+  .object({
+    currentWeight: z.number(),
+    targetWeight: z.number(),
+    recentNutrition: z.object({}).loose().optional(),
+    goals: z.string().optional(),
+  })
+  .loose();
+
+export const SuggestMealRequestSchema = z
+  .object({
+    remainingCalories: z.number(),
+    remainingProtein: z.number(),
+    remainingCarbs: z.number(),
+    remainingFats: z.number(),
+    remainingFiber: z.number(),
+    mealType: z.enum(MealType),
+    dietPreference: z.enum(DietPreference).optional(),
+    calorieCap: z.number().optional(),
+  })
+  .loose();
+
+export const SuggestNutrientRequestSchema = z
+  .object({
+    nutrientName: z.string(),
+    currentAmount: z.number(),
+    targetAmount: z.number(),
+  })
+  .loose();
+
+export const SuggestGoalsRequestSchema = z
+  .object({
+    height: z.number(),
+    currentWeight: z.number(),
+    age: z.number(),
+    // Gender/activity are free-form strings on the profile.
+    gender: z.string(),
+    activityLevel: z.string(),
+    targetWeight: z.number(),
+  })
+  .loose();
+
+// Conversational meal-logging turns. Each entry's shape is owned by the AI
+// service; default to empty arrays so controllers receive a guaranteed shape
+// (no re-defaulting at the call site).
+const ChatHistorySchema = z.array(z.object({}).loose()).default([]);
+const LoggedMealsSchema = z.array(z.object({}).loose()).default([]);
+
+export const ChatMealSchema = z
+  .object({
+    history: ChatHistorySchema,
+    loggedMeals: LoggedMealsSchema,
+  })
+  .loose();
+
+// Streaming meal-chat body. Only the optional image needs a content/size guard,
+// handled by ImageDataUrlSchema (defined above, next to MealSchema).
 export const ChatMealStreamSchema = z
   .object({
-    history: z.array(z.object({}).loose()).optional(),
-    loggedMeals: z.array(z.object({}).loose()).optional(),
+    history: ChatHistorySchema,
+    loggedMeals: LoggedMealsSchema,
     image: ImageDataUrlSchema.optional(),
   })
   .loose();
@@ -188,7 +268,7 @@ export const MealInsightRequestSchema = z
     mealType: z.enum(MealType),
     consumed: MealMacrosSchema,
     target: MealMacrosSchema,
-    laterMealTypes: z.array(z.enum(MealType)).optional(),
+    laterMealTypes: z.array(z.enum(MealType)).default([]),
     dietPreference: z.string().optional(),
   })
   .loose();
