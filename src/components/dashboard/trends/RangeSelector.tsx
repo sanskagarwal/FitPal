@@ -31,8 +31,8 @@ export const RangeSelector = ({ range, onChange }: RangeSelectorProps) => (
           onClick={() => onChange(opt.value)}
           className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
             active
-              ? 'bg-white text-primary-600 shadow-sm dark:bg-gray-800 dark:text-primary-300'
-              : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              ? 'bg-white text-primary-700 shadow-sm dark:bg-gray-800 dark:text-primary-300'
+              : 'text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
           }`}
         >
           {opt.label}

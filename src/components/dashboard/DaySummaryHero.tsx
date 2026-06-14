@@ -53,7 +53,7 @@ const MacroPill = ({ label, value, target, dotClassName }: MacroPillProps) => (
     <span className="text-sm font-medium">{label}</span>
     <span className="text-sm tabular-nums">
       {Math.round(value)}
-      <span className="opacity-70"> / {Math.round(target)}g</span>
+      <span className="opacity-80"> / {Math.round(target)}g</span>
     </span>
   </div>
 );

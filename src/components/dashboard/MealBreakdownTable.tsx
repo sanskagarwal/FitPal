@@ -107,7 +107,7 @@ const MealRow = ({
           <Icon className="w-5 h-5 shrink-0 text-gray-400 dark:text-gray-500" />
           <h3 className="font-medium text-gray-500 dark:text-gray-400 truncate">{label}</h3>
         </div>
-        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+        <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">
           Target {target.calories} kcal
         </span>
       </motion.div>
