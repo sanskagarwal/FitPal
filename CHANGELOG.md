@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-06-17
+
 ### Changed
 
 - Quick Log with AI no longer interrupts the chat to ask which meal it is.
@@ -134,7 +136,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/sanskagarwal/FitPal/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/sanskagarwal/FitPal/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/sanskagarwal/FitPal/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/sanskagarwal/FitPal/compare/v0.3.0...v0.4.0
