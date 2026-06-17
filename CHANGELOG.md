@@ -10,6 +10,10 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Fixed
+
+- Server build error that prevented the 0.5.2 release image from building.
+
 ## [0.5.2] - 2026-06-17
 
 ### Changed

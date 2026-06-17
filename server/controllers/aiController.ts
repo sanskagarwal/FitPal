@@ -109,7 +109,7 @@ export const aiController = {
   async chatMealStream(req: Request, res: Response): Promise<void> {
     const history = req.body.history;
     const loggedMeals = req.body.loggedMeals;
-    const localTime: string | undefined = req.body.localTime;
+    const localTime: string = req.body.localTime;
 
     // Optional photo: normalize (validate + decode + re-encode) up front so a
     // bad image fails as a 400 before we open the NDJSON stream. The normalized
