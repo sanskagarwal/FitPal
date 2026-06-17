@@ -1,56 +1,15 @@
 import { User, MealEntry, WeightEntry, NotificationSettings, Streak } from '../types';
+import { DataSource } from '../services/data/types';
+import { remoteDataSource } from '../services/data/remoteDataSource';
+import { API_BASE_URL } from '../services/data/apiClient';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// Re-exported so existing imports (`import { ApiError } from '../utils/db'`)
+// keep working now that the low-level REST client lives in services/data.
+export { ApiError } from '../services/data/apiClient';
 
-// A failed API call. Carries the HTTP status and the server-provided error
-// message (when present) so callers can distinguish error kinds and surface a
-// meaningful message instead of a generic "API call failed".
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly endpoint: string
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-// Read the server's error message from a non-OK response body, falling back to
-// the status text. Mirrors the auth/AI clients so error handling is uniform.
-async function readErrorMessage(response: Response): Promise<string> {
-  try {
-    const data = await response.json();
-    if (data?.error) return data.error;
-  } catch {
-    // No/invalid JSON body - fall through to the status text.
-  }
-  return response.statusText || 'Request failed';
-}
-
-// Helper function for API calls. `credentials: 'include'` sends the httpOnly
-// auth cookie so the server can authenticate the request and enforce ownership.
-async function apiCall(endpoint: string, method: string = 'GET', body?: unknown) {
-  const options: RequestInit = {
-    method,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-
-  if (!response.ok) {
-    throw new ApiError(await readErrorMessage(response), response.status, endpoint);
-  }
-
-  return await response.json();
-}
+// Active storage backend. The web build uses the REST-backed remote source.
+// Phase 1 adds a local SQLite-backed source selected via a platform check.
+const backend: DataSource = remoteDataSource;
 
 // ---------------------------------------------------------------------------
 // Auth operations. The server hashes passwords (bcrypt) and issues a session
@@ -141,145 +100,68 @@ export const authDeleteAccount = async (password: string): Promise<AuthResult> =
   }
 };
 
+// ---------------------------------------------------------------------------
+// Data operations. These delegate to the active storage backend so the rest of
+// the app imports the same names regardless of platform (web REST vs local).
+// ---------------------------------------------------------------------------
+
 // User operations
-export const saveUser = async (user: User): Promise<void> => {
-  await apiCall(`/users`, 'POST', user);
-};
+export const saveUser = (user: User): Promise<void> => backend.saveUser(user);
 
-export const getUser = async (id: string): Promise<User | undefined> => {
-  try {
-    return await apiCall(`/users/${id}`);
-  } catch (error) {
-    console.error(`Failed to get user ${id}:`, error);
-    return undefined;
-  }
-};
+export const getUser = (id: string): Promise<User | undefined> => backend.getUser(id);
 
-export const updateUser = async (user: User): Promise<void> => {
-  await apiCall(`/users/${user.id}`, 'PUT', user);
-};
+export const updateUser = (user: User): Promise<void> => backend.updateUser(user);
 
 // Meal operations
-export const saveMeal = async (meal: MealEntry): Promise<void> => {
-  await apiCall(`/meals`, 'POST', meal);
-};
+export const saveMeal = (meal: MealEntry): Promise<void> => backend.saveMeal(meal);
 
-export const getMeal = async (id: string, userId: string): Promise<MealEntry | undefined> => {
-  try {
-    const meals = await getMealsByUser(userId);
-    return meals.find(m => m.id === id);
-  } catch (error) {
-    console.error(`Failed to get meal ${id} for user ${userId}:`, error);
-    return undefined;
-  }
-};
+export const getMeal = (id: string, userId: string): Promise<MealEntry | undefined> =>
+  backend.getMeal(id, userId);
 
-export const getMealsByUser = async (userId: string): Promise<MealEntry[]> => {
-  try {
-    return await apiCall(`/meals/${userId}`);
-  } catch (error) {
-    console.error(`Failed to get meals for user ${userId}:`, error);
-    return [];
-  }
-};
+export const getMealsByUser = (userId: string): Promise<MealEntry[]> =>
+  backend.getMealsByUser(userId);
 
-export const getMealsByDateRange = async (
+export const getMealsByDateRange = (
   userId: string,
   startDate: Date,
   endDate: Date
-): Promise<MealEntry[]> => {
-  try {
-    const query = `start=${encodeURIComponent(startDate.toISOString())}&end=${encodeURIComponent(
-      endDate.toISOString()
-    )}`;
-    return await apiCall(`/meals/${userId}/range?${query}`);
-  } catch (error) {
-    console.error(`Failed to get meals in range for user ${userId}:`, error);
-    return [];
-  }
-};
+): Promise<MealEntry[]> => backend.getMealsByDateRange(userId, startDate, endDate);
 
-export const updateMeal = async (meal: MealEntry): Promise<void> => {
-  await apiCall(`/meals/${meal.id}`, 'PUT', meal);
-};
+export const updateMeal = (meal: MealEntry): Promise<void> => backend.updateMeal(meal);
 
-export const deleteMeal = async (id: string, userId: string): Promise<void> => {
-  await apiCall(`/meals/${userId}/${id}`, 'DELETE');
-};
+export const deleteMeal = (id: string, userId: string): Promise<void> =>
+  backend.deleteMeal(id, userId);
 
-// URL of a meal's stored photo. The browser fetches it lazily (with the auth
-// cookie) only when an <img> using this src is rendered.
 export const getMealImageUrl = (userId: string, mealId: string): string =>
-  `${API_BASE_URL}/meals/${userId}/${mealId}/image`;
+  backend.getMealImageUrl(userId, mealId);
 
 // Weight operations
-export const saveWeight = async (weight: WeightEntry): Promise<void> => {
-  await apiCall(`/weights`, 'POST', weight);
-};
+export const saveWeight = (weight: WeightEntry): Promise<void> => backend.saveWeight(weight);
 
-export const getWeightsByUser = async (userId: string): Promise<WeightEntry[]> => {
-  try {
-    const weights = await apiCall(`/weights/${userId}`);
-    return weights.sort((a: WeightEntry, b: WeightEntry) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-  } catch (error) {
-    console.error(`Failed to get weights for user ${userId}:`, error);
-    return [];
-  }
-};
+export const getWeightsByUser = (userId: string): Promise<WeightEntry[]> =>
+  backend.getWeightsByUser(userId);
 
-export const getWeightsByDateRange = async (
+export const getWeightsByDateRange = (
   userId: string,
   startDate: Date,
   endDate: Date
-): Promise<WeightEntry[]> => {
-  try {
-    const query = `start=${encodeURIComponent(startDate.toISOString())}&end=${encodeURIComponent(
-      endDate.toISOString()
-    )}`;
-    const weights = await apiCall(`/weights/${userId}/range?${query}`);
-    return weights.sort(
-      (a: WeightEntry, b: WeightEntry) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-  } catch (error) {
-    console.error(`Failed to get weights in range for user ${userId}:`, error);
-    return [];
-  }
-};
+): Promise<WeightEntry[]> => backend.getWeightsByDateRange(userId, startDate, endDate);
 
-export const updateWeight = async (weight: WeightEntry): Promise<void> => {
-  await apiCall(`/weights/${weight.id}`, 'PUT', weight);
-};
+export const updateWeight = (weight: WeightEntry): Promise<void> => backend.updateWeight(weight);
 
-export const deleteWeight = async (id: string, userId: string): Promise<void> => {
-  await apiCall(`/weights/${userId}/${id}`, 'DELETE');
-};
+export const deleteWeight = (id: string, userId: string): Promise<void> =>
+  backend.deleteWeight(id, userId);
 
 // Notification operations
-export const saveNotificationSettings = async (settings: NotificationSettings): Promise<void> => {
-  await apiCall(`/notifications`, 'POST', settings);
-};
+export const saveNotificationSettings = (settings: NotificationSettings): Promise<void> =>
+  backend.saveNotificationSettings(settings);
 
-export const getNotificationSettings = async (userId: string): Promise<NotificationSettings | undefined> => {
-  try {
-    return await apiCall(`/notifications/${userId}`);
-  } catch (error) {
-    console.error(`Failed to get notification settings for user ${userId}:`, error);
-    return undefined;
-  }
-};
+export const getNotificationSettings = (
+  userId: string
+): Promise<NotificationSettings | undefined> => backend.getNotificationSettings(userId);
 
 // Streak operations
-export const saveStreak = async (streak: Streak): Promise<void> => {
-  await apiCall(`/streaks`, 'POST', streak);
-};
+export const saveStreak = (streak: Streak): Promise<void> => backend.saveStreak(streak);
 
-export const getStreak = async (userId: string): Promise<Streak | undefined> => {
-  try {
-    return await apiCall(`/streaks/${userId}`);
-  } catch (error) {
-    console.error(`Failed to get streak for user ${userId}:`, error);
-    return undefined;
-  }
-};
+export const getStreak = (userId: string): Promise<Streak | undefined> =>
+  backend.getStreak(userId);
