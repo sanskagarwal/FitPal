@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Sparkles, Send, X, Camera } from 'lucide-react';
-import { MealEntry, MealChatResult } from '../../types';
+import { MealEntry, MealChatResult, MealType } from '../../types';
 import { Spinner } from '../Spinner';
 import { ChatMessage } from './foodLoggerUtils';
 import { MealProposal } from './MealProposal';
@@ -13,6 +13,8 @@ interface MealChatProps {
   chatLoading: boolean;
   chatPreparing: boolean;
   proposedMeal: MealChatResult | null;
+  proposedMealType: MealType;
+  mealTypeUncertain: boolean;
   pendingImage: string | null;
   imageLoading: boolean;
   todayMeals: MealEntry[];
@@ -23,6 +25,7 @@ interface MealChatProps {
   onDiscard: () => void;
   onReset: () => void;
   onUpdateProposedFoodCalories: (index: number, calories: number) => void;
+  onUpdateProposedMealType: (mealType: MealType) => void;
 }
 
 export const MealChat = ({
@@ -32,6 +35,8 @@ export const MealChat = ({
   chatLoading,
   chatPreparing,
   proposedMeal,
+  proposedMealType,
+  mealTypeUncertain,
   pendingImage,
   imageLoading,
   todayMeals,
@@ -42,6 +47,7 @@ export const MealChat = ({
   onDiscard,
   onReset,
   onUpdateProposedFoodCalories,
+  onUpdateProposedMealType,
 }: MealChatProps) => {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,7 +142,10 @@ export const MealChat = ({
             proposedMeal={proposedMeal}
             todayMeals={todayMeals}
             chatLoading={chatLoading}
+            proposedMealType={proposedMealType}
+            mealTypeUncertain={mealTypeUncertain}
             onUpdateProposedFoodCalories={onUpdateProposedFoodCalories}
+            onUpdateProposedMealType={onUpdateProposedMealType}
             onConfirm={onConfirm}
             onDiscard={onDiscard}
           />

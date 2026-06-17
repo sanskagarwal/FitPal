@@ -10,6 +10,18 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Changed
+
+- Quick Log with AI no longer interrupts the chat to ask which meal it is.
+- Meal-type guesses now follow your local time zone instead of the server's.
+
+### Fixed
+
+- Quick Log with AI now infers the meal type into an editable, "inferred"-tagged
+  dropdown.
+- Corrected the time-of-day windows for the default meal type (mid-morning is now
+  Breakfast), including the dashboard's AI suggestions.
+
 ## [0.5.1] - 2026-06-14
 
 ### Added

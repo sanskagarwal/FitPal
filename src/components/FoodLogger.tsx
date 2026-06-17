@@ -70,6 +70,8 @@ export const FoodLogger = () => {
         chatLoading={chat.chatLoading}
         chatPreparing={chat.chatPreparing}
         proposedMeal={chat.proposedMeal}
+        proposedMealType={chat.proposedMealType}
+        mealTypeUncertain={chat.mealTypeUncertain}
         pendingImage={chat.pendingImage}
         imageLoading={chat.imageLoading}
         todayMeals={todayMeals}
@@ -80,6 +82,7 @@ export const FoodLogger = () => {
         onDiscard={chat.resetChat}
         onReset={chat.resetChat}
         onUpdateProposedFoodCalories={chat.updateProposedFoodCalories}
+        onUpdateProposedMealType={chat.updateProposedMealType}
       />
 
       {/* Divider */}

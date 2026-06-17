@@ -824,7 +824,7 @@ const MealExtractSchema = z.object({
   targetMealId: z.string().nullable(),
   message: z.string(),
   mealType: z.enum(MealType).nullable(),
-  time: z.string().nullable(),
+  mealTypeInferred: z.boolean(),
   foods: z.array(
     z.object({
       name: z.string(),
@@ -985,7 +985,7 @@ async function assembleChatResult(extracted: ExtractedMeal) {
     targetMealId: extracted.targetMealId ?? null,
     message: extracted.message || '',
     mealType: extracted.mealType ?? undefined,
-    time: extracted.time ?? null,
+    mealTypeInferred: extracted.mealTypeInferred ?? false,
     foods,
   };
 }
@@ -1000,9 +1000,10 @@ export interface LoggedMealSummary {
 export async function chatLogMeal(
   history: { role: 'user' | 'assistant'; content: string }[],
   loggedMeals: LoggedMealSummary[] = [],
-  image?: VisionImage
+  image: VisionImage | undefined,
+  localTime: string
 ) {
-  const system = mealChatSystemPrompt(loggedMeals);
+  const system = mealChatSystemPrompt(loggedMeals, localTime);
   const messages = image ? attachImageToHistory(history, image) : ([...history] as ChatMessage[]);
   const extracted = await completeStructured(
     messages,
@@ -1022,10 +1023,11 @@ export async function chatLogMealStream(
   history: { role: 'user' | 'assistant'; content: string }[],
   loggedMeals: LoggedMealSummary[],
   onMessage: (text: string) => void,
-  onMessageDone?: () => void,
-  image?: VisionImage
+  onMessageDone: (() => void) | undefined,
+  image: VisionImage | undefined,
+  localTime: string
 ) {
-  const system = mealChatSystemPrompt(loggedMeals);
+  const system = mealChatSystemPrompt(loggedMeals, localTime);
   const messages = image ? attachImageToHistory(history, image) : ([...history] as ChatMessage[]);
   const result = streamText({
     model: image ? getVisionModel() : getModel(),

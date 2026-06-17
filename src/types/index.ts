@@ -287,7 +287,7 @@ export interface MealChatResult {
   targetMealId?: string | null; // id of the existing meal for update/delete
   message: string; // assistant's reply: a clarifying question or a confirmation summary
   mealType?: MealType;
-  time?: string | null; // HH:mm if known
+  mealTypeInferred?: boolean;
   foods: ParsedMealFood[];
   // Normalized photo (data URL) echoed back by the server when the meal was
   // logged from a picture, so it can be persisted on confirm.

@@ -1,4 +1,4 @@
-import { Gender, ActivityLevel } from '../types';
+import { Gender, ActivityLevel, MealType } from '../types';
 
 export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
@@ -192,6 +192,15 @@ export const formatNutrient = (value: number | undefined, unit: string): string 
 export const formatMealTypeLabel = (mealType: string): string => {
   const text = mealType.replace(/-/g, ' ');
   return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+export const defaultMealTypeForNow = (): MealType => {
+  const hour = new Date().getHours();
+  if (hour < 11) return MealType.Breakfast;
+  if (hour < 13) return MealType.MorningSnack;
+  if (hour < 17) return MealType.Lunch;
+  if (hour < 20) return MealType.EveningSnack;
+  return MealType.Dinner;
 };
 
 // Percentage of goal

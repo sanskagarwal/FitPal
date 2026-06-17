@@ -11,7 +11,7 @@ import {
 } from '../../types';
 import { saveMeal, updateMeal, deleteMeal } from '../../utils/db';
 import { chatLogMealStream } from '../../services/openai';
-import { generateId, combineDateWithCurrentTime } from '../../utils/helpers';
+import { generateId, combineDateWithCurrentTime, defaultMealTypeForNow } from '../../utils/helpers';
 import { ToastType } from '../Toast';
 import {
   ChatMessage,
@@ -42,6 +42,8 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   const [chatLoading, setChatLoading] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
   const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(null);
+  const [proposedMealType, setProposedMealType] = useState<MealType>(MealType.Breakfast);
+  const [mealTypeUncertain, setMealTypeUncertain] = useState(false);
   // Compressed photo (data URL) staged for the next message; loading flag drives the spinner.
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
@@ -89,19 +91,15 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
       foods.map((entry) => ({ nutrients: entry.food.nutrients, quantity: entry.quantity }))
     );
 
-    // Resolve the meal date/time
-    let date = existing ? new Date(existing.date) : combineDateWithCurrentTime(selectedDate);
-    if (result.time && /^\d{1,2}:\d{2}$/.test(result.time)) {
-      const [h, m] = result.time.split(':').map(Number);
-      date = new Date(date);
-      date.setHours(h, m, 0, 0);
-    }
+    // Resolve the meal date/time. Updates keep the existing meal's timestamp;
+    // new meals are stamped with the current local time on the selected day.
+    const date = existing ? new Date(existing.date) : combineDateWithCurrentTime(selectedDate);
 
     return {
       id: existing ? existing.id : generateId(),
       userId: user.id,
       date,
-      mealType: result.mealType || existing?.mealType || MealType.Breakfast,
+      mealType: proposedMealType,
       foods,
       totalNutrients,
       notes: existing?.notes,
@@ -128,6 +126,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     setChatLoading(true);
     setChatPreparing(false);
     setProposedMeal(null);
+    setMealTypeUncertain(false);
 
     try {
       // Reload today's meals so the assistant matches update/delete requests
@@ -166,6 +165,29 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
         (result.action === 'delete' ? !!result.targetMealId : result.foods.length > 0);
       if (isActionable) {
         setProposedMeal(result);
+        if (result.mealType) {
+          // The assistant classified the meal - use it, but still let the user
+          // change it in the proposal dropdown.
+          setProposedMealType(result.mealType);
+          // Flag it as a guess when the assistant inferred it from the food
+          // rather than from an explicit meal name or a stated time.
+          setMealTypeUncertain(result.mealTypeInferred ?? false);
+        } else {
+          // No signal at all: keep the existing meal's type (for edits) or fall
+          // back to the meal type that fits the current local time. The local
+          // time guess is flagged; an existing meal's real type is not.
+          const existing =
+            result.action === 'update' && result.targetMealId
+              ? freshMeals.find((m) => m.id === result.targetMealId)
+              : undefined;
+          if (existing) {
+            setProposedMealType(existing.mealType as MealType);
+            setMealTypeUncertain(false);
+          } else {
+            setProposedMealType(defaultMealTypeForNow());
+            setMealTypeUncertain(true);
+          }
+        }
       }
     } catch (err) {
       console.error('Meal chat error:', err);
@@ -215,8 +237,12 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     setChatInput('');
     setChatPreparing(false);
     setProposedMeal(null);
+    setMealTypeUncertain(false);
     setPendingImage(null);
   };
+
+  // Update the confirmed meal type from the proposal's dropdown.
+  const updateProposedMealType = (mealType: MealType) => setProposedMealType(mealType);
 
   // Override the per-unit calories of a food in the AI chat proposal before confirming.
   const updateProposedFoodCalories = (index: number, calories: number) => {
@@ -239,6 +265,8 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     chatLoading,
     chatPreparing,
     proposedMeal,
+    proposedMealType,
+    mealTypeUncertain,
     pendingImage,
     imageLoading,
     attachImage,
@@ -247,5 +275,6 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     confirmChatMeal,
     resetChat,
     updateProposedFoodCalories,
+    updateProposedMealType,
   };
 };

@@ -16,10 +16,11 @@ import {
   calculateStreak,
   formatNutrient,
   formatMealTypeLabel,
+  defaultMealTypeForNow,
   getGoalPercentage,
   generateId,
 } from '../../src/utils/helpers';
-import { Gender, ActivityLevel } from '../../src/types';
+import { Gender, ActivityLevel, MealType } from '../../src/types';
 
 describe('generateId', () => {
   it('returns a non-empty unique-ish string', () => {
@@ -221,6 +222,30 @@ describe('formatMealTypeLabel', () => {
   it('replaces hyphens with spaces and capitalizes only the first letter', () => {
     expect(formatMealTypeLabel('morning-snack')).toBe('Morning snack');
     expect(formatMealTypeLabel('evening-snack')).toBe('Evening snack');
+  });
+});
+
+describe('defaultMealTypeForNow', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const at = (iso: string): MealType => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(iso));
+    return defaultMealTypeForNow();
+  };
+
+  it('maps the local hour to the matching meal type', () => {
+    expect(at('2026-06-05T07:30:00')).toBe(MealType.Breakfast);
+    expect(at('2026-06-05T10:37:00')).toBe(MealType.Breakfast);
+    expect(at('2026-06-05T11:00:00')).toBe(MealType.MorningSnack);
+    expect(at('2026-06-05T12:59:00')).toBe(MealType.MorningSnack);
+    expect(at('2026-06-05T13:00:00')).toBe(MealType.Lunch);
+    expect(at('2026-06-05T16:30:00')).toBe(MealType.Lunch);
+    expect(at('2026-06-05T17:30:00')).toBe(MealType.EveningSnack);
+    expect(at('2026-06-05T19:59:00')).toBe(MealType.EveningSnack);
+    expect(at('2026-06-05T21:00:00')).toBe(MealType.Dinner);
   });
 });
 

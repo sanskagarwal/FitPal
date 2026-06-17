@@ -8,6 +8,7 @@ import {
   suggestFoodForNutrient,
   getDietaryInsights,
 } from '../services/openai';
+import { defaultMealTypeForNow } from '../utils/helpers';
 import { useDashboardData } from './dashboard/useDashboardData';
 import { DaySummaryHero } from './dashboard/DaySummaryHero';
 import { MealSuggestionPanel } from './dashboard/MealSuggestionPanel';
@@ -16,17 +17,6 @@ import { MealBreakdownTable } from './dashboard/MealBreakdownTable';
 import { MicronutrientsPanel } from './dashboard/MicronutrientsPanel';
 import { NutrientSuggestionPanel } from './dashboard/NutrientSuggestionPanel';
 import { TrendsSection } from './dashboard/trends/TrendsSection';
-
-// Pick a sensible default meal type from the current time of day. The user can
-// override this in the suggestion panel.
-const defaultMealTypeForNow = (): MealType => {
-  const hour = new Date().getHours();
-  if (hour < 10) return MealType.Breakfast;
-  if (hour < 12) return MealType.MorningSnack;
-  if (hour < 15) return MealType.Lunch;
-  if (hour < 18) return MealType.EveningSnack;
-  return MealType.Dinner;
-};
 
 // Small eyebrow label used to group the dashboard into visual sections. Kept as
 // a paragraph (not a heading) so it doesn't disturb the card heading hierarchy.

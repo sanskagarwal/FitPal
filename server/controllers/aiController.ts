@@ -97,7 +97,7 @@ export const aiController = {
     ),
 
   chatMeal: (req: Request, res: Response) =>
-    run(res, () => chatLogMeal(req.body.history, req.body.loggedMeals)),
+    run(res, () => chatLogMeal(req.body.history, req.body.loggedMeals, undefined, req.body.localTime)),
 
   // Streaming chat endpoint. Responds with newline-delimited JSON (NDJSON):
   //   {"t":"msg","v":"<assistant message so far>"}  - emitted as the reply streams
@@ -109,6 +109,7 @@ export const aiController = {
   async chatMealStream(req: Request, res: Response): Promise<void> {
     const history = req.body.history;
     const loggedMeals = req.body.loggedMeals;
+    const localTime: string | undefined = req.body.localTime;
 
     // Optional photo: normalize (validate + decode + re-encode) up front so a
     // bad image fails as a 400 before we open the NDJSON stream. The normalized
@@ -136,7 +137,8 @@ export const aiController = {
         loggedMeals,
         (text) => write({ t: 'msg', v: text }),
         () => write({ t: 'msg_done' }),
-        image
+        image,
+        localTime
       );
       write({ t: 'done', v: withImage(final) });
     } catch (error: unknown) {
@@ -144,7 +146,7 @@ export const aiController = {
         error: error instanceof Error ? error.message : String(error),
       });
       try {
-        const final = await chatLogMeal(history, loggedMeals, image);
+        const final = await chatLogMeal(history, loggedMeals, image, localTime);
         write({ t: 'done', v: withImage(final) });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'AI request failed';

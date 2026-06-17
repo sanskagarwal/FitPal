@@ -1,22 +1,17 @@
 import { motion } from 'motion/react';
 import { Check, AlertCircle } from 'lucide-react';
-import { MealEntry, MealChatResult } from '../../types';
+import { MealEntry, MealChatResult, MealType } from '../../types';
+import { formatMealTypeLabel } from '../../utils/helpers';
 import { ConfidenceBadge } from './ConfidenceBadge';
-
-// Title-case a meal type for display, e.g. "evening-snack" -> "Evening Snack".
-// Done in JS rather than CSS `capitalize` so it stays correct even when wrapped
-// in parentheses (CSS capitalize mis-handles a word glued to a leading "(").
-const formatMealType = (mealType: string): string =>
-  mealType
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 
 interface MealProposalProps {
   proposedMeal: MealChatResult;
   todayMeals: MealEntry[];
   chatLoading: boolean;
+  proposedMealType: MealType;
+  mealTypeUncertain: boolean;
   onUpdateProposedFoodCalories: (index: number, calories: number) => void;
+  onUpdateProposedMealType: (mealType: MealType) => void;
   onConfirm: () => void;
   onDiscard: () => void;
 }
@@ -27,7 +22,10 @@ export const MealProposal = ({
   proposedMeal,
   todayMeals,
   chatLoading,
+  proposedMealType,
+  mealTypeUncertain,
   onUpdateProposedFoodCalories,
+  onUpdateProposedMealType,
   onConfirm,
   onDiscard,
 }: MealProposalProps) => {
@@ -50,13 +48,50 @@ export const MealProposal = ({
             : proposedMeal.action === 'update'
             ? 'Ready to update'
             : 'Ready to log'}
-          {proposedMeal.mealType && proposedMeal.action !== 'delete' && (
-            <span className="ml-2 text-sm font-normal text-gray-600 dark:text-gray-300">
-              ({formatMealType(proposedMeal.mealType)})
-            </span>
-          )}
         </h3>
       </div>
+      {proposedMeal.action !== 'delete' && (
+        <div className="mb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <label
+              htmlFor="proposed-meal-type"
+              className="text-sm font-medium text-gray-700 dark:text-gray-200"
+            >
+              Logging as
+            </label>
+            <select
+              id="proposed-meal-type"
+              value={proposedMealType}
+              onChange={(e) => onUpdateProposedMealType(e.target.value as MealType)}
+              disabled={chatLoading}
+              className={`rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 ${
+                mealTypeUncertain
+                  ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+                  : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100'
+              }`}
+            >
+              {Object.values(MealType).map((type) => (
+                <option key={type} value={type}>
+                  {formatMealTypeLabel(type)}
+                </option>
+              ))}
+            </select>
+            {mealTypeUncertain && (
+              <span
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                title="I guessed this meal type - change it if needed"
+              >
+                ~inferred
+              </span>
+            )}
+          </div>
+          {mealTypeUncertain && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              You didn't say which meal this is, so I guessed it - change it if that's not right.
+            </p>
+          )}
+        </div>
+      )}
       {proposedMeal.action === 'delete' ? (
         (() => {
           const target = todayMeals.find((m) => m.id === proposedMeal.targetMealId);

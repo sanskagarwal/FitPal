@@ -191,7 +191,11 @@ export async function chatLogMeal(
   history: MealChatMessage[],
   loggedMeals: LoggedMealSummary[] = []
 ): Promise<MealChatResult> {
-  return aiCall<MealChatResult>('chat-meal', { history, loggedMeals });
+  return aiCall<MealChatResult>('chat-meal', {
+    history,
+    loggedMeals,
+    localTime: new Date().toLocaleString(),
+  });
 }
 
 // Streaming variant. Calls `onMessage` with the assistant's reply text as it is
@@ -213,7 +217,12 @@ export async function chatLogMealStream(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ history, loggedMeals, ...(image ? { image } : {}) }),
+    body: JSON.stringify({
+      history,
+      loggedMeals,
+      localTime: new Date().toLocaleString(),
+      ...(image ? { image } : {}),
+    }),
   });
 
   if (response.status === 429) {

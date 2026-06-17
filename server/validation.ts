@@ -235,11 +235,13 @@ export const SuggestGoalsRequestSchema = z
 // (no re-defaulting at the call site).
 const ChatHistorySchema = z.array(z.object({}).loose()).default([]);
 const LoggedMealsSchema = z.array(z.object({}).loose()).default([]);
+const LocalTimeSchema = z.string().min(1).max(100);
 
 export const ChatMealSchema = z
   .object({
     history: ChatHistorySchema,
     loggedMeals: LoggedMealsSchema,
+    localTime: LocalTimeSchema,
   })
   .loose();
 
@@ -249,6 +251,7 @@ export const ChatMealStreamSchema = z
   .object({
     history: ChatHistorySchema,
     loggedMeals: LoggedMealsSchema,
+    localTime: LocalTimeSchema,
     image: ImageDataUrlSchema.optional(),
   })
   .loose();
