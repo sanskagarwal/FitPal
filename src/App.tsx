@@ -32,7 +32,7 @@ function AppContent() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigate={setCurrentPage} />;
       case 'log-food':
         return <FoodLogger />;
       case 'weight':
@@ -44,7 +44,7 @@ function AppContent() {
       case 'profile':
         return <Profile />;
       default:
-        return <Dashboard />;
+        return <Dashboard onNavigate={setCurrentPage} />;
     }
   };
 

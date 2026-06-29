@@ -26,7 +26,11 @@ const SectionLabel = ({ children }: { children: string }) => (
   </p>
 );
 
-export const Dashboard = () => {
+interface DashboardProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const Dashboard = ({ onNavigate }: DashboardProps) => {
   const { user } = useAuth();
   const { selectedDate, isToday } = useSelectedDate();
   const { loading, todayStats, recentWeight, mealTypeStats, micronutrients } =
@@ -158,7 +162,11 @@ export const Dashboard = () => {
       <section className="space-y-4">
         <SectionLabel>Today's progress</SectionLabel>
 
-        <DaySummaryHero todayStats={todayStats} goals={goals} />
+        <DaySummaryHero
+          todayStats={todayStats}
+          goals={goals}
+          onLogMeal={onNavigate ? () => onNavigate('log-food') : undefined}
+        />
 
         <MicronutrientsPanel
           micronutrients={micronutrients}

@@ -7,6 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 interface DaySummaryHeroProps {
   todayStats: DailyStats | null;
   goals?: UserGoals;
+  onLogMeal?: () => void;
 }
 
 // Macro accent colors, matching the rest of the dashboard.
@@ -61,7 +62,7 @@ const MacroPill = ({ label, value, target, dotClassName }: MacroPillProps) => (
 // "Day at a glance" hero: a calorie ring with the remaining-for-the-day figure,
 // the day's status line, and compact protein/carbs/fats pills. Replaces the old
 // four-card overview and the motivational banner.
-export const DaySummaryHero = ({ todayStats, goals }: DaySummaryHeroProps) => {
+export const DaySummaryHero = ({ todayStats, goals, onLogMeal }: DaySummaryHeroProps) => {
   const { isDark } = useTheme();
 
   const consumed = Math.round(todayStats?.totalCalories || 0);
@@ -144,6 +145,14 @@ export const DaySummaryHero = ({ todayStats, goals }: DaySummaryHeroProps) => {
               dotClassName={MACRO_COLORS.fats.bar}
             />
           </div>
+          {!todayStats?.mealsLogged && onLogMeal && (
+            <button
+              onClick={onLogMeal}
+              className="mt-5 btn-primary w-full sm:w-auto"
+            >
+              Log your first meal
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

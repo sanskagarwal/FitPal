@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FoodEntry,
   MealEntry,
@@ -37,16 +37,49 @@ interface UseMealChatArgs {
 // proposed meal preview, and applying the create/update/delete action. Wraps
 // the existing AI + db calls only.
 export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, setToast }: UseMealChatArgs) => {
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
+  // Read draft once on mount via lazy initializer (no effect, no cascading renders).
+  const [initialDraft] = useState<{
+    chatMessages?: ChatMessage[];
+    chatInput?: string;
+    proposedMeal?: MealChatResult | null;
+    proposedMealType?: MealType;
+    mealTypeUncertain?: boolean;
+    pendingImage?: string | null;
+  } | null>(() => {
+    if (!user) return null;
+    try {
+      const raw = sessionStorage.getItem(`meal-chat-draft-${user.id}`);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialDraft?.chatMessages ?? []);
+  const [chatInput, setChatInput] = useState(initialDraft?.chatInput ?? '');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
-  const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(null);
-  const [proposedMealType, setProposedMealType] = useState<MealType>(MealType.Breakfast);
-  const [mealTypeUncertain, setMealTypeUncertain] = useState(false);
+  const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(initialDraft?.proposedMeal ?? null);
+  const [proposedMealType, setProposedMealType] = useState<MealType>(initialDraft?.proposedMealType ?? MealType.Breakfast);
+  const [mealTypeUncertain, setMealTypeUncertain] = useState(initialDraft?.mealTypeUncertain ?? false);
   // Compressed photo (data URL) staged for the next message; loading flag drives the spinner.
-  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<string | null>(initialDraft?.pendingImage ?? null);
   const [imageLoading, setImageLoading] = useState(false);
+
+  const draftKey = user ? `meal-chat-draft-${user.id}` : null;
+
+  // Persist chat draft to sessionStorage on every meaningful state change.
+  useEffect(() => {
+    if (!draftKey || !chatMessages.length) return;
+    try {
+      sessionStorage.setItem(
+        draftKey,
+        JSON.stringify({ chatMessages, chatInput, proposedMeal, proposedMealType, mealTypeUncertain, pendingImage })
+      );
+    } catch {
+      // ignore quota errors (e.g. private browsing with full storage)
+    }
+  }, [draftKey, chatMessages, chatInput, proposedMeal, proposedMealType, mealTypeUncertain, pendingImage]);
 
   // Compress and stage a photo for the next send. Surfaces a toast on failure
   // (unreadable/oversized) and leaves any previously staged image cleared.
@@ -233,6 +266,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   };
 
   const resetChat = () => {
+    if (draftKey) sessionStorage.removeItem(draftKey);
     setChatMessages([]);
     setChatInput('');
     setChatPreparing(false);
