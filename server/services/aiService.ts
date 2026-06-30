@@ -265,10 +265,20 @@ export interface UnitNutrition {
   nutrients: NutrientInfo;
 }
 
-export async function reestimateNutrientsForUnit(
-  foodName: string,
-  unit: MealUnit
-): Promise<UnitNutrition> {
+// The fill and reestimate prompts instruct the model to return per-100g for
+// gram and per-100ml for ml (matching its natural prior). Divide back to
+// per-1g/1ml so sumNutrients(nutrients * unitQuantity) stays correct with
+// unitQuantity remaining the human-readable gram/ml count.
+function normalizeGramMlNutrients(nutrients: NutrientInfo, unit: string): NutrientInfo {
+  if (unit !== MealUnit.Gram && unit !== MealUnit.Ml) return nutrients;
+  return Object.fromEntries(
+    Object.entries(nutrients).map(([k, v]) => [k, (v as number) / 100])
+  ) as NutrientInfo;
+}
+
+// Raw re-estimate: AI call only, no gram/ml normalization. Used internally so
+// normalization happens in one place per call path.
+async function reestimateRaw(foodName: string, unit: MealUnit): Promise<UnitNutrition> {
   const messages: ChatMessage[] = [{ role: 'user', content: reestimatePrompt(foodName, unit) }];
   try {
     const result = await completeStructured(messages, ReestimateSchema, 'reestimate_unit', 0.2);
@@ -278,10 +288,17 @@ export async function reestimateNutrientsForUnit(
       nutrients: result.nutrients as NutrientInfo,
     };
   } catch (error) {
-    // Safe zero-nutrition, low-confidence fallback so callers always get a usable shape.
     logger.error('Error re-estimating unit nutrition', { error: error instanceof Error ? error.message : String(error) });
     return { servingSize: `1 ${unit}`, confidence: 'low', nutrients: { ...ZERO_NUTRIENTS } };
   }
+}
+
+export async function reestimateNutrientsForUnit(
+  foodName: string,
+  unit: MealUnit
+): Promise<UnitNutrition> {
+  const raw = await reestimateRaw(foodName, unit);
+  return { ...raw, nutrients: normalizeGramMlNutrients(raw.nutrients, unit) };
 }
 
 // Recipe suggestions
@@ -873,15 +890,16 @@ async function batchFillNutrition(foods: ExtractedFood[]): Promise<FilledNutriti
   }));
 }
 
-// Single-food fallback, reusing the existing per-unit re-estimator.
+// Single-food fallback, using the raw re-estimator (normalization applied by fillNutrition).
 async function singleFillNutrition(food: ExtractedFood): Promise<FilledNutrition> {
-  const { servingSize, confidence, nutrients } = await reestimateNutrientsForUnit(food.name, food.unit);
+  const { servingSize, confidence, nutrients } = await reestimateRaw(food.name, food.unit);
   return { servingSize, confidence, nutrients };
 }
 
 // Always returns exactly one result per input food. Tries the batched call, then
 // fills any gaps individually so a length mismatch or batch failure never breaks
-// the request.
+// the request. Normalizes gram/ml nutrients to per-1g/1ml after all fills so
+// unitQuantity stays the human-readable count throughout.
 async function fillNutrition(foods: ExtractedFood[]): Promise<FilledNutrition[]> {
   if (foods.length === 0) return [];
   let batched: FilledNutrition[] = [];
@@ -890,12 +908,20 @@ async function fillNutrition(foods: ExtractedFood[]): Promise<FilledNutrition[]>
   } catch (error) {
     logger.warn('Batched nutrition fill failed, filling individually', { error: error instanceof Error ? error.message : String(error) });
   }
-  if (batched.length === foods.length) return batched;
-  const out: FilledNutrition[] = [];
-  for (let i = 0; i < foods.length; i++) {
-    out.push(batched[i] ?? (await singleFillNutrition(foods[i])));
+  let results: FilledNutrition[];
+  if (batched.length === foods.length) {
+    results = batched;
+  } else {
+    const out: FilledNutrition[] = [];
+    for (let i = 0; i < foods.length; i++) {
+      out.push(batched[i] ?? (await singleFillNutrition(foods[i])));
+    }
+    results = out;
   }
-  return out;
+  return results.map((f, i) => ({
+    ...f,
+    nutrients: normalizeGramMlNutrients(f.nutrients, foods[i].unit),
+  }));
 }
 
 interface GroundedFood {

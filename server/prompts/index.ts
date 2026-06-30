@@ -54,7 +54,13 @@ For each food, set "servingSize" using the unit Indians naturally use, including
 }
 
 export function reestimatePrompt(foodName: string, unit: string): string {
-  return `For the Indian food "${foodName}", estimate the nutrition for exactly ONE "${unit}" of it.
+  const gramMlNote =
+    unit === 'gram'
+      ? ' Exception: return nutrition for 100g (the standard database reference); the app converts to per-gram itself.'
+      : unit === 'ml'
+      ? ' Exception: return nutrition for 100ml (the standard database reference); the app converts to per-ml itself.'
+      : '';
+  return `For the Indian food "${foodName}", estimate the nutrition for exactly ONE "${unit}" of it.${gramMlNote}
 
 "servingSize" must describe one ${unit} with an approximate gram/ml weight in parentheses (e.g. "1 ${unit} (~150g)"). The "nutrients" MUST correspond to exactly ONE ${unit}, not any other portion. Set "confidence" to "high" for well-known dishes with reliable nutrition, "medium" when you can reasonably estimate, or "low" when you are largely guessing.`;
 }
@@ -227,7 +233,10 @@ Behaviour:
    - "piece" for roti, chapati, idli, samosa, paratha, dosa, vada
    - "glass" for milk, lassi, juice, buttermilk
    - "bowl"/"plate" for larger portions; "tbsp"/"tsp" for ghee, chutney, pickle, sugar
-   - "slice" for bread/cake; otherwise "gram"/"ml"/"serving"/"cup"/"oz"
+   - "slice" for bread/cake; otherwise "serving"/"cup"/"oz"
+   Never choose "gram" or "ml" unless the user explicitly stated a numeric weight or volume
+   (e.g. "150g paneer", "200ml milk"). When the user gives no weight, always prefer the
+   natural Indian household unit above even if the food is not listed.
 2. Ask SHORT clarifying questions ONLY when something important is genuinely
    ambiguous - unclear quantity, an unknown food, or which existing meal to edit.
    NEVER ask which meal type (breakfast/lunch/dinner/snack) a new meal belongs to;
@@ -278,15 +287,11 @@ ALWAYS respond with ONLY a JSON object (no markdown) in this exact shape:
 
 For "delete", "foods" must be an empty array. For "update", "foods" must contain the full corrected list of foods for that meal. When status is "need_info", you may still include any foods you have already understood (with your best-guess quantities) so the user sees progress, but set status to "need_info" until the open question is resolved. When everything needed is known, set status to "ready".`;
 
-export const NUTRITION_FILL_SYSTEM_PROMPT = `You are a precise nutrition database for Indian foods. For each food given, return the nutrition for exactly ONE unit of the stated unit — NEVER the total amount eaten (the app multiplies by quantity itself). Keep every value realistic for a typical Indian home portion of one unit; when unsure prefer a sensible mid-range value over an extreme one. Set "confidence" to "high" for well-known dishes with reliable nutrition, "medium" when reasonably estimating, "low" when largely guessing. Return the "foods" array in the SAME ORDER and with the SAME COUNT as the input list.`;
+export const NUTRITION_FILL_SYSTEM_PROMPT = `You are a precise nutrition database for Indian foods. For each food given, return the nutrition for exactly ONE unit of the stated unit — NEVER the total amount eaten (the app multiplies by quantity itself). Keep every value realistic for a typical Indian home portion of one unit; when unsure prefer a sensible mid-range value over an extreme one. Exception: when unit is "gram", return nutrition for 100g (the standard database reference amount); when unit is "ml", return nutrition for 100ml. Set "confidence" to "high" for well-known dishes with reliable nutrition, "medium" when reasonably estimating, "low" when largely guessing. Return the "foods" array in the SAME ORDER and with the SAME COUNT as the input list.`;
 
 // User message listing the foods to fill nutrition for (stage 2 of meal chat).
-export function nutritionFillPrompt(
-  foods: { name: string; unit: string; servingSize: string }[]
-): string {
-  const list = foods
-    .map((f, i) => `${i + 1}. "${f.name}" — one ${f.unit} (${f.servingSize})`)
-    .join('\n');
+export function nutritionFillPrompt(foods: { name: string; unit: string }[]): string {
+  const list = foods.map((f, i) => `${i + 1}. "${f.name}" — one ${f.unit}`).join('\n');
   return `Provide per-one-unit nutrition for each of these Indian foods, in the same order:\n${list}`;
 }
 

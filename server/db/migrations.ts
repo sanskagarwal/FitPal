@@ -109,6 +109,19 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 4,
+    name: 'clear gram/ml nutrition cache poison',
+    up: (db) => {
+      // Previous AI fills stored per-100g values under gram/ml keys but
+      // multiplied them as per-1g, causing 100x calorie inflation. The prompt
+      // fix aligns the model to per-100g output and the service now divides
+      // back to per-1g before caching, so these stale entries must be removed.
+      db.exec(`
+        DELETE FROM nutrition_cache WHERE key LIKE '%|gram' OR key LIKE '%|ml';
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {
