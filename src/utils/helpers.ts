@@ -67,6 +67,18 @@ export const calculateMacros = (totalCalories: number) => {
 };
 
 // Date utilities
+
+// Format a Date as a YYYY-MM-DD string using local (not UTC) calendar values.
+// Used wherever we need to derive a date-only key from a Date object without
+// the UTC-midnight off-by-one that toISOString().slice(0,10) introduces for
+// western timezones.
+export const localDateStr = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export const getStartOfDay = (date: Date): Date => {
   const start = new Date(date);
   start.setHours(0, 0, 0, 0);

@@ -146,6 +146,20 @@ export const DateRangeQuerySchema = z
     path: ['end'],
   });
 
+// Water intake (one cup per row)
+export const WaterSchema = z
+  .object({
+    id: z.string().min(1),
+    userId: z.string().min(1),
+    date: z.iso.date(),
+  })
+  .loose();
+
+// Single-date query for endpoints that filter by a specific local date.
+export const DateQuerySchema = z.object({
+  date: z.iso.date(),
+});
+
 // Notifications & streaks (one row per user)
 
 export const NotificationSchema = z

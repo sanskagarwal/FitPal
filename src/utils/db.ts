@@ -1,4 +1,4 @@
-import { User, MealEntry, WeightEntry, NotificationSettings, Streak } from '../types';
+import { User, MealEntry, WeightEntry, NotificationSettings, Streak, WaterEntry } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -263,6 +263,24 @@ export const updateWeight = async (weight: WeightEntry): Promise<void> => {
 
 export const deleteWeight = async (id: string, userId: string): Promise<void> => {
   await apiCall(`/weights/${userId}/${id}`, 'DELETE');
+};
+
+// Water tracking operations
+export const getWaterByDate = async (userId: string, date: string): Promise<WaterEntry[]> => {
+  try {
+    return await apiCall(`/water/${userId}?date=${encodeURIComponent(date)}`);
+  } catch (error) {
+    console.error(`Failed to get water entries for user ${userId} on ${date}:`, error);
+    return [];
+  }
+};
+
+export const logWater = async (entry: WaterEntry): Promise<void> => {
+  await apiCall(`/water/${entry.userId}`, 'POST', entry);
+};
+
+export const deleteWater = async (id: string, userId: string): Promise<void> => {
+  await apiCall(`/water/${userId}/${id}`, 'DELETE');
 };
 
 // Notification operations

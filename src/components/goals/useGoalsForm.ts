@@ -18,6 +18,7 @@ export type GoalsFormData = {
   targetCarbs: number;
   targetFats: number;
   targetFiber: number;
+  targetWaterCups: number;
   targetVitaminA: number;
   targetVitaminC: number;
   targetVitaminD: number;
@@ -35,6 +36,7 @@ const buildInitialForm = (goals?: UserGoals): GoalsFormData => ({
   targetCarbs: goals?.targetCarbs || 250,
   targetFats: goals?.targetFats || 65,
   targetFiber: goals?.targetFiber || 30,
+  targetWaterCups: goals?.targetWaterCups ?? 8,
   targetVitaminA: goals?.targetVitaminA || 900,
   targetVitaminC: goals?.targetVitaminC || 90,
   targetVitaminD: goals?.targetVitaminD || 15,

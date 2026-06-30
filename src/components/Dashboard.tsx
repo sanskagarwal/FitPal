@@ -16,6 +16,7 @@ import { InsightPanel } from './dashboard/InsightPanel';
 import { MealBreakdownTable } from './dashboard/MealBreakdownTable';
 import { MicronutrientsPanel } from './dashboard/MicronutrientsPanel';
 import { NutrientSuggestionPanel } from './dashboard/NutrientSuggestionPanel';
+import { WaterPanel } from './dashboard/WaterPanel';
 import { TrendsSection } from './dashboard/trends/TrendsSection';
 
 // Small eyebrow label used to group the dashboard into visual sections. Kept as
@@ -167,6 +168,8 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
           goals={goals}
           onLogMeal={onNavigate ? () => onNavigate('log-food') : undefined}
         />
+
+        <WaterPanel />
 
         <MicronutrientsPanel
           micronutrients={micronutrients}

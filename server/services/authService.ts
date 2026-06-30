@@ -3,6 +3,7 @@ import { hashPassword, verifyPassword } from '../auth.js';
 import { userRepository, toPublicUser, type StoredUser } from '../repositories/userRepository.js';
 import { mealRepository } from '../repositories/mealRepository.js';
 import { weightRepository } from '../repositories/weightRepository.js';
+import { waterRepository } from '../repositories/waterRepository.js';
 import { notificationRepository } from '../repositories/notificationRepository.js';
 import { streakRepository } from '../repositories/streakRepository.js';
 import { nutritionRepository } from '../repositories/nutritionRepository.js';
@@ -82,6 +83,7 @@ export const authService = {
     getDb().transaction(() => {
       mealRepository.deleteByUser(userId);
       weightRepository.deleteByUser(userId);
+      waterRepository.deleteByUser(userId);
       notificationRepository.deleteByUser(userId);
       streakRepository.deleteByUser(userId);
       nutritionRepository.deleteByUser(userId);

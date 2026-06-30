@@ -26,6 +26,23 @@ export const MacroTargets = ({ formData, updateField }: MacroTargetsProps) => {
         <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Recommended: 1800-2500 for most adults</p>
       </div>
 
+      {/* Daily Water Goal */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+          Daily Water Goal (cups)
+        </label>
+        <input
+          type="number"
+          inputMode="numeric"
+          min="1"
+          max="30"
+          value={formData.targetWaterCups}
+          onChange={(e) => updateField('targetWaterCups', parseInt(e.target.value))}
+          className="input-field"
+        />
+        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Recommended: 8 cups (about 2 litres) per day</p>
+      </div>
+
       {/* Macros */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>

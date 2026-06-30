@@ -44,6 +44,7 @@ export interface UserGoals {
   targetCarbs: number;
   targetFats: number;
   targetFiber: number;
+  targetWaterCups?: number; // daily cups goal, default 8
   targetVitaminA?: number;
   targetVitaminC?: number;
   targetVitaminD?: number;
@@ -135,6 +136,13 @@ export interface WeightEntry {
   bodyFat?: number; // %
   bmi: number;
   notes?: string;
+}
+
+// Water Tracking
+export interface WaterEntry {
+  id: string;
+  userId: string;
+  date: string; // YYYY-MM-DD local date
 }
 
 // Streak Tracking

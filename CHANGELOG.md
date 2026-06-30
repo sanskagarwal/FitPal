@@ -10,6 +10,10 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- Water intake tracking on the Dashboard. Daily goal (default 8 cups) is set from the Goals page.
+
 ## [0.7.0] - 2026-06-30
 
 ### Security

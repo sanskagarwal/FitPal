@@ -151,6 +151,27 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 7,
+    name: 'water intake table',
+    up: (db) => {
+      // Each row represents one logged cup of water. Kept as a JSON collection
+      // (same pattern as meals/weights) so the base repository methods work
+      // unchanged. The expression index on $.date mirrors the v3 meal/weight
+      // indexes so per-day queries are driven by (user_id, date) instead of a
+      // full scan.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS water_intake (
+          id      TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          data    TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_water_user ON water_intake(user_id);
+        CREATE INDEX IF NOT EXISTS idx_water_user_date
+          ON water_intake(user_id, json_extract(data, '$.date'));
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {
