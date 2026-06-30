@@ -6,6 +6,7 @@ import { mealRoutes } from './mealRoutes.js';
 import { weightRoutes } from './weightRoutes.js';
 import { waterRoutes } from './waterRoutes.js';
 import { notificationRoutes } from './notificationRoutes.js';
+import { pushSubscriptionRoutes } from './pushSubscriptionRoutes.js';
 import { streakRoutes } from './streakRoutes.js';
 import { aiRoutes } from './aiRoutes.js';
 
@@ -24,4 +25,5 @@ apiRouter.use('/meals', mealRoutes);
 apiRouter.use('/weights', weightRoutes);
 apiRouter.use('/water', waterRoutes);
 apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/push', pushSubscriptionRoutes);
 apiRouter.use('/streaks', streakRoutes);

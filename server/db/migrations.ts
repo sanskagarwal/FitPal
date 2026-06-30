@@ -172,6 +172,26 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 8,
+    name: 'push subscriptions table',
+    up: (db) => {
+      // One row per browser/device subscription. A user may have multiple active
+      // subscriptions (phone + desktop). Uses the standard JSON collection shape
+      // so JsonCollectionRepository methods work unchanged. endpoint is unique
+      // so re-subscribing the same device upserts rather than duplicates.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+          id      TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          data    TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id);
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subs_endpoint
+          ON push_subscriptions(json_extract(data, '$.endpoint'));
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

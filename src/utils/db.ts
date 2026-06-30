@@ -1,4 +1,4 @@
-import { User, MealEntry, WeightEntry, NotificationSettings, Streak, WaterEntry } from '../types';
+import { User, MealEntry, WeightEntry, NotificationSettings, PushSubscriptionPayload, Streak, WaterEntry } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -295,6 +295,24 @@ export const getNotificationSettings = async (userId: string): Promise<Notificat
     console.error(`Failed to get notification settings for user ${userId}:`, error);
     return undefined;
   }
+};
+
+// Push notification subscription operations
+export const getVapidPublicKey = async (): Promise<string | null> => {
+  try {
+    const data = await apiCall('/push/vapid-public-key');
+    return (data as { publicKey: string }).publicKey;
+  } catch {
+    return null;
+  }
+};
+
+export const subscribeToPush = async (userId: string, payload: PushSubscriptionPayload): Promise<void> => {
+  await apiCall(`/push/${userId}/subscribe`, 'POST', payload);
+};
+
+export const unsubscribeFromPush = async (userId: string, endpoint: string): Promise<void> => {
+  await apiCall(`/push/${userId}/unsubscribe`, 'POST', { endpoint });
 };
 
 // Streak operations

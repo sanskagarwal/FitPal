@@ -56,6 +56,11 @@ const EnvSchema = z.object({
   // Optional multimodal model for photo-based logging; falls back to AI_MODEL.
   AI_VISION_MODEL: z.string().optional(),
   AI_API_VERSION: z.string().optional(),
+
+  // VAPID keys for Web Push notifications (optional - push disabled if absent).
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_MAILTO: z.string().optional(),
 });
 
 export type AppConfig = z.infer<typeof EnvSchema>;

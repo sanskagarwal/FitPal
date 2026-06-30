@@ -20,7 +20,9 @@
     "express": "^5.2.1",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.5.0",
     "sharp": "^0.35.1",
+    "web-push": "^3.6.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -30,6 +32,8 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.1",
+    "@types/node-cron": "^3.0.11",
+    "@types/web-push": "^3.6.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   },

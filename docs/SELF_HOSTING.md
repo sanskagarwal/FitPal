@@ -36,14 +36,47 @@ For nginx, see the [nginx TLS docs](https://nginx.org/en/docs/http/configuring_h
 > The server already ships security headers (CSP, HSTS, X-Frame-Options, etc.)
 > via helmet. You do not need to configure these at the proxy.
 
-## 3. Keep your AI key private
+## 3. Enable push notifications (optional)
+
+Push notifications let FitPal remind users to log meals even when the app is
+closed. They require three extra env vars — if any are absent the scheduler
+simply stays off and everything else works normally.
+
+**Generate a VAPID key pair** (one-time, per deployment):
+
+```bash
+node --input-type=module -e "
+import w from 'web-push';
+const k = w.generateVAPIDKeys();
+console.log('VAPID_PUBLIC_KEY=' + k.publicKey);
+console.log('VAPID_PRIVATE_KEY=' + k.privateKey);
+"
+```
+
+Add the output plus a contact address to your `.env`:
+
+```
+VAPID_PUBLIC_KEY=<output from above>
+VAPID_PRIVATE_KEY=<output from above>
+VAPID_MAILTO=mailto:you@example.com
+```
+
+> **HTTPS required.** Browsers only allow push subscriptions on secure origins.
+> A Caddy or nginx reverse-proxy with TLS (see section 2) satisfies this
+> automatically. `localhost` is treated as secure for local development.
+
+> **Key rotation.** If you change `VAPID_PUBLIC_KEY`, existing subscribers must
+> re-enable notifications in the app because their push subscriptions are tied
+> to the old key.
+
+## 4. Keep your AI key private
 
 `AI_API_KEY` is read only by the backend and never sent to the browser. Since
 you pay per AI call, consider a provider that lets you set a hard spending limit.
 To cut AI costs entirely, use a local model with Ollama or vLLM - set
 `AI_BASE_URL=http://localhost:11434/v1` and any non-empty `AI_API_KEY`.
 
-## 4. Back up your data
+## 5. Back up your data
 
 Everything lives in one SQLite file. Copy it while the app is idle:
 
@@ -54,7 +87,7 @@ docker compose cp fitpal:/app/data/fitpal.db ./fitpal-backup.db
 Restore by putting the file back before starting the app. Store backups
 encrypted if the file contains sensitive health data.
 
-## 5. Keep it updated
+## 6. Keep it updated
 
 ```bash
 docker compose pull && docker compose up -d

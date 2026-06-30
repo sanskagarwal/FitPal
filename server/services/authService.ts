@@ -5,6 +5,7 @@ import { mealRepository } from '../repositories/mealRepository.js';
 import { weightRepository } from '../repositories/weightRepository.js';
 import { waterRepository } from '../repositories/waterRepository.js';
 import { notificationRepository } from '../repositories/notificationRepository.js';
+import { pushSubscriptionRepository } from '../repositories/pushSubscriptionRepository.js';
 import { streakRepository } from '../repositories/streakRepository.js';
 import { nutritionRepository } from '../repositories/nutritionRepository.js';
 import { getDb } from '../db/database.js';
@@ -85,6 +86,7 @@ export const authService = {
       weightRepository.deleteByUser(userId);
       waterRepository.deleteByUser(userId);
       notificationRepository.deleteByUser(userId);
+      pushSubscriptionRepository.deleteByUser(userId);
       streakRepository.deleteByUser(userId);
       nutritionRepository.deleteByUser(userId);
       userRepository.delete(userId);

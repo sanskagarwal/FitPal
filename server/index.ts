@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { initStorage } from './storage.js';
 import { createApp } from './app.js';
+import { startPushScheduler } from './services/pushScheduler.js';
 import { logger } from './logger.js';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +25,8 @@ const DATA_DIR = config.DATA_DIR || path.join(__dirname, 'data');
 // Initialise the SQLite store (creates the DB/schema and seeds the nutrition
 // cache) before any request can hit a repository.
 initStorage(DATA_DIR);
+
+startPushScheduler();
 
 const app = createApp();
 

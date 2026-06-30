@@ -160,7 +160,13 @@ export interface NotificationSettings {
   breakfast?: string; // time in HH:mm format
   lunch?: string;
   dinner?: string;
-  snack?: string;
+  timezone?: string; // IANA timezone, e.g. "Asia/Kolkata"
+}
+
+export interface PushSubscriptionPayload {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
 }
 
 // Recipe Type

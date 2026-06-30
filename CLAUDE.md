@@ -37,7 +37,7 @@ Required `.env` before running (copy from `.env.example`): `JWT_SECRET` (16+ cha
 FitPal is a PWA with three distinct parts that must stay separated:
 
 **1. Frontend SPA (`src/`)** - React 19 + TypeScript + Vite + Tailwind CSS v4.
-- Navigation is **state-based**: a `currentPage` string switched in `src/App.tsx`. Do not introduce React Router.
+- Navigation uses **React Router** (`BrowserRouter`). Routes are defined as `<Route>` entries in `src/App.tsx`. The Express server already includes a catch-all that serves `index.html` for non-API paths, so deep links and refreshes work correctly.
 - Talks to the server exclusively through `src/utils/db.ts` (the `apiCall` REST helper).
 - AI features are requested via `src/services/openai.ts`, which only forwards calls to `/api/ai/*` -- no AI logic runs in the browser.
 - Shared TypeScript types live in `src/types/index.ts`.
@@ -56,7 +56,7 @@ FitPal is a PWA with three distinct parts that must stay separated:
 
 To add a new AI feature: add a prompt in `server/prompts/`, implement with a `zod` schema in `aiService.ts`, expose via `aiController.ts` + `aiRoutes.ts`, then add a client call in `src/services/openai.ts`.
 
-To add a new page: create `src/components/MyPage.tsx`, add a case to `renderPage()` in `App.tsx`, and add a nav entry in `Layout.tsx`.
+To add a new page: create `src/components/MyPage.tsx`, add a `<Route path="/my-page" element={<MyPage />} />` in `App.tsx`, and add a nav entry in `Layout.tsx`.
 
 To add a new storage endpoint: repository (`server/repositories/`) -> service (`server/services/`) -> controller + route, then add the client call in `src/utils/db.ts`.
 

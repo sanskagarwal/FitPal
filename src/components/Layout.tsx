@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
@@ -8,58 +9,62 @@ import { BottomNav } from './BottomNav';
 
 interface LayoutProps {
   children: ReactNode;
-  currentPage: string;
-  onNavigate: (page: string) => void;
 }
 
-const DATE_SWIPE_PAGES = new Set(['dashboard', 'log-food']);
+const DATE_SWIPE_PATHS = new Set(['/', '/log-food']);
 
-export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
+const menuItems = [
+  { path: '/', label: 'Dashboard', icon: Home },
+  { path: '/log-food', label: 'Log Food', icon: UtensilsCrossed },
+  { path: '/weight', label: 'Weight', icon: Scale },
+  { path: '/goals', label: 'Goals', icon: Target },
+  { path: '/recipes', label: 'Recipes', icon: BookOpen },
+];
+
+export const Layout = ({ children }: LayoutProps) => {
   const { user, logout } = useAuth();
   const { goToPreviousDay, goToNextDay } = useSelectedDate();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => DATE_SWIPE_PAGES.has(currentPage) && goToNextDay(),
-    onSwipedRight: () => DATE_SWIPE_PAGES.has(currentPage) && goToPreviousDay(),
+    onSwipedLeft: () => DATE_SWIPE_PATHS.has(location.pathname) && goToNextDay(),
+    onSwipedRight: () => DATE_SWIPE_PATHS.has(location.pathname) && goToPreviousDay(),
     delta: 60,
     // No preventScrollOnSwipe - vertical scroll must remain unblocked.
   });
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'log-food', label: 'Log Food', icon: UtensilsCrossed },
-    { id: 'weight', label: 'Weight', icon: Scale },
-    { id: 'goals', label: 'Goals', icon: Target },
-    { id: 'recipes', label: 'Recipes', icon: BookOpen },
-  ];
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
+      isActive
+        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+    }`;
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 pt-safe px-safe">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">🥗</span>
             <h1 className="text-xl font-bold text-primary-600">FitPal</h1>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
-                    currentPage === item.id
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
-                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                  }`}
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/'}
+                  className={navLinkClass}
                 >
                   <Icon className="w-4 h-4" />
                   {item.label}
-                </button>
+                </NavLink>
               );
             })}
           </nav>
@@ -68,20 +73,22 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
             <div className="hidden md:block">
               <ThemeToggle />
             </div>
-            <button
-              onClick={() => onNavigate('profile')}
-              className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
-                currentPage === 'profile'
-                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
-              }`}
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                `hidden md:flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
+                  isActive
+                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
+                }`
+              }
               title="View profile"
             >
               <UserCircle className="w-5 h-5" />
               <span className="text-sm font-medium">{user?.name}</span>
-            </button>
+            </NavLink>
             <button
-              onClick={logout}
+              onClick={() => { logout(); navigate('/'); }}
               className="hidden md:flex items-center gap-2 text-gray-600 hover:text-red-600 dark:text-gray-300 dark:hover:text-red-400"
             >
               <LogOut className="w-4 h-4" />
@@ -107,8 +114,8 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
         </div>
       </footer>
 
-      {/* Mobile bottom navigation (replaces the hamburger menu on small screens) */}
-      <BottomNav currentPage={currentPage} onNavigate={onNavigate} />
+      {/* Mobile bottom navigation */}
+      <BottomNav />
     </div>
   );
 };

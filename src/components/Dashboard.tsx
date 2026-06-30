@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
@@ -27,11 +28,8 @@ const SectionLabel = ({ children }: { children: string }) => (
   </p>
 );
 
-interface DashboardProps {
-  onNavigate?: (page: string) => void;
-}
-
-export const Dashboard = ({ onNavigate }: DashboardProps) => {
+export const Dashboard = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedDate, isToday } = useSelectedDate();
   const { loading, todayStats, recentWeight, mealTypeStats, micronutrients } =
@@ -166,7 +164,7 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
         <DaySummaryHero
           todayStats={todayStats}
           goals={goals}
-          onLogMeal={onNavigate ? () => onNavigate('log-food') : undefined}
+          onLogMeal={() => navigate('/log-food')}
         />
 
         <WaterPanel />

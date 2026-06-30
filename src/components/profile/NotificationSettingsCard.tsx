@@ -1,4 +1,5 @@
 import { Bell } from 'lucide-react';
+import { Spinner } from '../Spinner';
 import { useNotificationSettings } from './useNotificationSettings';
 
 const TIME_FIELDS = [
@@ -11,6 +12,7 @@ export const NotificationSettingsCard = () => {
   const {
     enabled,
     toggleEnabled,
+    toggling,
     times,
     updateTime,
     loading,
@@ -48,24 +50,29 @@ export const NotificationSettingsCard = () => {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   Enable reminders
                 </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={enabled}
-                  onClick={toggleEnabled}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
-                    enabled
-                      ? 'bg-primary-600 dark:bg-primary-500'
-                      : 'bg-gray-200 dark:bg-gray-600'
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      enabled ? 'translate-x-5' : 'translate-x-0'
+                <div className="flex items-center gap-2">
+                  {toggling && <Spinner />}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enabled}
+                    aria-busy={toggling}
+                    disabled={toggling}
+                    onClick={toggleEnabled}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
+                      enabled
+                        ? 'bg-primary-600 dark:bg-primary-500'
+                        : 'bg-gray-200 dark:bg-gray-600'
                     }`}
-                  />
-                </button>
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
 
               {enabled && (

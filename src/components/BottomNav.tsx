@@ -1,48 +1,43 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, Menu, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useScrollDirection } from './useScrollDirection';
 import { ThemeToggle } from './ThemeToggle';
 
-interface BottomNavProps {
-  currentPage: string;
-  onNavigate: (page: string) => void;
-}
-
-// Primary tabs shown directly in the bar. Recipes, Profile, Logout and the
-// theme toggle live in the "More" sheet to keep the bar thumb-friendly.
 const primaryItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'log-food', label: 'Log Food', icon: UtensilsCrossed },
-  { id: 'weight', label: 'Weight', icon: Scale },
-  { id: 'goals', label: 'Goals', icon: Target },
+  { path: '/', label: 'Dashboard', icon: Home },
+  { path: '/log-food', label: 'Log Food', icon: UtensilsCrossed },
+  { path: '/weight', label: 'Weight', icon: Scale },
+  { path: '/goals', label: 'Goals', icon: Target },
 ] as const;
 
 const moreItems = [
-  { id: 'recipes', label: 'Recipes', icon: BookOpen },
-  { id: 'profile', label: 'Profile', icon: UserCircle },
+  { path: '/recipes', label: 'Recipes', icon: BookOpen },
+  { path: '/profile', label: 'Profile', icon: UserCircle },
 ] as const;
 
-// Pages reachable from the "More" sheet; used to highlight the More tab when
-// one of them is active.
-const morePageIds: string[] = [...moreItems.map((item) => item.id)];
+const moreItemPaths: string[] = [...moreItems.map((item) => item.path)];
 
 /**
- * Mobile-only bottom navigation bar. Replaces the hamburger menu on small
- * screens with a thumb-friendly tab bar. Hidden on md+ where the top nav is
- * used instead. Hides on scroll-down and reappears on scroll-up.
+ * Mobile-only bottom navigation bar. Hides on scroll-down and reappears on scroll-up.
  */
-export const BottomNav = ({ currentPage, onNavigate }: BottomNavProps) => {
+export const BottomNav = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const scrollDirection = useScrollDirection();
   const hidden = scrollDirection === 'down' && !moreOpen;
 
-  const moreActive = moreOpen || morePageIds.includes(currentPage);
+  const moreActive = moreOpen || moreItemPaths.includes(location.pathname);
 
-  const navigate = (page: string) => {
-    onNavigate(page);
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname === path;
+
+  const navTo = (path: string) => {
+    navigate(path);
     setMoreOpen(false);
   };
 
@@ -81,11 +76,11 @@ export const BottomNav = ({ currentPage, onNavigate }: BottomNavProps) => {
               <nav className="space-y-1 p-4">
                 {moreItems.map((item) => {
                   const Icon = item.icon;
-                  const active = currentPage === item.id;
+                  const active = isActive(item.path);
                   return (
                     <button
-                      key={item.id}
-                      onClick={() => navigate(item.id)}
+                      key={item.path}
+                      onClick={() => navTo(item.path)}
                       className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${
                         active
                           ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
@@ -93,7 +88,7 @@ export const BottomNav = ({ currentPage, onNavigate }: BottomNavProps) => {
                       }`}
                     >
                       <Icon className="h-5 w-5" />
-                      {item.id === 'profile' ? user?.name || 'Profile' : item.label}
+                      {item.path === '/profile' ? user?.name || 'Profile' : item.label}
                     </button>
                   );
                 })}
@@ -101,6 +96,7 @@ export const BottomNav = ({ currentPage, onNavigate }: BottomNavProps) => {
                   onClick={() => {
                     logout();
                     setMoreOpen(false);
+                    navigate('/');
                   }}
                   className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left font-medium text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:text-red-400 dark:hover:bg-red-900/30"
                 >
@@ -127,12 +123,12 @@ export const BottomNav = ({ currentPage, onNavigate }: BottomNavProps) => {
         <div className="flex items-stretch gap-1 px-2 py-1">
           {primaryItems.map((item) => {
             const Icon = item.icon;
-            const active = currentPage === item.id;
+            const active = isActive(item.path);
             return (
               <motion.button
-                key={item.id}
+                key={item.path}
                 whileTap={{ scale: 0.92 }}
-                onClick={() => navigate(item.id)}
+                onClick={() => navTo(item.path)}
                 aria-current={active ? 'page' : undefined}
                 className={tabClass(active)}
               >
