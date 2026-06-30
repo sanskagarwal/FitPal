@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-30
+
 ### Added
 
 - Dashboard shows a "Log your first meal" button when no meals are logged for the day.
@@ -152,7 +154,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/sanskagarwal/FitPal/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/sanskagarwal/FitPal/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/sanskagarwal/FitPal/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/sanskagarwal/FitPal/compare/v0.5.0...v0.5.1
