@@ -5,6 +5,7 @@ import { ProfileForm } from './profile/ProfileForm';
 import { ProfileInfoCard } from './profile/ProfileInfoCard';
 import { DataManagementCard } from './profile/DataManagementCard';
 import { DangerZoneCard } from './profile/DangerZoneCard';
+import { NotificationSettingsCard } from './profile/NotificationSettingsCard';
 import { ThemeToggle } from './ThemeToggle';
 
 export const Profile = () => {
@@ -46,6 +47,8 @@ export const Profile = () => {
         </div>
         <ThemeToggle showLabels />
       </div>
+
+      <NotificationSettingsCard />
 
       <ProfileInfoCard />
 
