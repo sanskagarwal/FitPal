@@ -183,6 +183,15 @@ export const getMealsByUser = async (userId: string): Promise<MealEntry[]> => {
   }
 };
 
+export const getRecentMeals = async (userId: string, limit = 10): Promise<MealEntry[]> => {
+  try {
+    return await apiCall(`/meals/${userId}/recent?limit=${limit}`);
+  } catch (error) {
+    console.error(`Failed to get recent meals for user ${userId}:`, error);
+    return [];
+  }
+};
+
 export const getMealsByDateRange = async (
   userId: string,
   startDate: Date,

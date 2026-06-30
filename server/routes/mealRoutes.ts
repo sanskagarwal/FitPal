@@ -21,6 +21,7 @@ mealRoutes.get(
   validateQuery(DateRangeQuerySchema),
   asyncHandler(mealController.listRange)
 );
+mealRoutes.get('/:userId/recent', requireOwnParam('userId'), asyncHandler(mealController.listRecent));
 mealRoutes.get('/:userId', requireOwnParam('userId'), asyncHandler(mealController.list));
 mealRoutes.get(
   '/:userId/:id/image',

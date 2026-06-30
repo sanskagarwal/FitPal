@@ -28,6 +28,11 @@ export const mealController = {
     res.json(mealService.listByUser(String(req.params.userId)));
   },
 
+  async listRecent(req: Request, res: Response): Promise<void> {
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 10, 50));
+    res.json(mealService.listRecent(String(req.params.userId), limit));
+  },
+
   async listRange(req: Request, res: Response): Promise<void> {
     const { start, end } = res.locals.query as { start: string; end: string };
     res.json(mealService.listByUserInRange(String(req.params.userId), start, end));

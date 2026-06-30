@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
 import { DateNavigator } from './DateNavigator';
-import { Food } from '../types';
+import { Food, MealEntry } from '../types';
 import { Toast, ToastType } from './Toast';
 import { useTodayMeals } from './foodLogger/useTodayMeals';
 import { useFoodSearch } from './foodLogger/useFoodSearch';
 import { useMealEditor } from './foodLogger/useMealEditor';
 import { useMealChat } from './foodLogger/useMealChat';
 import { MealChat } from './foodLogger/MealChat';
+import { RecentMeals } from './foodLogger/RecentMeals';
 import { FoodSearch } from './foodLogger/FoodSearch';
 import { SelectedFoodsList } from './foodLogger/SelectedFoodsList';
 import { TodayMealsHistory } from './foodLogger/TodayMealsHistory';
@@ -37,6 +38,11 @@ export const FoodLogger = () => {
   const handleAddFood = (food: Food) => {
     editor.addFood(food);
     search.clearSearch();
+  };
+
+  const handleRelogMeal = (meal: MealEntry) => {
+    editor.startRelogMeal(meal);
+    editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (
@@ -84,6 +90,10 @@ export const FoodLogger = () => {
         onUpdateProposedFoodCalories={chat.updateProposedFoodCalories}
         onUpdateProposedMealType={chat.updateProposedMealType}
       />
+
+      {user && (
+        <RecentMeals userId={user.id} selectedDate={selectedDate} onRelog={handleRelogMeal} />
+      )}
 
       {/* Divider */}
       <div className="flex items-center gap-3 pt-2">

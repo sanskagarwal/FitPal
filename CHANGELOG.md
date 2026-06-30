@@ -10,6 +10,16 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Added
+
+- Dashboard shows a "Log your first meal" button when no meals are logged for the day.
+- Food logger shows a "Quick Re-log" strip with recent meals from previous days for one-tap re-logging.
+- Swipe left/right on the dashboard and food logger to navigate between days.
+
+### Fixed
+
+- Chat conversation is now restored after switching tabs or backgrounding the app mid-session.
+
 ## [0.5.3] - 2026-06-17
 
 ### Fixed

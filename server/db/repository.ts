@@ -30,6 +30,17 @@ export class JsonCollectionRepository<T extends { id: string; userId: string }> 
     return rows.map((r) => JSON.parse(r.data) as T);
   }
 
+  // Return the most recent `limit` rows for a user, newest first.
+  // Uses the expression index on json_extract(data, '$.date') added in migration v3.
+  listRecent(userId: string, limit: number): T[] {
+    const rows = getDb()
+      .prepare(
+        `SELECT data FROM ${this.table} WHERE user_id = ? ORDER BY json_extract(data, '$.date') DESC LIMIT ?`
+      )
+      .all(userId, limit) as { data: string }[];
+    return rows.map((r) => JSON.parse(r.data) as T);
+  }
+
   // List rows owned by `userId` whose JSON `date` falls within [start, end]
   // (inclusive). `start` and `end` are ISO 8601 strings, which sort
   // chronologically, so the (user_id, date) expression index drives the range.

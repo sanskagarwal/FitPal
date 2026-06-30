@@ -129,6 +129,15 @@ export const useMealEditor = ({ user, selectedDate, loadTodayMeals, todayMeals, 
     setNotes(meal.notes || '');
   };
 
+  // Pre-fill the editor from a past meal without setting editingMealId, so the
+  // save path calls saveMealEntry (new record) instead of saveEditedMeal (update).
+  const startRelogMeal = (meal: MealEntry) => {
+    setEditingMealId(null);
+    setSelectedFoods(meal.foods);
+    setMealType(meal.mealType);
+    setNotes('');
+  };
+
   const cancelEditMeal = () => {
     setEditingMealId(null);
     setSelectedFoods([]);
@@ -198,6 +207,7 @@ export const useMealEditor = ({ user, selectedDate, loadTodayMeals, todayMeals, 
     updateFoodCalories,
     saveMealEntry,
     startEditMeal,
+    startRelogMeal,
     cancelEditMeal,
     saveEditedMeal,
     handleDeleteMeal,

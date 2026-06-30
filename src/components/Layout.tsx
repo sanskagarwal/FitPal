@@ -1,5 +1,7 @@
 import { ReactNode } from 'react';
+import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../context/AuthContext';
+import { useSelectedDate } from '../context/DateContext';
 import { Home, UtensilsCrossed, Scale, Target, BookOpen, LogOut, UserCircle } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { BottomNav } from './BottomNav';
@@ -10,8 +12,18 @@ interface LayoutProps {
   onNavigate: (page: string) => void;
 }
 
+const DATE_SWIPE_PAGES = new Set(['dashboard', 'log-food']);
+
 export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
   const { user, logout } = useAuth();
+  const { goToPreviousDay, goToNextDay } = useSelectedDate();
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => DATE_SWIPE_PAGES.has(currentPage) && goToNextDay(),
+    onSwipedRight: () => DATE_SWIPE_PAGES.has(currentPage) && goToPreviousDay(),
+    delta: 60,
+    // No preventScrollOnSwipe - vertical scroll must remain unblocked.
+  });
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -80,7 +92,10 @@ export const Layout = ({ children, currentPage, onNavigate }: LayoutProps) => {
       </header>
 
       {/* Main Content */}
-      <main className="w-full max-w-7xl mx-auto flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8">
+      <main
+        {...swipeHandlers}
+        className="w-full max-w-7xl mx-auto flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24 md:pb-8"
+      >
         {children}
       </main>
 
