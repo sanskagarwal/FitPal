@@ -122,6 +122,20 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 5,
+    name: 'reseed nutrition cache with micronutrients',
+    up: (db) => {
+      // Seed entries previously omitted micronutrients (vitaminA/C/D, calcium,
+      // iron, magnesium, potassium). Deleting the old seed rows lets
+      // seedNutritionCache(), which runs immediately after migrations on
+      // startup, re-insert them with the complete nutrient profile.
+      // Learned (user-corrected) entries keyed by source='learned' are untouched.
+      db.exec(`
+        DELETE FROM nutrition_cache WHERE source = 'seed';
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {
