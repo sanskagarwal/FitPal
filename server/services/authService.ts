@@ -5,6 +5,7 @@ import { mealRepository } from '../repositories/mealRepository.js';
 import { weightRepository } from '../repositories/weightRepository.js';
 import { notificationRepository } from '../repositories/notificationRepository.js';
 import { streakRepository } from '../repositories/streakRepository.js';
+import { nutritionRepository } from '../repositories/nutritionRepository.js';
 import { getDb } from '../db/database.js';
 import { AuthError, ConflictError, NotFoundError } from '../errors.js';
 
@@ -83,6 +84,7 @@ export const authService = {
       weightRepository.deleteByUser(userId);
       notificationRepository.deleteByUser(userId);
       streakRepository.deleteByUser(userId);
+      nutritionRepository.deleteByUser(userId);
       userRepository.delete(userId);
     })();
   },

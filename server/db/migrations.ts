@@ -136,6 +136,21 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 6,
+    name: 'user-scoped nutrition cache',
+    up: (db) => {
+      // Learned entries are now keyed as "user:{userId}:{normName}|{unit}" so
+      // one user's AI-learned values never bleed into another user's session.
+      // Seed rows keep the unscoped key and user_id stays NULL for them.
+      // Existing learned rows (unscoped keys) are removed so they are
+      // re-filled per-user on next use; seeds are untouched.
+      db.exec(`
+        ALTER TABLE nutrition_cache ADD COLUMN user_id TEXT;
+        DELETE FROM nutrition_cache WHERE source = 'learned';
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

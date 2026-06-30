@@ -966,13 +966,14 @@ function completeNutrients(n: Partial<NutrientInfo> | Record<string, number>): N
 
 async function resolveFoodsNutrition(
   foods: ExtractedFood[],
-  useModel: boolean
+  useModel: boolean,
+  userId: string
 ): Promise<GroundedFood[]> {
   const grounded: (GroundedFood | null)[] = new Array(foods.length).fill(null);
   const misses: { index: number; food: ExtractedFood }[] = [];
 
   foods.forEach((f, i) => {
-    const cached = nutritionRepository.get(f.name, f.unit);
+    const cached = nutritionRepository.get(f.name, f.unit, userId);
     if (cached) {
       grounded[i] = {
         name: f.name,
@@ -996,10 +997,12 @@ async function resolveFoodsNutrition(
     misses.forEach((m, j) => {
       const fill = filled[j];
       if (useModel && fill.confidence === 'high') {
-        nutritionRepository.put(m.food.name, m.food.unit, {
-          servingSize: fill.servingSize,
-          nutrients: fill.nutrients as Record<string, number>,
-        });
+        nutritionRepository.put(
+          m.food.name,
+          m.food.unit,
+          { servingSize: fill.servingSize, nutrients: fill.nutrients as Record<string, number> },
+          userId
+        );
       }
       grounded[m.index] = {
         name: m.food.name,
@@ -1020,8 +1023,8 @@ async function resolveFoodsNutrition(
 // Combine a stage-1 extraction with resolved nutrition into the final result.
 // Nutrition is only looked up via the model when the meal is ready to act on;
 // clarifying turns (need_info) skip it, keeping those turns to a single call.
-async function assembleChatResult(extracted: ExtractedMeal) {
-  const foods = await resolveFoodsNutrition(extracted.foods, extracted.status === 'ready');
+async function assembleChatResult(extracted: ExtractedMeal, userId: string) {
+  const foods = await resolveFoodsNutrition(extracted.foods, extracted.status === 'ready', userId);
   return {
     status: extracted.status,
     action: extracted.action,
@@ -1044,7 +1047,8 @@ export async function chatLogMeal(
   history: { role: 'user' | 'assistant'; content: string }[],
   loggedMeals: LoggedMealSummary[] = [],
   image: VisionImage | undefined,
-  localTime: string
+  localTime: string,
+  userId: string
 ) {
   const system = mealChatSystemPrompt(loggedMeals, localTime);
   const messages = image ? attachImageToHistory(history, image) : ([...history] as ChatMessage[]);
@@ -1056,7 +1060,7 @@ export async function chatLogMeal(
     system,
     image ? getVisionModel() : getModel()
   );
-  return assembleChatResult(extracted);
+  return assembleChatResult(extracted, userId);
 }
 
 // Streaming variant: emits the assistant's `message` text via `onMessage` as it
@@ -1068,7 +1072,8 @@ export async function chatLogMealStream(
   onMessage: (text: string) => void,
   onMessageDone: (() => void) | undefined,
   image: VisionImage | undefined,
-  localTime: string
+  localTime: string,
+  userId: string
 ) {
   const system = mealChatSystemPrompt(loggedMeals, localTime);
   const messages = image ? attachImageToHistory(history, image) : ([...history] as ChatMessage[]);
@@ -1090,5 +1095,5 @@ export async function chatLogMealStream(
 
   const extracted = await result.output;
   if (extracted.status === 'ready' && extracted.foods.length > 0) onMessageDone?.();
-  return assembleChatResult(extracted);
+  return assembleChatResult(extracted, userId);
 }

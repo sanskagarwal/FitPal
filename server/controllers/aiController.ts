@@ -97,7 +97,7 @@ export const aiController = {
     ),
 
   chatMeal: (req: Request, res: Response) =>
-    run(res, () => chatLogMeal(req.body.history, req.body.loggedMeals, undefined, req.body.localTime)),
+    run(res, () => chatLogMeal(req.body.history, req.body.loggedMeals, undefined, req.body.localTime, req.userId!)),
 
   // Streaming chat endpoint. Responds with newline-delimited JSON (NDJSON):
   //   {"t":"msg","v":"<assistant message so far>"}  - emitted as the reply streams
@@ -138,7 +138,8 @@ export const aiController = {
         (text) => write({ t: 'msg', v: text }),
         () => write({ t: 'msg_done' }),
         image,
-        localTime
+        localTime,
+        req.userId!
       );
       write({ t: 'done', v: withImage(final) });
     } catch (error: unknown) {
@@ -146,7 +147,7 @@ export const aiController = {
         error: error instanceof Error ? error.message : String(error),
       });
       try {
-        const final = await chatLogMeal(history, loggedMeals, image, localTime);
+        const final = await chatLogMeal(history, loggedMeals, image, localTime, req.userId!);
         write({ t: 'done', v: withImage(final) });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'AI request failed';

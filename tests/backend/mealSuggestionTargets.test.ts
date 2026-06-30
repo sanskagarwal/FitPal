@@ -43,9 +43,15 @@ describe('getMealSuggestionTargets', () => {
     expect(targets.calories).toBe(650);
   });
 
-  it('clamps negative remaining values to zero', () => {
+  it('falls back to per-meal cap when daily goal is exceeded (negative remaining)', () => {
+    // Sending zero-budget to the AI produces nonsensical suggestions, so the
+    // function uses the meal-type cap with balanced macro proportions instead.
     const targets = getMealSuggestionTargets(-200, -10, -20, -5, -3, MealType.Dinner);
-    expect(targets).toEqual({ calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
+    expect(targets.calories).toBe(MEAL_CALORIE_CAPS[MealType.Dinner]);
+    expect(targets.protein).toBeGreaterThan(0);
+    expect(targets.carbs).toBeGreaterThan(0);
+    expect(targets.fats).toBeGreaterThan(0);
+    expect(targets.fiber).toBeGreaterThan(0);
   });
 
   it('honours a user-supplied calorie cap below the meal-type default', () => {
