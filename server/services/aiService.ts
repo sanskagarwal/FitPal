@@ -628,9 +628,26 @@ export function getMealSuggestionTargets(
     typeof calorieCapOverride === 'number' && Number.isFinite(calorieCapOverride) && calorieCapOverride > 0
       ? Math.round(calorieCapOverride)
       : defaultCap;
-  const calorieTarget = Math.min(normalizeMealTarget(remainingCalories), calorieCap);
+
   const safeRemainingCalories = Math.max(0, remainingCalories);
-  const scale = safeRemainingCalories > 0 ? Math.min(1, calorieTarget / safeRemainingCalories) : 0;
+
+  // When the user is at or over their daily goal, the remaining budget is 0.
+  // Sending all-zeros to the AI produces nonsensical suggestions, so fall back
+  // to the per-meal cap with balanced macro proportions instead.
+  if (safeRemainingCalories === 0) {
+    const macroFromCap = (energyFraction: number, kcalPerGram: number) =>
+      Math.round((calorieCap * energyFraction) / kcalPerGram);
+    return {
+      calories: calorieCap,
+      protein: macroFromCap(0.3, 4),
+      carbs: macroFromCap(0.5, 4),
+      fats: macroFromCap(0.25, 9),
+      fiber: 8,
+    };
+  }
+
+  const calorieTarget = Math.min(safeRemainingCalories, calorieCap);
+  const scale = Math.min(1, calorieTarget / safeRemainingCalories);
 
   const maxFromCalories = (energyFraction: number, kcalPerGram: number) =>
     Math.round((calorieTarget * energyFraction) / kcalPerGram);

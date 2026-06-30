@@ -69,11 +69,11 @@ export const Dashboard = ({ onNavigate }: DashboardProps) => {
     setMealSuggestions(null);
 
     const goals = user.profile.goals;
-    const remainingCalories = goals.targetCalories - todayStats.totalCalories;
-    const remainingProtein = goals.targetProtein - todayStats.totalProtein;
-    const remainingCarbs = goals.targetCarbs - todayStats.totalCarbs;
-    const remainingFats = goals.targetFats - todayStats.totalFats;
-    const remainingFiber = (goals.targetFiber || 30) - (micronutrients.fiber || 0);
+    const remainingCalories = Math.max(0, goals.targetCalories - todayStats.totalCalories);
+    const remainingProtein = Math.max(0, goals.targetProtein - todayStats.totalProtein);
+    const remainingCarbs = Math.max(0, goals.targetCarbs - todayStats.totalCarbs);
+    const remainingFats = Math.max(0, goals.targetFats - todayStats.totalFats);
+    const remainingFiber = Math.max(0, (goals.targetFiber || 30) - (micronutrients.fiber || 0));
 
     try {
       const suggestion = await suggestMeal(

@@ -279,15 +279,28 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   const updateProposedMealType = (mealType: MealType) => setProposedMealType(mealType);
 
   // Override the per-unit calories of a food in the AI chat proposal before confirming.
+  // Scales protein/carbs/fats/fiber proportionally so the macro rings stay consistent.
   const updateProposedFoodCalories = (index: number, calories: number) => {
     const safeCalories = clampNumber(calories, 0, MAX_CALORIES, 0);
     setProposedMeal((prev) => {
       if (!prev) return prev;
-      const foods = prev.foods.map((f, i) =>
-        i === index
-          ? { ...f, nutrients: { ...f.nutrients, calories: safeCalories }, confidence: 'high' as const }
-          : f
-      );
+      const foods = prev.foods.map((f, i) => {
+        if (i !== index) return f;
+        const oldCalories = f.nutrients.calories;
+        const scale = oldCalories > 0 ? safeCalories / oldCalories : 1;
+        return {
+          ...f,
+          confidence: 'high' as const,
+          nutrients: {
+            ...f.nutrients,
+            calories: safeCalories,
+            protein: Math.round(f.nutrients.protein * scale * 10) / 10,
+            carbs: Math.round(f.nutrients.carbs * scale * 10) / 10,
+            fats: Math.round(f.nutrients.fats * scale * 10) / 10,
+            fiber: Math.round((f.nutrients.fiber ?? 0) * scale * 10) / 10,
+          },
+        };
+      });
       return { ...prev, foods };
     });
   };

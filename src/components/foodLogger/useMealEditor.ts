@@ -82,14 +82,24 @@ export const useMealEditor = ({ user, selectedDate, loadTodayMeals, todayMeals, 
   };
 
   // Override the per-unit calories of a selected food (used to correct AI estimates).
+  // Scales protein/carbs/fats/fiber proportionally so the macro rings stay consistent.
   const updateFoodCalories = (index: number, calories: number) => {
     const safeCalories = clampNumber(calories, 0, MAX_CALORIES, 0);
     const updated = [...selectedFoods];
     const entry = updated[index];
+    const oldCalories = entry.food.nutrients.calories;
+    const scale = oldCalories > 0 ? safeCalories / oldCalories : 1;
     entry.food = {
       ...entry.food,
-      nutrients: { ...entry.food.nutrients, calories: safeCalories },
-      confidence: 'high', // user has confirmed/corrected the value
+      confidence: 'high',
+      nutrients: {
+        ...entry.food.nutrients,
+        calories: safeCalories,
+        protein: Math.round(entry.food.nutrients.protein * scale * 10) / 10,
+        carbs: Math.round(entry.food.nutrients.carbs * scale * 10) / 10,
+        fats: Math.round(entry.food.nutrients.fats * scale * 10) / 10,
+        fiber: Math.round((entry.food.nutrients.fiber ?? 0) * scale * 10) / 10,
+      },
     };
     setSelectedFoods(updated);
   };
