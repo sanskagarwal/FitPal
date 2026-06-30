@@ -78,12 +78,11 @@ export const FoodLogger = () => {
         proposedMeal={chat.proposedMeal}
         proposedMealType={chat.proposedMealType}
         mealTypeUncertain={chat.mealTypeUncertain}
-        pendingImage={chat.pendingImage}
         imageLoading={chat.imageLoading}
         todayMeals={todayMeals}
         onSend={chat.sendChat}
         onAttachImage={chat.attachImage}
-        onClearImage={chat.clearImage}
+        onAttachLabel={chat.attachLabelImage}
         onConfirm={chat.confirmChatMeal}
         onDiscard={chat.resetChat}
         onReset={chat.resetChat}

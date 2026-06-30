@@ -44,7 +44,6 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     proposedMeal?: MealChatResult | null;
     proposedMealType?: MealType;
     mealTypeUncertain?: boolean;
-    pendingImage?: string | null;
   } | null>(() => {
     if (!user) return null;
     try {
@@ -62,8 +61,7 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
   const [proposedMeal, setProposedMeal] = useState<MealChatResult | null>(initialDraft?.proposedMeal ?? null);
   const [proposedMealType, setProposedMealType] = useState<MealType>(initialDraft?.proposedMealType ?? MealType.Breakfast);
   const [mealTypeUncertain, setMealTypeUncertain] = useState(initialDraft?.mealTypeUncertain ?? false);
-  // Compressed photo (data URL) staged for the next message; loading flag drives the spinner.
-  const [pendingImage, setPendingImage] = useState<string | null>(initialDraft?.pendingImage ?? null);
+  // imageLoading covers only the compression phase; chatLoading covers the API call.
   const [imageLoading, setImageLoading] = useState(false);
 
   const draftKey = user ? `meal-chat-draft-${user.id}` : null;
@@ -74,32 +72,12 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     try {
       sessionStorage.setItem(
         draftKey,
-        JSON.stringify({ chatMessages, chatInput, proposedMeal, proposedMealType, mealTypeUncertain, pendingImage })
+        JSON.stringify({ chatMessages, chatInput, proposedMeal, proposedMealType, mealTypeUncertain })
       );
     } catch {
       // ignore quota errors (e.g. private browsing with full storage)
     }
-  }, [draftKey, chatMessages, chatInput, proposedMeal, proposedMealType, mealTypeUncertain, pendingImage]);
-
-  // Compress and stage a photo for the next send. Surfaces a toast on failure
-  // (unreadable/oversized) and leaves any previously staged image cleared.
-  const attachImage = async (file: File) => {
-    setImageLoading(true);
-    try {
-      const dataUrl = await compressImage(file);
-      setPendingImage(dataUrl);
-    } catch (err) {
-      setPendingImage(null);
-      setToast({
-        message: err instanceof Error ? err.message : 'Could not read that image.',
-        type: 'error',
-      });
-    } finally {
-      setImageLoading(false);
-    }
-  };
-
-  const clearImage = () => setPendingImage(null);
+  }, [draftKey, chatMessages, chatInput, proposedMeal, proposedMealType, mealTypeUncertain]);
 
   const buildMealFromParsed = (result: MealChatResult, existing?: MealEntry): MealEntry | null => {
     if (!user || result.foods.length === 0) return null;
@@ -142,20 +120,20 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     };
   };
 
-  const sendChat = async () => {
-    // Allow sending with text, a photo, or both - but never an empty turn.
-    if ((!chatInput.trim() && !pendingImage) || chatLoading || imageLoading) return;
+  // opts lets photo attach paths supply image+content directly, bypassing state.
+  const sendChat = async (opts?: { image: string; content: string }) => {
+    const image = opts?.image;
+    const content = opts?.content ?? chatInput.trim();
+    if ((!content && !image) || chatLoading || imageLoading) return;
 
-    const image = pendingImage ?? undefined;
     const userMessage: ChatMessage = {
       role: 'user',
-      content: chatInput.trim(),
+      content,
       ...(image ? { image } : {}),
     };
     const newHistory = [...chatMessages, userMessage];
     setChatMessages(newHistory);
     setChatInput('');
-    setPendingImage(null);
     setChatLoading(true);
     setChatPreparing(false);
     setProposedMeal(null);
@@ -234,6 +212,28 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     }
   };
 
+  // Compress a photo then auto-dispatch it. imageLoading covers compression only;
+  // chatLoading covers the subsequent API call.
+  const attachAndSend = async (file: File, content: string) => {
+    setImageLoading(true);
+    let dataUrl: string;
+    try {
+      dataUrl = await compressImage(file);
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : 'Could not read that image.',
+        type: 'error',
+      });
+      return;
+    } finally {
+      setImageLoading(false);
+    }
+    await sendChat({ image: dataUrl, content });
+  };
+
+  const attachImage = (file: File) => attachAndSend(file, "Here's a photo of my meal.");
+  const attachLabelImage = (file: File) => attachAndSend(file, "I photographed the nutrition label on a packaged food. Please read the nutritional info from the image and ask me what I need to clarify.");
+
   const confirmChatMeal = async () => {
     if (!proposedMeal || !user) return;
 
@@ -272,7 +272,6 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     setChatPreparing(false);
     setProposedMeal(null);
     setMealTypeUncertain(false);
-    setPendingImage(null);
   };
 
   // Update the confirmed meal type from the proposal's dropdown.
@@ -314,10 +313,9 @@ export const useMealChat = ({ user, selectedDate, todayMeals, loadTodayMeals, se
     proposedMeal,
     proposedMealType,
     mealTypeUncertain,
-    pendingImage,
     imageLoading,
     attachImage,
-    clearImage,
+    attachLabelImage,
     sendChat,
     confirmChatMeal,
     resetChat,

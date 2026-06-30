@@ -5,7 +5,7 @@ test.describe('authentication', () => {
     const user = await registerViaUi(page);
 
     // The authenticated shell is visible.
-    await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
 
     // Log out -> back to the auth screen (register toggle is present there).
     await page.getByRole('button', { name: 'Logout' }).click();
@@ -17,7 +17,7 @@ test.describe('authentication', () => {
     await page.locator('button[type="submit"]').click();
 
     await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
   });
 
   test('rejects invalid credentials', async ({ page }) => {

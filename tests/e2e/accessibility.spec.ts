@@ -57,7 +57,7 @@ test.describe('color contrast (WCAG AA)', () => {
     for (const scheme of SCHEMES) {
       await page.emulateMedia({ colorScheme: scheme });
       for (const { name, heading } of pages) {
-        await page.getByRole('button', { name, exact: true }).click();
+        await page.getByRole('link', { name, exact: true }).click();
         await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
         // Let the page-transition fade (opacity 0 -> 1) settle so axe doesn't
         // sample blended colors mid-animation.

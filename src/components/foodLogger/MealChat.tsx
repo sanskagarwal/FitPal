@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Sparkles, Send, X, Camera } from 'lucide-react';
+import { Sparkles, Send, X, Camera, Package } from 'lucide-react';
 import { MealEntry, MealChatResult, MealType } from '../../types';
 import { Spinner } from '../Spinner';
 import { ChatMessage } from './foodLoggerUtils';
@@ -15,12 +15,11 @@ interface MealChatProps {
   proposedMeal: MealChatResult | null;
   proposedMealType: MealType;
   mealTypeUncertain: boolean;
-  pendingImage: string | null;
   imageLoading: boolean;
   todayMeals: MealEntry[];
   onSend: () => void;
   onAttachImage: (file: File) => void;
-  onClearImage: () => void;
+  onAttachLabel: (file: File) => void;
   onConfirm: () => void;
   onDiscard: () => void;
   onReset: () => void;
@@ -37,12 +36,11 @@ export const MealChat = ({
   proposedMeal,
   proposedMealType,
   mealTypeUncertain,
-  pendingImage,
   imageLoading,
   todayMeals,
   onSend,
   onAttachImage,
-  onClearImage,
+  onAttachLabel,
   onConfirm,
   onDiscard,
   onReset,
@@ -51,6 +49,7 @@ export const MealChat = ({
 }: MealChatProps) => {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const labelInputRef = useRef<HTMLInputElement>(null);
 
   const autoFocusInput =
     typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
@@ -64,11 +63,16 @@ export const MealChat = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) onAttachImage(file);
-    // Reset so picking the same file again still fires onChange.
     e.target.value = '';
   };
 
-  const canSend = (!!chatInput.trim() || !!pendingImage) && !chatLoading && !imageLoading;
+  const handleLabelFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onAttachLabel(file);
+    e.target.value = '';
+  };
+
+  const canSend = !!chatInput.trim() && !chatLoading && !imageLoading;
 
   return (
     <div className="card">
@@ -78,8 +82,9 @@ export const MealChat = ({
       </div>
       <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
         Describe your meal in plain language - e.g.{' '}
-        <span className="italic">"2 rotis and a katori of dal for lunch at 1pm"</span>, or snap a
-        photo of your plate. You can also edit or remove today's meals, like{' '}
+        <span className="italic">"2 rotis and a katori of dal for lunch at 1pm"</span>, snap a
+        photo of your plate, or photo a nutrition label to log a packaged food exactly. You can
+        also edit or remove today's meals, like{' '}
         <span className="italic">"add a glass of milk to breakfast"</span> or{' '}
         <span className="italic">"delete my lunch"</span>.
       </p>
@@ -152,34 +157,10 @@ export const MealChat = ({
         )}
       </AnimatePresence>
 
-      {/* Staged photo preview (before sending) */}
-      {(pendingImage || imageLoading) && (
-        <div className="mb-3 flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2">
-          {imageLoading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <Spinner className="w-4 h-4" />
-              Processing photo...
-            </div>
-          ) : (
-            <>
-              <img
-                src={pendingImage as string}
-                alt="Photo to send"
-                className="h-14 w-14 rounded-md object-cover"
-              />
-              <span className="flex-1 text-sm text-gray-600 dark:text-gray-300">
-                Photo ready - add a note or just send.
-              </span>
-              <button
-                onClick={onClearImage}
-                disabled={chatLoading}
-                className="inline-flex items-center justify-center min-h-11 min-w-11 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
-                aria-label="Remove photo"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </>
-          )}
+      {imageLoading && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <Spinner className="w-4 h-4" />
+          Processing photo...
         </div>
       )}
 
@@ -192,21 +173,38 @@ export const MealChat = ({
           onChange={handleFileChange}
           className="hidden"
         />
+        <input
+          ref={labelInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleLabelFileChange}
+          className="hidden"
+        />
         <button
           onClick={() => fileInputRef.current?.click()}
-          disabled={chatLoading || imageLoading}
+          disabled={chatLoading || chatPreparing || imageLoading}
           className="btn-secondary flex items-center justify-center px-3"
-          title="Add a photo"
-          aria-label="Add a photo"
+          title="Photo your plate"
+          aria-label="Photo your plate"
         >
           <Camera className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => labelInputRef.current?.click()}
+          disabled={chatLoading || chatPreparing || imageLoading}
+          className="btn-secondary flex items-center justify-center px-3"
+          title="Scan nutrition label"
+          aria-label="Scan nutrition label"
+        >
+          <Package className="w-4 h-4" />
         </button>
         <input
           type="text"
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && canSend && onSend()}
-          placeholder={pendingImage ? 'Add a note (optional)' : 'What did you eat?'}
+          placeholder="What did you eat?"
           className="input-field flex-1"
           disabled={chatLoading}
           autoFocus={autoFocusInput}
