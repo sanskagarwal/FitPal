@@ -2,6 +2,7 @@ import { config } from './env.js';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import fsSync from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -18,6 +19,29 @@ export function createApp(): Express {
   // Static asset location is configurable so the same build can run from a
   // container (mounted volume) or directly from source.
   const STATIC_DIR = config.STATIC_DIR || path.join(__dirname, '..', '..', 'dist');
+
+  // Security headers. helmet's defaults cover X-Frame-Options, X-Content-Type-Options,
+  // HSTS, Referrer-Policy etc. CSP is tuned for the app's needs:
+  //   - unsafe-inline for scripts: required by the theme-detection inline script in index.html
+  //   - unsafe-inline for styles: required by Tailwind v4's runtime style injection
+  //   - data:/blob: for images: meal photos are served as data URLs
+  //   - worker-src: PWA service worker
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'blob:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          workerSrc: ["'self'"],
+          frameAncestors: ["'none'"],
+        },
+      },
+    })
+  );
 
   // Middleware. `credentials: true` lets the browser send the auth cookie on
   // cross-origin (split-deployment) requests; same-origin works regardless.

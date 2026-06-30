@@ -32,8 +32,15 @@ const EnvSchema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
 
-  // Auth - required. Min length keeps weak secrets out.
-  JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
+  // Auth - required. Min length keeps weak secrets out. The literal default
+  // from .env.example is rejected so a copy-paste without editing fails fast.
+  JWT_SECRET: z
+    .string()
+    .min(16, 'JWT_SECRET must be at least 16 characters')
+    .refine(
+      (s) => s !== 'change-me-to-a-long-random-secret',
+      'JWT_SECRET is still the example default - generate a real secret: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+    ),
 
   // Storage / static asset locations (optional; sensible defaults at runtime).
   DATA_DIR: z.string().optional(),

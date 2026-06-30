@@ -1,28 +1,29 @@
-# Self-hosting FitPal securely
+# Self-hosting FitPal
 
-This guide covers running FitPal safely. For setup (Docker, env vars, updates)
-see the [README](../README.md); this focuses on hardening and operations.
+For setup steps (Docker, env vars, updates) see the [README](../README.md).
+This guide covers the things worth knowing once you have it running.
 
-## Set a strong JWT secret
+## 1. Set a strong JWT secret
 
-`JWT_SECRET` signs the auth cookie (min 16 chars, or the server refuses to
-start). Generate one and keep it in `.env` (already gitignored):
+This is the only required security step. `JWT_SECRET` signs the auth cookie - if
+it is weak or left as the example default, anyone who knows it can log in as any user.
+
+The server refuses to start if the value is missing, under 16 characters, or
+still set to the placeholder from `.env.example`. Generate a real one:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Changing it later logs everyone out - a quick way to revoke all sessions.
+Paste the output into `.env`. Never commit `.env` to version control (it is already
+in `.gitignore`). Changing `JWT_SECRET` later logs everyone out - useful for
+revoking all sessions in an emergency.
 
-## Keep your AI key private
+## 2. Put it behind a reverse proxy with TLS
 
-`AI_API_KEY` is read only by the backend. Since you pay
-per AI call, consider a provider that supports a hard spending limit.
-
-## Reverse proxy with TLS
-
-For anything beyond your local network, terminate TLS at a reverse proxy and
-forward to the container. Caddy gives automatic HTTPS:
+For anything outside your home network, run FitPal behind a reverse proxy that
+handles HTTPS. The simplest option is Caddy, which gets and renews a certificate
+automatically:
 
 ```caddyfile
 fitpal.example.com {
@@ -30,45 +31,92 @@ fitpal.example.com {
 }
 ```
 
-## Same-origin vs split deployments
+For nginx, see the [nginx TLS docs](https://nginx.org/en/docs/http/configuring_https_servers.html).
 
-The default single-process deployment serves the frontend and API from one
-origin; the built-in CSP and permissive CORS assume this. If you split them via
-`VITE_API_URL`, the CSP `connect-src 'self'` blocks the cross-origin API calls -
-extend `connect-src` in [`server/app.ts`](../server/app.ts) to your API origin
-and tighten CORS. Staying single-origin avoids all of this.
+> The server already ships security headers (CSP, HSTS, X-Frame-Options, etc.)
+> via helmet. You do not need to configure these at the proxy.
 
-## No built-in login rate limiting
+## 3. Keep your AI key private
 
-FitPal targets one person or a small, trusted group, so it does not throttle
-login attempts. If you expose it publicly, gate it at the proxy (basic auth, an
-SSO/identity proxy, a VPN/Tailscale network, or a rate-limit rule on the login
-route).
+`AI_API_KEY` is read only by the backend and never sent to the browser. Since
+you pay per AI call, consider a provider that lets you set a hard spending limit.
+To cut AI costs entirely, use a local model with Ollama or vLLM - set
+`AI_BASE_URL=http://localhost:11434/v1` and any non-empty `AI_API_KEY`.
 
-## Back up your data
+## 4. Back up your data
 
-All data lives in one SQLite file: the `fitpal-data` volume at `/app/data` under
-Docker, or `server/data` from source (override with `DATA_DIR`). Back it up while
-the app is idle and store it encrypted:
+Everything lives in one SQLite file. Copy it while the app is idle:
 
 ```bash
 docker compose cp fitpal:/app/data/fitpal.db ./fitpal-backup.db
 ```
 
-Restore by putting the file back before starting the app.
+Restore by putting the file back before starting the app. Store backups
+encrypted if the file contains sensitive health data.
 
-## Keep it updated
+## 5. Keep it updated
 
 ```bash
 docker compose pull && docker compose up -d
 ```
 
-Building from source? Run `npm audit` in both the root and `server/` directories
-periodically and keep dependencies current.
+Building from source? Run `npm audit` in the root and `server/` directories
+periodically to catch dependency vulnerabilities.
+
+---
+
+## Optional hardening
+
+These are not required for a typical home or small-group deployment, but worth
+doing if the instance is publicly accessible.
+
+### Rate limit the login endpoint
+
+FitPal does not throttle login attempts internally. If you want brute-force
+protection, add a rate limit rule at the proxy.
+
+**Caddy** (needs the [caddy-ratelimit](https://github.com/mholt/caddy-ratelimit) plugin):
+```caddyfile
+rate_limit {
+    zone auth_zone {
+        match path /api/auth/login /api/auth/register
+        key {remote_host}
+        events 10
+        window 1m
+    }
+}
+```
+
+**nginx** (`ngx_http_limit_req_module` is included in most builds):
+```nginx
+limit_req_zone $binary_remote_addr zone=fitpal_auth:10m rate=10r/m;
+
+location ~ ^/api/auth/(login|register) {
+    limit_req zone=fitpal_auth burst=5 nodelay;
+    proxy_pass http://localhost:3001;
+}
+```
+
+### Run the container as a non-root user
+
+The Docker image runs as root by default. You can drop privileges without
+rebuilding by adding `user:` to your compose file:
+
+```yaml
+services:
+  fitpal:
+    user: "1000:1000"   # replace with the UID that owns your data volume
+```
+
+### Restrict network access
+
+For a small trusted group, an identity proxy (Authelia, Authentik) or a
+private network (Tailscale, WireGuard) means only enrolled users can reach
+the login page at all.
+
+---
 
 ## Privacy
 
-FitPal sends no telemetry. The only data leaving your server is what you send to
-your configured AI provider when using an AI feature. Pick a provider whose data
-policy you trust, or run a local model (Ollama, vLLM) so nothing leaves your
-machine.
+FitPal sends no telemetry. The only data that leaves your server is what you send to your AI provider when using an AI feature.
+Pick a provider whose data policy you trust, or run a local model so nothing leaves your machine.

@@ -10,6 +10,21 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Security
+
+- Server now ships HTTP security headers (CSP, HSTS, X-Frame-Options, etc.) via helmet.
+- Server refuses to start if `JWT_SECRET` is still set to the example placeholder value.
+
+### Fixed
+
+- 100x calorie inflation when logging foods by weight (grams/ml) via Meal Chat.
+- Micronutrients (vitamins, calcium, iron, etc.) were always zero for common Indian
+  foods logged via Meal Chat.
+- AI-learned nutrition values were shared across all users instead of being per-user.
+- Editing a food's calories in the proposal panel or meal editor now scales macros
+  proportionally.
+- Meal suggestions now give a sensible result when the daily calorie goal is already met.
+
 ## [0.6.0] - 2026-06-30
 
 ### Added
