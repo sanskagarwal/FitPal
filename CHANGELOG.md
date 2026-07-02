@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-02
+
 ### Added
 
 - Water intake tracking on the Dashboard. Daily goal (default 8 cups) is set from the Goals page.
@@ -186,7 +188,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/sanskagarwal/FitPal/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/sanskagarwal/FitPal/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/sanskagarwal/FitPal/compare/v0.5.3...v0.6.0
 [0.5.3]: https://github.com/sanskagarwal/FitPal/compare/v0.5.2...v0.5.3
