@@ -9,6 +9,7 @@ import { notificationRoutes } from './notificationRoutes.js';
 import { pushSubscriptionRoutes } from './pushSubscriptionRoutes.js';
 import { streakRoutes } from './streakRoutes.js';
 import { aiRoutes } from './aiRoutes.js';
+import { backupRoutes } from './backupRoutes.js';
 
 // Assembles the full /api router. AI routes are auth-gated; each data
 // sub-router applies its own requireAuth + ownership guards.
@@ -27,3 +28,4 @@ apiRouter.use('/water', waterRoutes);
 apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/push', pushSubscriptionRoutes);
 apiRouter.use('/streaks', streakRoutes);
+apiRouter.use('/backup', backupRoutes);

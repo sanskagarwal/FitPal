@@ -192,6 +192,19 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 9,
+    name: 'last backup timestamp',
+    up: (db) => {
+      // Stamped by GET /api/backup on success. Kept as a discrete column (not
+      // folded into the user's JSON `data` blob) so it can be updated with a
+      // targeted UPDATE and is never clobbered by userRepository.save(), which
+      // only ever writes the email/data columns.
+      db.exec(`
+        ALTER TABLE users ADD COLUMN last_backup_at TEXT;
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): void {

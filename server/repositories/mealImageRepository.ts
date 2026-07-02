@@ -13,7 +13,19 @@ export interface MealImage {
   image: Buffer;
 }
 
+export interface UserMealImage extends MealImage {
+  mealId: string;
+}
+
 export const mealImageRepository = {
+  // All images owned by `userId`, for backup export.
+  listByUser(userId: string): UserMealImage[] {
+    const rows = getDb()
+      .prepare(`SELECT meal_id, mime, image FROM meal_images WHERE user_id = ?`)
+      .all(userId) as { meal_id: string; mime: string; image: Buffer }[];
+    return rows.map((r) => ({ mealId: r.meal_id, mime: r.mime, image: r.image }));
+  },
+
   // Insert or replace the image for a meal owned by `userId`.
   upsert(mealId: string, userId: string, mime: string, image: Buffer): void {
     getDb()

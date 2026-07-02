@@ -13,7 +13,16 @@ export interface StoredUser {
   id: string;
   email?: string;
   password?: string;
+  lastBackupAt?: string | null;
   [key: string]: unknown;
+}
+
+type UserRow = { data: string; last_backup_at: string | null };
+
+function rowToUser(row: UserRow): StoredUser {
+  const user = JSON.parse(row.data) as StoredUser;
+  user.lastBackupAt = row.last_backup_at;
+  return user;
 }
 
 export const userRepository = {
@@ -27,21 +36,25 @@ export const userRepository = {
   },
 
   findById(id: string): StoredUser | null {
-    const row = getDb().prepare('SELECT data FROM users WHERE id = ?').get(id) as
-      | { data: string }
+    const row = getDb().prepare('SELECT data, last_backup_at FROM users WHERE id = ?').get(id) as
+      | UserRow
       | undefined;
-    return row ? (JSON.parse(row.data) as StoredUser) : null;
+    return row ? rowToUser(row) : null;
   },
 
   findByEmail(email: string): StoredUser | null {
-    const row = getDb().prepare('SELECT data FROM users WHERE email = ?').get(email) as
-      | { data: string }
-      | undefined;
-    return row ? (JSON.parse(row.data) as StoredUser) : null;
+    const row = getDb()
+      .prepare('SELECT data, last_backup_at FROM users WHERE email = ?')
+      .get(email) as UserRow | undefined;
+    return row ? rowToUser(row) : null;
   },
 
   emailExists(email: string): boolean {
     return Boolean(getDb().prepare('SELECT 1 FROM users WHERE email = ?').get(email));
+  },
+
+  setLastBackupAt(userId: string, isoString: string): void {
+    getDb().prepare('UPDATE users SET last_backup_at = ? WHERE id = ?').run(isoString, userId);
   },
 
   // Delete the user row by id. Returns true when a row was removed. Callers are

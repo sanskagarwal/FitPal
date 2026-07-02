@@ -88,4 +88,18 @@ export const nutritionRepository = {
       .prepare('DELETE FROM nutrition_cache WHERE user_id = ?')
       .run(userId);
   },
+
+  // All learned entries for `userId`, for backup export. Keys are returned with
+  // the "user:{userId}:" prefix stripped down to the bare "{normName}|{unit}"
+  // form so a restore can re-scope them onto a (possibly different) account.
+  listByUser(userId: string): { key: string; data: CachedNutrition }[] {
+    const prefix = `user:${userId}:`;
+    const rows = getDb()
+      .prepare(`SELECT key, data FROM nutrition_cache WHERE user_id = ? AND source = 'learned'`)
+      .all(userId) as { key: string; data: string }[];
+    return rows.map((r) => ({
+      key: r.key.startsWith(prefix) ? r.key.slice(prefix.length) : r.key,
+      data: JSON.parse(r.data) as CachedNutrition,
+    }));
+  },
 };

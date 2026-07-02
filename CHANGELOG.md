@@ -13,6 +13,13 @@ change between minor releases.
 ### Added
 
 - Water intake tracking on the Dashboard. Daily goal (default 8 cups) is set from the Goals page.
+- Notification settings page: grant or revoke push-notification permission and set per-meal reminder times.
+- Web push meal reminders: the service worker delivers reminders at your chosen times even when the app is in the background or closed.
+- Nutrition label scan: point the camera (or upload a photo) at a packaged food's nutrition facts panel and the values are filled in automatically.
+
+### Changed
+
+- Navigation migrated from local state to React Router, enabling proper deep links, back/forward navigation, and page refreshes.
 
 ## [0.7.0] - 2026-06-30
 
