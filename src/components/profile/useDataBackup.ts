@@ -1,99 +1,86 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { ToastType } from '../Toast';
-import {
-  authMe,
-  getMealsByUser,
-  getNotificationSettings,
-  getWeightsByUser,
-} from '../../utils/db';
-import {
-  exportDataAsCSV,
-  exportDataAsJSON,
-  importDataFromJSON,
-} from '../../utils/exportImport';
+import { BackupPreview, RestoreMode } from '../../types';
+import { authMe, downloadBackup, restoreBackup } from '../../utils/db';
+import { readBackupPreview } from '../../utils/exportImport';
 
 type ToastState = { message: string; type: ToastType } | null;
 
-// Owns the Profile "Data & Backup" actions: exporting the signed-in user's data
-// as JSON/CSV and restoring a JSON backup. All storage access goes through the
-// existing db client, and the imported records are re-mapped to the current
-// user server-side, so this never touches another account's data.
 export const useDataBackup = () => {
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const [toast, setToast] = useState<ToastState>(null);
   const [exporting, setExporting] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [preview, setPreview] = useState<BackupPreview | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [selectedMode, setSelectedMode] = useState<RestoreMode>('merge');
+  const [restoring, setRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const exportJSON = async () => {
-    if (!user || exporting) return;
+  const exportBackup = async () => {
+    if (exporting) return;
     setExporting(true);
     try {
-      const [meals, weights, notifications] = await Promise.all([
-        getMealsByUser(user.id),
-        getWeightsByUser(user.id),
-        getNotificationSettings(user.id),
-      ]);
-      await exportDataAsJSON(user, meals, weights, notifications);
-      setToast({ message: 'Backup downloaded as JSON.', type: 'success' });
-    } catch (error) {
-      console.error('Error exporting data as JSON:', error);
-      setToast({ message: 'Could not export your data. Please try again.', type: 'error' });
+      await downloadBackup();
+      // Refresh user so lastBackupAt updates in context immediately.
+      const refreshed = await authMe();
+      if (refreshed) setUser(refreshed);
+      setToast({ message: 'Backup downloaded.', type: 'success' });
+    } catch {
+      setToast({ message: 'Could not download backup. Please try again.', type: 'error' });
     } finally {
       setExporting(false);
     }
   };
 
-  const exportCSV = async () => {
-    if (!user || exporting) return;
-    setExporting(true);
-    try {
-      const [meals, weights] = await Promise.all([
-        getMealsByUser(user.id),
-        getWeightsByUser(user.id),
-      ]);
-      await exportDataAsCSV(meals, weights);
-      setToast({ message: 'Meals and weights exported as CSV.', type: 'success' });
-    } catch (error) {
-      console.error('Error exporting data as CSV:', error);
-      setToast({ message: 'Could not export your data. Please try again.', type: 'error' });
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  // Open the native file picker. The actual work runs in `handleFileSelected`.
-  const startImport = () => {
-    if (importing) return;
+  const startRestore = () => {
+    if (restoring) return;
     fileInputRef.current?.click();
   };
 
   const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    // Reset the input so selecting the same file again still fires onChange.
     event.target.value = '';
-    if (!file || !user || importing) return;
+    if (!file || restoring) return;
 
-    setImporting(true);
     try {
-      const result = await importDataFromJSON(file, user.id);
-      // The restore may have changed the profile/goals, so refresh the cached
-      // auth user from the server to keep the rest of the app in sync.
+      const manifest = await readBackupPreview(file);
+      setPendingFile(file);
+      setSelectedMode('merge');
+      setPreview(manifest);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not read this file.';
+      setToast({ message: msg, type: 'error' });
+    }
+  };
+
+  const cancelRestore = () => {
+    setPreview(null);
+    setPendingFile(null);
+    setSelectedMode('merge');
+  };
+
+  const confirmRestore = async () => {
+    if (!pendingFile || restoring) return;
+    setRestoring(true);
+    try {
+      const result = await restoreBackup(pendingFile, selectedMode);
       const refreshed = await authMe();
       if (refreshed) setUser(refreshed);
-      setToast({
-        message: `Restore complete: ${result.meals} meals and ${result.weights} weight entries imported.`,
-        type: 'success',
-      });
-    } catch (error) {
-      console.error('Error importing data:', error);
-      setToast({
-        message: 'Could not restore this backup. Make sure it is a FitPal JSON export.',
-        type: 'error',
-      });
+      const parts = [
+        `${result.meals} meal${result.meals !== 1 ? 's' : ''}`,
+        `${result.weightEntries} weight entr${result.weightEntries !== 1 ? 'ies' : 'y'}`,
+        `${result.waterEntries} water entr${result.waterEntries !== 1 ? 'ies' : 'y'}`,
+      ];
+      if (result.images > 0) parts.push(`${result.images} photo${result.images !== 1 ? 's' : ''}`);
+      setToast({ message: `Restore complete: ${parts.join(', ')}.`, type: 'success' });
+    } catch {
+      setToast({ message: 'Restore failed. Please try again.', type: 'error' });
     } finally {
-      setImporting(false);
+      setRestoring(false);
+      setPreview(null);
+      setPendingFile(null);
+      setSelectedMode('merge');
     }
   };
 
@@ -101,11 +88,15 @@ export const useDataBackup = () => {
     toast,
     setToast,
     exporting,
-    importing,
+    restoring,
+    preview,
+    selectedMode,
+    setSelectedMode,
     fileInputRef,
-    exportJSON,
-    exportCSV,
-    startImport,
+    exportBackup,
+    startRestore,
     handleFileSelected,
+    confirmRestore,
+    cancelRestore,
   };
 };

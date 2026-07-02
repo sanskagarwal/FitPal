@@ -21,6 +21,7 @@ export interface User {
   password?: string; // bcrypt hash; server-only, never present on the client
   createdAt: Date;
   profile: UserProfile;
+  lastBackupAt?: string | null;
 }
 
 export interface UserProfile {
@@ -200,14 +201,25 @@ export interface WeeklyStats {
   averageFats: number;
 }
 
-// Export/Import Types
-export interface ExportData {
+// Backup / Restore Types
+export type RestoreMode = 'merge' | 'replace';
+
+export interface RestoreResult {
+  meals: number;
+  weightEntries: number;
+  waterEntries: number;
+  images: number;
+  nutritionCacheEntries: number;
+  mode: RestoreMode;
+}
+
+export interface BackupPreview {
   version: string;
-  exportDate: Date;
-  user: User;
-  meals: MealEntry[];
-  weightEntries: WeightEntry[];
-  notifications: NotificationSettings;
+  exportedAt: string;
+  meals: number;
+  mealsWithPhotos: number;
+  weightEntries: number;
+  waterEntries: number;
 }
 
 // ---------------------------------------------------------------------------

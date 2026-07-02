@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { useSelectedDate } from '../context/DateContext';
@@ -19,6 +20,11 @@ import { MicronutrientsPanel } from './dashboard/MicronutrientsPanel';
 import { NutrientSuggestionPanel } from './dashboard/NutrientSuggestionPanel';
 import { WaterPanel } from './dashboard/WaterPanel';
 import { TrendsSection } from './dashboard/trends/TrendsSection';
+
+function backupDaysSince(lastBackupAt: string | null | undefined): number | null {
+  if (!lastBackupAt) return null;
+  return Math.floor((Date.now() - new Date(lastBackupAt).getTime()) / 86_400_000);
+}
 
 // Small eyebrow label used to group the dashboard into visual sections. Kept as
 // a paragraph (not a heading) so it doesn't disturb the card heading hierarchy.
@@ -41,6 +47,9 @@ export const Dashboard = () => {
   const [suggestingNutrient, setSuggestingNutrient] = useState(false);
   const [insight, setInsight] = useState<DietaryInsight | null>(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
+  const [nudgeDismissed, setNudgeDismissed] = useState(
+    () => !!sessionStorage.getItem('backupNudgeDismissed')
+  );
   const [dietPreference, setDietPreference] = useState<DietPreference>(
     user?.profile.dietPreference || DietPreference.Vegetarian
   );
@@ -141,6 +150,20 @@ export const Dashboard = () => {
     }
   };
 
+  const backupDaysAgo = backupDaysSince(user?.lastBackupAt);
+
+  const showNudge = !nudgeDismissed && (backupDaysAgo === null || backupDaysAgo > 30);
+
+  const nudgeText =
+    backupDaysAgo === null
+      ? 'You have not backed up your data yet - consider creating a backup.'
+      : `Your last backup was ${backupDaysAgo} day${backupDaysAgo !== 1 ? 's' : ''} ago - consider creating one.`;
+
+  const dismissNudge = () => {
+    sessionStorage.setItem('backupNudgeDismissed', '1');
+    setNudgeDismissed(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -157,6 +180,20 @@ export const Dashboard = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
         <DateNavigator />
       </div>
+
+      {showNudge && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
+          <span>{nudgeText}</span>
+          <button
+            type="button"
+            aria-label="Dismiss backup reminder"
+            onClick={dismissNudge}
+            className="shrink-0 rounded p-0.5 hover:bg-amber-100 dark:hover:bg-amber-800/40"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       <section className="space-y-4">
         <SectionLabel>Today's progress</SectionLabel>

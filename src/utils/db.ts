@@ -1,4 +1,4 @@
-import { User, MealEntry, WeightEntry, NotificationSettings, PushSubscriptionPayload, Streak, WaterEntry } from '../types';
+import { User, MealEntry, WeightEntry, NotificationSettings, PushSubscriptionPayload, Streak, WaterEntry, RestoreMode, RestoreResult } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -327,4 +327,39 @@ export const getStreak = async (userId: string): Promise<Streak | undefined> => 
     console.error(`Failed to get streak for user ${userId}:`, error);
     return undefined;
   }
+};
+
+// Backup / Restore
+// These bypass apiCall because the download returns a binary ZIP and the restore
+// sends multipart form data -- neither fits the JSON-only apiCall contract.
+export const downloadBackup = async (): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/backup`, { credentials: 'include' });
+  if (!response.ok) {
+    throw new ApiError(await readErrorMessage(response), response.status, '/backup');
+  }
+  const blob = await response.blob();
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const nameMatch = disposition.match(/filename="([^"]+)"/);
+  const filename = nameMatch?.[1] ?? `fitpal-backup-${new Date().toISOString().split('T')[0]}.zip`;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+export const restoreBackup = async (file: File, mode: RestoreMode): Promise<RestoreResult> => {
+  const body = new FormData();
+  body.append('file', file);
+  body.append('mode', mode);
+  const response = await fetch(`${API_BASE_URL}/backup/restore`, {
+    method: 'POST',
+    credentials: 'include',
+    body,
+  });
+  if (!response.ok) {
+    throw new ApiError(await readErrorMessage(response), response.status, '/backup/restore');
+  }
+  return response.json() as Promise<RestoreResult>;
 };
