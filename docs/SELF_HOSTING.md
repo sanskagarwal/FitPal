@@ -78,14 +78,26 @@ To cut AI costs entirely, use a local model with Ollama or vLLM - set
 
 ## 5. Back up your data
 
-Everything lives in one SQLite file. Copy it while the app is idle:
+There are two independent backup layers:
+
+**Instance backup (whole database)** — copies the SQLite file out of the
+container. Use this for disaster recovery or migrating to a new host.
 
 ```bash
-docker compose cp fitpal:/app/data/fitpal.db ./fitpal-backup.db
+# Back up (saves to ./backups/fitpal-YYYYMMDD_HHMMSS.db)
+./scripts/backup.sh
+
+# Restore
+./scripts/restore.sh backups/fitpal-20260101_120000.db
 ```
 
-Restore by putting the file back before starting the app. Store backups
-encrypted if the file contains sensitive health data.
+Both scripts read `FITPAL_CONTAINER` (default: `fitpal`) and prompt before
+overwriting. Store the resulting `.db` files encrypted if they contain
+sensitive health data.
+
+**Per-user backup (ZIP)** — each user can export and restore their own data
+from Profile > Data & Backup. The ZIP includes meals, photos, weights, water
+entries, and settings. This works across accounts and instances.
 
 ## 6. Keep it updated
 

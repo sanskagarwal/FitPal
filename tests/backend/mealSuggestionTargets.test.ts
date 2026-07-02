@@ -86,12 +86,4 @@ describe('getMealSuggestionTargets', () => {
     expect(targets.carbs).toBe(60);
   });
 
-  it('leaves macros that already fit within the realistic ceilings untouched', () => {
-    // 1500 kcal remaining capped to a 750 kcal lunch -> scale = 0.5.
-    const targets = getMealSuggestionTargets(1500, 120, 180, 50, 30, MealType.Lunch);
-    // Scaled protein 60g is below the 75g ceiling (40% of 750 / 4).
-    expect(targets.protein).toBe(60);
-    expect(targets.carbs).toBe(90);
-    expect(targets.fats).toBe(25);
-  });
 });

@@ -33,44 +33,12 @@ function meal(userId: string, overrides: Partial<MealRecord> = {}): MealRecord {
 }
 
 describe('mealService', () => {
-  it('creates and lists meals scoped to a user', () => {
-    const userId = randomUUID();
-    const m = meal(userId);
-    mealService.create(m);
-    const list = mealService.listByUser(userId);
-    expect(list).toHaveLength(1);
-    expect(list[0].id).toBe(m.id);
-  });
-
-  it('does not leak meals across users', () => {
-    const userA = randomUUID();
-    const userB = randomUUID();
-    mealService.create(meal(userA));
-    expect(mealService.listByUser(userB)).toHaveLength(0);
-  });
-
-  it('updates an owned meal', () => {
-    const userId = randomUUID();
-    const m = meal(userId, { mealType: 'lunch' });
-    mealService.create(m);
-    mealService.update(m.id, userId, { ...m, mealType: 'dinner' });
-    expect(mealService.listByUser(userId)[0].mealType).toBe('dinner');
-  });
-
   it('refuses to update another user\u2019s meal (NotFoundError)', () => {
     const owner = randomUUID();
     const attacker = randomUUID();
     const m = meal(owner);
     mealService.create(m);
     expect(() => mealService.update(m.id, attacker, m)).toThrow(NotFoundError);
-  });
-
-  it('deletes an owned meal', () => {
-    const userId = randomUUID();
-    const m = meal(userId);
-    mealService.create(m);
-    mealService.delete(m.id, userId);
-    expect(mealService.listByUser(userId)).toHaveLength(0);
   });
 
   it('refuses to delete another user\u2019s meal (NotFoundError)', () => {

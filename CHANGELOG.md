@@ -16,6 +16,10 @@ change between minor releases.
 - Notification settings page: grant or revoke push-notification permission and set per-meal reminder times.
 - Web push meal reminders: the service worker delivers reminders at your chosen times even when the app is in the background or closed.
 - Nutrition label scan: point the camera (or upload a photo) at a packaged food's nutrition facts panel and the values are filled in automatically.
+- Backup exports a ZIP with all user data including meal photos, water entries, nutrition cache, and streak; restore accepts the same ZIP in Merge or Replace mode.
+- Pre-restore modal shows backup date and record counts and requires explicit mode selection before any data is changed.
+- Data & Backup card shows time since last backup with an amber badge when overdue; dashboard shows a dismissible nudge when no backup exists or it is older than 30 days.
+- `scripts/backup.sh` and `scripts/restore.sh` for instance-level database snapshots via `docker cp`.
 
 ### Changed
 

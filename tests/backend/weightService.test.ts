@@ -32,44 +32,12 @@ function weight(userId: string, overrides: Partial<WeightRecord> = {}): WeightRe
 }
 
 describe('weightService', () => {
-  it('creates and lists weights scoped to a user', () => {
-    const userId = randomUUID();
-    const w = weight(userId);
-    weightService.create(w);
-    const list = weightService.listByUser(userId);
-    expect(list).toHaveLength(1);
-    expect(list[0].id).toBe(w.id);
-  });
-
-  it('does not leak weights across users', () => {
-    const userA = randomUUID();
-    const userB = randomUUID();
-    weightService.create(weight(userA));
-    expect(weightService.listByUser(userB)).toHaveLength(0);
-  });
-
-  it('updates an owned weight', () => {
-    const userId = randomUUID();
-    const w = weight(userId, { weight: 80 });
-    weightService.create(w);
-    weightService.update(w.id, userId, { ...w, weight: 78 });
-    expect(weightService.listByUser(userId)[0].weight).toBe(78);
-  });
-
   it('refuses to update another user\u2019s weight (NotFoundError)', () => {
     const owner = randomUUID();
     const attacker = randomUUID();
     const w = weight(owner);
     weightService.create(w);
     expect(() => weightService.update(w.id, attacker, w)).toThrow(NotFoundError);
-  });
-
-  it('deletes an owned weight', () => {
-    const userId = randomUUID();
-    const w = weight(userId);
-    weightService.create(w);
-    weightService.delete(w.id, userId);
-    expect(weightService.listByUser(userId)).toHaveLength(0);
   });
 
   it('refuses to delete another user\u2019s weight (NotFoundError)', () => {

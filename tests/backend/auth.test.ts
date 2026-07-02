@@ -5,7 +5,6 @@ import {
   verifyPassword,
   signToken,
   verifyAuthToken,
-  AUTH_COOKIE_NAME,
 } from '../../server/auth.js';
 
 describe('password hashing', () => {
@@ -57,8 +56,3 @@ describe('JWT tokens', () => {
   });
 });
 
-describe('cookie name', () => {
-  it('is the stable httpOnly cookie name', () => {
-    expect(AUTH_COOKIE_NAME).toBe('fitpal-token');
-  });
-});

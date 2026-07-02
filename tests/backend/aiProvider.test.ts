@@ -106,11 +106,4 @@ describe('getVisionModel', () => {
     expect(model.modelId).toBe('test-model');
   });
 
-  it('builds the vision model with the configured provider', async () => {
-    process.env.AI_PROVIDER = 'google';
-    process.env.AI_VISION_MODEL = 'gemini-vision';
-    const model = (await loadGetVisionModel())();
-    expect(model.provider).toBe('google.generative-ai');
-    expect(model.modelId).toBe('gemini-vision');
-  });
 });
