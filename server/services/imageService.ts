@@ -32,7 +32,7 @@ export const OUTPUT_MIME = 'image/jpeg';
 // body as a base64 data URL (~4/3 the decoded size) alongside the other fields,
 // so the decoded image must stay comfortably under 5 MB. The client compresses
 // far below this; it is only a safety cap.
-const MAX_INPUT_BYTES = 3 * 1024 * 1024; // 3 MB (~4 MB as base64, fits the 5 MB body)
+export const MAX_INPUT_BYTES = 3 * 1024 * 1024; // 3 MB (~4 MB as base64, fits the 5 MB body)
 // Cap input pixels so a tiny file cannot expand into huge memory (bomb guard).
 const MAX_INPUT_PIXELS = 40_000_000; // 40 MP
 

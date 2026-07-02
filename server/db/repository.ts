@@ -53,6 +53,17 @@ export class JsonCollectionRepository<T extends { id: string; userId: string }> 
     return rows.map((r) => JSON.parse(r.data) as T);
   }
 
+  // Insert a new row, or update it in place if `id` already exists.
+  upsert(entity: T): void {
+    getDb()
+      .prepare(
+        `INSERT INTO ${this.table} (id, user_id, data) VALUES (?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET data = excluded.data
+         WHERE ${this.table}.user_id = excluded.user_id`
+      )
+      .run(entity.id, entity.userId, JSON.stringify(entity));
+  }
+
   // Update only when the row belongs to `userId`. Returns false if no such row.
   update(id: string, userId: string, entity: T): boolean {
     const result = getDb()

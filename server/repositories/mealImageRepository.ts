@@ -31,7 +31,8 @@ export const mealImageRepository = {
     getDb()
       .prepare(
         `INSERT INTO meal_images (meal_id, user_id, mime, image) VALUES (?, ?, ?, ?)
-         ON CONFLICT(meal_id) DO UPDATE SET mime = excluded.mime, image = excluded.image`
+         ON CONFLICT(meal_id) DO UPDATE SET mime = excluded.mime, image = excluded.image
+         WHERE meal_images.user_id = excluded.user_id`
       )
       .run(mealId, userId, mime, image);
   },

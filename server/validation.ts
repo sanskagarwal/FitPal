@@ -21,7 +21,7 @@ const BoundedNutrients = NutrientsSchema.refine(
 
 // Profile is a rich nested object; validate the load-bearing fields and let the
 // rest pass through so the client can evolve it without breaking the contract.
-const ProfileSchema = z
+export const ProfileSchema = z
   .object({
     dateOfBirth: z.string().min(1),
     gender: z.string().min(1),
@@ -289,3 +289,61 @@ export const MealInsightRequestSchema = z
     dietPreference: z.string().optional(),
   })
   .loose();
+
+// Backup / restore
+//
+// Mirrors the per-entity schemas above so a restored record is validated the
+// same way a freshly-written one would be. Array sizes are bounded so a
+// crafted backup.json can't force the server to hold an unreasonable number of
+// records in memory during restore.
+
+export const RestoreModeSchema = z.enum(['merge', 'replace']);
+
+const BackupUserSchema = z
+  .object({
+    name: z.string().min(1),
+    email: z.email(),
+    createdAt: z.string(),
+    profile: ProfileSchema,
+    lastBackupAt: z.string().nullable(),
+  })
+  .loose();
+
+const BackupStreakSchema = z.object({
+  currentStreak: z.number().nonnegative(),
+  longestStreak: z.number().nonnegative(),
+  lastLogDate: z.string(),
+});
+
+const BackupNutritionDataSchema = z
+  .object({
+    servingSize: z.string().optional(),
+    nutrients: z.record(z.string(), z.number()),
+  })
+  .nullable();
+
+const BackupNutritionCacheEntrySchema = z.object({
+  key: z.string().min(1),
+  data: BackupNutritionDataSchema,
+});
+
+const BACKUP_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
+const BackupImageIndexEntrySchema = z.object({
+  mealId: z.string().min(1),
+  filename: z.string().min(1).max(300),
+  mime: z.enum(BACKUP_IMAGE_MIMES),
+});
+
+export const BackupManifestSchema = z.object({
+  version: z.literal('1.0.0'),
+  exportedAt: z.string(),
+  user: BackupUserSchema,
+  meals: z.array(MealSchema).max(50_000),
+  weightEntries: z.array(WeightSchema).max(20_000),
+  waterEntries: z.array(WaterSchema).max(50_000),
+  notifications: NotificationSchema,
+  streak: BackupStreakSchema,
+  nutritionCache: z.array(BackupNutritionCacheEntrySchema).max(20_000),
+  imageIndex: z.array(BackupImageIndexEntrySchema).max(5_000),
+});
