@@ -2,6 +2,7 @@ import { Lightbulb } from 'lucide-react';
 
 interface MicronutrientCardProps {
   label: string;
+  benefit: string;
   value: number;
   unit: string;
   target: number;
@@ -15,6 +16,7 @@ interface MicronutrientCardProps {
 // an icon-only "Suggest foods" action. Replaces the taller tinted tile.
 export const MicronutrientCard = ({
   label,
+  benefit,
   value,
   unit,
   target,
@@ -29,7 +31,10 @@ export const MicronutrientCard = ({
     <div className="flex items-center gap-3 py-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{label}</span>
+          <div className="min-w-0">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate block">{label}</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 italic truncate block">{benefit}</span>
+          </div>
           <span className="text-xs tabular-nums text-gray-600 dark:text-gray-300 shrink-0">
             <span className={`font-semibold ${valueClassName}`}>{Math.round(value)}</span>
             <span className="text-gray-500 dark:text-gray-400">

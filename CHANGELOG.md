@@ -10,6 +10,10 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Changed
+
+- Micronutrient cards now show a one-line benefit label beneath each nutrient name
+
 ## [0.8.0] - 2026-07-02
 
 ### Added
