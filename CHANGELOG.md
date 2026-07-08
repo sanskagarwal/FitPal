@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-08
+
 ### Changed
 
 - Micronutrient cards now show a one-line benefit label beneath each nutrient name
@@ -192,7 +194,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/sanskagarwal/FitPal/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/sanskagarwal/FitPal/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/sanskagarwal/FitPal/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/sanskagarwal/FitPal/compare/v0.5.3...v0.6.0
