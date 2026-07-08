@@ -10,6 +10,10 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix WCAG AA contrast in light mode
+
 ## [0.8.1] - 2026-07-08
 
 ### Changed

@@ -33,7 +33,7 @@ export const MicronutrientCard = ({
         <div className="flex items-baseline justify-between gap-2">
           <div className="min-w-0">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate block">{label}</span>
-            <span className="text-xs text-gray-400 dark:text-gray-500 italic truncate block">{benefit}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 italic truncate block">{benefit}</span>
           </div>
           <span className="text-xs tabular-nums text-gray-600 dark:text-gray-300 shrink-0">
             <span className={`font-semibold ${valueClassName}`}>{Math.round(value)}</span>
