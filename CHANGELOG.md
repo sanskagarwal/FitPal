@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-07-08
+
 ### Fixed
 
 - Fix WCAG AA contrast in light mode
@@ -198,7 +200,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/sanskagarwal/FitPal/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/sanskagarwal/FitPal/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/sanskagarwal/FitPal/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/sanskagarwal/FitPal/compare/v0.6.0...v0.7.0
