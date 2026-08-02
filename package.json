@@ -50,7 +50,7 @@
     "jsdom": "^29.1.1",
     "jsonwebtoken": "^9.0.3",
     "playwright": "^1.60.0",
-    "postcss": "^8.5.15",
+    "postcss": "^8.5.25",
     "supertest": "^7.2.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
