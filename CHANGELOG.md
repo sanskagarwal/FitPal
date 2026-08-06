@@ -10,6 +10,10 @@ change between minor releases.
 
 ## [Unreleased]
 
+### Security
+
+- Patched npm audit findings
+
 ## [0.8.2] - 2026-07-08
 
 ### Fixed
