@@ -10,6 +10,8 @@ change between minor releases.
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-08-06
+
 ### Security
 
 - Patched npm audit findings
@@ -204,7 +206,8 @@ change between minor releases.
 - Express 5 + better-sqlite3 storage server with JWT cookie authentication.
 - Server-side AI service (Vercel AI SDK) for meal and nutrition assistance.
 
-[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/sanskagarwal/FitPal/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/sanskagarwal/FitPal/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/sanskagarwal/FitPal/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/sanskagarwal/FitPal/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/sanskagarwal/FitPal/compare/v0.7.0...v0.8.0
