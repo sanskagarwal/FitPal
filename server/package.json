@@ -8,11 +8,11 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.81",
-    "@ai-sdk/azure": "^3.0.70",
-    "@ai-sdk/google": "^3.0.80",
-    "@ai-sdk/openai-compatible": "^2.0.48",
-    "ai": "^6.0.197",
+    "@ai-sdk/anthropic": "^3.0.116",
+    "@ai-sdk/azure": "^3.0.116",
+    "@ai-sdk/google": "^3.0.121",
+    "@ai-sdk/openai-compatible": "^2.0.74",
+    "ai": "^6.0.277",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.0",
     "cookie-parser": "^1.4.7",
